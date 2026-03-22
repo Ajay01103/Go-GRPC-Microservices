@@ -12,16 +12,10 @@ help: ## Show this help
 
 # ─── Code Generation ──────────────────────────────────────────────────────────
 
-proto: ## Generate gRPC Go code from proto files
+proto: ## Generate gRPC Go and TS code from proto files
 	-@mkdir $(AUTH_PB_OUT) 2>nul || exit 0
-	protoc \
-		--proto_path=$(PROTO_DIR)/auth \
-		--go_out=$(AUTH_PB_OUT) \
-		--go_opt=paths=source_relative \
-		--go-grpc_out=$(AUTH_PB_OUT) \
-		--go-grpc_opt=paths=source_relative \
-		auth.proto
-	@echo "✓ Proto generated → $(AUTH_PB_OUT)"
+	cd $(PROTO_DIR)/auth && npx @bufbuild/buf generate
+	@echo "✓ Proto generated"
 
 sqlc: ## Generate type-safe Go from SQL (auth service)
 	cd $(AUTH_SVC) && sqlc generate

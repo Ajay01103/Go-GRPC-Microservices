@@ -11,6 +11,8 @@ dist/
 *.so
 *.dylib
 
+ref.txt
+
 # Go
 *.test
 *.out
