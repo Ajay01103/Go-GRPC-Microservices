@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 
+	"go.uber.org/zap"
+
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/go-grpc-sqlc/auth/config"
 	db "github.com/go-grpc-sqlc/auth/gen/sqlc"
@@ -21,6 +22,7 @@ type AuthService struct {
 	tokenMaker token.TokenMaker
 	tokenStore *redisstore.TokenStore
 	cfg        config.Config
+	logger     *zap.Logger
 }
 
 // New creates an AuthService with its dependencies wired.
@@ -29,12 +31,14 @@ func New(
 	tokenMaker token.TokenMaker,
 	tokenStore *redisstore.TokenStore,
 	cfg config.Config,
+	logger *zap.Logger,
 ) *AuthService {
 	return &AuthService{
 		userRepo:   userRepo,
 		tokenMaker: tokenMaker,
 		tokenStore: tokenStore,
 		cfg:        cfg,
+		logger:     logger,
 	}
 }
 
@@ -47,14 +51,14 @@ type RegisterResult struct {
 }
 
 func (s *AuthService) Register(ctx context.Context, email, name, password string) (*RegisterResult, error) {
-	// Hash password
-	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	// Hash password with argon2id
+	hashed, err := HashPassword(password)
 	if err != nil {
 		return nil, fmt.Errorf("hash password: %w", err)
 	}
 
 	// Persist user
-	user, err := s.userRepo.CreateUser(ctx, email, name, string(hashed))
+	user, err := s.userRepo.CreateUser(ctx, email, name, hashed)
 	if err != nil {
 		if errors.Is(err, repository.ErrEmailTaken) {
 			return nil, ErrEmailAlreadyExists
@@ -91,7 +95,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*Login
 		return nil, fmt.Errorf("get user: %w", err)
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+	if err := VerifyPassword(user.Password, password); err != nil {
 		return nil, ErrInvalidCredentials
 	}
 
@@ -110,10 +114,25 @@ type RefreshResult struct {
 	RefreshToken string
 }
 
-// RefreshToken validates the incoming refresh token, checks Redis for revocation,
-// then atomically rotates the token pair (old JTI deleted, new JTI stored).
+// RefreshToken implements the suggested secure flow:
+//
+//  1. Verify JWT signature + expiry              — cryptographic gate
+//  2. Atomically claim (delete) the old JTI      — race-safe, reuse detection here
+//  3. Fetch user from DB                         — existence check
+//  4. Mint new refresh token (new JTI)
+//  5. Mint new access token paired with new JTI
+//  6. Store new JTI in Redis
+//  7. Return token pair
+//
+// Steps 2–6 are ordered so the most reliable failure (Redis atomic claim) happens
+// before any expensive work. If step 6 fails, the user loses their session and
+// must re-login — this is an acceptable trade-off for race safety.
+//
+// Reuse detection: if step 2 returns ErrTokenRevoked for a token that already
+// passed JWT verification, a consumed token was replayed. This signals possible
+// theft, so all sessions for that user are immediately revoked.
 func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr string) (*RefreshResult, error) {
-	// 1. Verify JWT signature + expiry
+	// 1. Verify JWT signature + expiry — fast cryptographic gate.
 	payload, err := s.tokenMaker.VerifyRefreshToken(refreshTokenStr)
 	if err != nil {
 		if errors.Is(err, token.ErrExpiredToken) {
@@ -122,17 +141,29 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr string) 
 		return nil, ErrInvalidToken
 	}
 
-	// 2. Check Redis — if the key is gone, the token was revoked (logout occurred)
 	oldJTI := payload.JTI.String()
-	_, err = s.tokenStore.ValidateRefreshToken(ctx, oldJTI)
-	if err != nil {
+
+	// 2. Atomically claim (delete) the old JTI from Redis.
+	//    This is the race-safe gate: only one concurrent request can win this.
+	//    If the key is missing, either:
+	//      a) the user already logged out (normal revocation), or
+	//      b) a concurrent request already claimed it (race), or
+	//      c) a consumed token is being replayed (theft attempt).
+	//    All three cases → refuse, and escalate (c) to full session wipe.
+	if err := s.tokenStore.ClaimRefreshToken(ctx, oldJTI); err != nil {
 		if errors.Is(err, redisstore.ErrTokenRevoked) {
+			// A valid-signature token whose JTI is already gone was replayed.
+			// This is a strong signal of theft — nuke every session for this user.
+			s.logger.Warn("refresh token reuse detected — possible theft, revoking all sessions",
+				zap.String("userID", payload.UserID.String()),
+			)
+			_ = s.tokenStore.RevokeAllUserTokens(ctx, payload.UserID.String())
 			return nil, ErrTokenRevoked
 		}
-		return nil, fmt.Errorf("redis validate: %w", err)
+		return nil, fmt.Errorf("redis claim: %w", err)
 	}
 
-	// 3. Fetch user to ensure they still exist
+	// 3. Fetch the user — verify they still exist in the DB.
 	user, err := s.userRepo.GetByID(ctx, payload.UserID)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
@@ -141,7 +172,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr string) 
 		return nil, fmt.Errorf("get user: %w", err)
 	}
 
-	// 4. Mint new refresh token
+	// 4. Mint new refresh token (generates its own JTI).
 	newRefreshStr, newRefreshPayload, err := s.tokenMaker.CreateRefreshToken(
 		user.ID, user.Email, user.Name,
 		s.cfg.RefreshTokenDuration,
@@ -150,7 +181,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr string) 
 		return nil, fmt.Errorf("create refresh token: %w", err)
 	}
 
-	// 5. Mint new access token paired with new refresh JTI
+	// 5. Mint new access token paired with the new refresh JTI.
 	newAccessStr, _, err := s.tokenMaker.CreateAccessToken(
 		user.ID, user.Email, user.Name,
 		newRefreshPayload.JTI.String(),
@@ -160,12 +191,17 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr string) 
 		return nil, fmt.Errorf("create access token: %w", err)
 	}
 
-	// 6. Atomically revoke old JTI, store new JTI in Redis
-	if err := s.tokenStore.RotateRefreshToken(
-		ctx, oldJTI, newRefreshPayload.JTI.String(),
-		user.ID, s.cfg.RefreshTokenDuration,
+	// 6. Store the new JTI in Redis.
+	//    If this fails, the old JTI is already gone (step 2) and the new one is
+	//    not stored — the user's session is lost and they must re-login.
+	//    This is acceptable: it's a transient Redis error, not a security issue.
+	if err := s.tokenStore.StoreRefreshToken(
+		ctx,
+		newRefreshPayload.JTI.String(),
+		user.ID,
+		s.cfg.RefreshTokenDuration,
 	); err != nil {
-		return nil, fmt.Errorf("rotate token in redis: %w", err)
+		return nil, fmt.Errorf("store new refresh token: %w", err)
 	}
 
 	return &RefreshResult{AccessToken: newAccessStr, RefreshToken: newRefreshStr}, nil
@@ -188,9 +224,9 @@ func (s *AuthService) Logout(ctx context.Context, refreshTokenStr string) error 
 // ─── ValidateToken ────────────────────────────────────────────────────────────
 
 type ValidateResult struct {
-	UserID   uuid.UUID
-	Email    string
-	Name     string
+	UserID uuid.UUID
+	Email  string
+	Name   string
 }
 
 // ValidateToken verifies an access token (used by other services / Next.js middleware).
@@ -204,9 +240,9 @@ func (s *AuthService) ValidateToken(ctx context.Context, accessTokenStr string) 
 	}
 
 	return &ValidateResult{
-		UserID:   payload.UserID,
-		Email:    payload.Email,
-		Name:     payload.Name,
+		UserID: payload.UserID,
+		Email:  payload.Email,
+		Name:   payload.Name,
 	}, nil
 }
 

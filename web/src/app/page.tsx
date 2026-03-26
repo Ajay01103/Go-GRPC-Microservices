@@ -3,10 +3,19 @@
 import Image from "next/image"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { useAuth } from "@/lib/auth-context"
+import { useLogout } from "@/hooks/use-logout"
+import { useRouter } from "next/navigation"
 
 export default function Home() {
   const { isLoadingAuth, accessToken } = useAuth()
   const { data: user, isLoading: isQueryLoading } = useCurrentUser()
+  const logoutMutation = useLogout()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await logoutMutation.mutateAsync()
+    router.refresh()
+  }
 
   const isLoading = isLoadingAuth || (!!accessToken && isQueryLoading)
 
@@ -34,6 +43,12 @@ export default function Home() {
               <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
                 Logged in as {user.email}
               </p>
+              <button
+                onClick={handleLogout}
+                disabled={logoutMutation.isPending}
+                className="mt-4 flex h-10 w-32 items-center justify-center rounded-full bg-red-600 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50">
+                {logoutMutation.isPending ? "Logging out..." : "Logout"}
+              </button>
             </>
           ) : (
             <>

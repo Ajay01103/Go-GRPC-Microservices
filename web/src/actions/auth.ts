@@ -38,3 +38,20 @@ export async function refreshAccessTokenAction() {
     return null
   }
 }
+
+export async function logoutAction() {
+  const cookieStore = await cookies()
+  const refreshToken = cookieStore.get("refreshToken")?.value
+
+  if (refreshToken) {
+    try {
+      // Call the gRPC endpoint to immediately revoke the token in Redis
+      await rpcClient.logout({ refreshToken })
+    } catch (error) {
+      // Log but don't block logout — still clear the cookie
+      console.error("RPC logout failed", error)
+    }
+  }
+
+  cookieStore.delete("refreshToken")
+}

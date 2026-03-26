@@ -3,14 +3,14 @@ package interceptor
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"time"
 
 	"connectrpc.com/connect"
+	"go.uber.org/zap"
 )
 
 // NewLoggingInterceptor creates a unary interceptor for structured logging
-func NewLoggingInterceptor(logger *slog.Logger) connect.UnaryInterceptorFunc {
+func NewLoggingInterceptor(logger *zap.Logger) connect.UnaryInterceptorFunc {
 	return func(next connect.UnaryFunc) connect.UnaryFunc {
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 			start := time.Now()
@@ -25,22 +25,22 @@ func NewLoggingInterceptor(logger *slog.Logger) connect.UnaryInterceptorFunc {
 				var connectErr *connect.Error
 				if errors.As(err, &connectErr) {
 					logger.Error("request failed",
-						slog.String("procedure", procedure),
-						slog.String("code", connectErr.Code().String()),
-						slog.String("error", connectErr.Message()),
-						slog.Duration("duration", duration),
+						zap.String("procedure", procedure),
+						zap.String("code", connectErr.Code().String()),
+						zap.String("error", connectErr.Message()),
+						zap.Duration("duration", duration),
 					)
 				} else {
 					logger.Error("request failed",
-						slog.String("procedure", procedure),
-						slog.String("error", err.Error()),
-						slog.Duration("duration", duration),
+						zap.String("procedure", procedure),
+						zap.String("error", err.Error()),
+						zap.Duration("duration", duration),
 					)
 				}
 			} else {
 				logger.Info("request succeeded",
-					slog.String("procedure", procedure),
-					slog.Duration("duration", duration),
+					zap.String("procedure", procedure),
+					zap.Duration("duration", duration),
 				)
 			}
 			return resp, err
