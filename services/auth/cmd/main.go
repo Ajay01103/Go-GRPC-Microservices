@@ -17,15 +17,15 @@ import (
 	"golang.org/x/net/http2/h2c"
 
 	"github.com/go-grpc-sqlc/auth/config"
-	db "github.com/go-grpc-sqlc/auth/gen/sqlc"
 	"github.com/go-grpc-sqlc/auth/gen/pb/pbconnect"
-	"github.com/go-grpc-sqlc/pkg/interceptor"
-	pkglogger "github.com/go-grpc-sqlc/pkg/logger"
-	"github.com/go-grpc-sqlc/pkg/token"
+	db "github.com/go-grpc-sqlc/auth/gen/sqlc"
 	"github.com/go-grpc-sqlc/auth/internal/redisstore"
 	"github.com/go-grpc-sqlc/auth/internal/repository"
 	"github.com/go-grpc-sqlc/auth/internal/service"
 	"github.com/go-grpc-sqlc/auth/server"
+	"github.com/go-grpc-sqlc/pkg/interceptor"
+	pkglogger "github.com/go-grpc-sqlc/pkg/logger"
+	"github.com/go-grpc-sqlc/pkg/token"
 )
 
 // corsMiddleware allows Next.js or any other frontend to access Connect endpoints.
@@ -125,7 +125,7 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	logger.Info("shutting down server...")
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
