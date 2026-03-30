@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
 	"connectrpc.com/connect"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -20,11 +19,12 @@ import (
 	"github.com/go-grpc-sqlc/auth/config"
 	db "github.com/go-grpc-sqlc/auth/gen/sqlc"
 	"github.com/go-grpc-sqlc/auth/gen/pb/pbconnect"
-	"github.com/go-grpc-sqlc/auth/internal/interceptor"
+	"github.com/go-grpc-sqlc/pkg/interceptor"
+	pkglogger "github.com/go-grpc-sqlc/pkg/logger"
+	"github.com/go-grpc-sqlc/pkg/token"
 	"github.com/go-grpc-sqlc/auth/internal/redisstore"
 	"github.com/go-grpc-sqlc/auth/internal/repository"
 	"github.com/go-grpc-sqlc/auth/internal/service"
-	"github.com/go-grpc-sqlc/auth/internal/token"
 	"github.com/go-grpc-sqlc/auth/server"
 )
 
@@ -43,20 +43,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 }
 
 func main() {
-	// Custom Zap configuration for better terminal readability
-	encoderCfg := zap.NewDevelopmentEncoderConfig()
-	encoderCfg.EncodeTime = zapcore.TimeEncoderOfLayout("15:04:05")
-	encoderCfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	// Custom duration encoder to add "ms" suffix
-	encoderCfg.EncodeDuration = func(d time.Duration, enc zapcore.PrimitiveArrayEncoder) {
-		enc.AppendString(fmt.Sprintf("%dms", d.Milliseconds()))
-	}
-
-	logger := zap.New(zapcore.NewCore(
-		zapcore.NewConsoleEncoder(encoderCfg),
-		zapcore.Lock(os.Stdout),
-		zap.NewAtomicLevelAt(zap.InfoLevel),
-	), zap.AddCaller())
+	logger := pkglogger.New()
 	defer logger.Sync()
 
 	undo := zap.ReplaceGlobals(logger)

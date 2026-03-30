@@ -11,9 +11,9 @@ import (
 
 	"github.com/go-grpc-sqlc/auth/config"
 	db "github.com/go-grpc-sqlc/auth/gen/sqlc"
+	"github.com/go-grpc-sqlc/pkg/token"
 	"github.com/go-grpc-sqlc/auth/internal/redisstore"
 	"github.com/go-grpc-sqlc/auth/internal/repository"
-	"github.com/go-grpc-sqlc/auth/internal/token"
 )
 
 // AuthService holds all dependencies needed by the auth business logic.
