@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package voice;
+
+option go_package = "github.com/go-grpc-sqlc/voice/gen/pb;pb";
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum VoiceCategory {
+  VOICE_CATEGORY_UNSPECIFIED = 0;
+  VOICE_CATEGORY_GENERAL     = 1;
+  VOICE_CATEGORY_NARRATION   = 2;
+  VOICE_CATEGORY_CHARACTER   = 3;
+}
+
+enum VoiceVariant {
+  VOICE_VARIANT_UNSPECIFIED = 0;
+  VOICE_VARIANT_MALE        = 1;
+  VOICE_VARIANT_FEMALE      = 2;
+  VOICE_VARIANT_NEUTRAL     = 3;
+}
+
+// ─── Shared Message ───────────────────────────────────────────────────────────
+
+message VoiceItem {
+  string         id          = 1;
+  string         name        = 2;
+  string         description = 3;
+  VoiceCategory  category    = 4;
+  string         language    = 5;
+  VoiceVariant   variant     = 6;
+}
+
+// ─── GetAll ───────────────────────────────────────────────────────────────────
+
+message GetAllVoicesRequest {
+  string user_id = 1;
+  string query   = 2; // optional search term
+}
+
+message GetAllVoicesResponse {
+  repeated VoiceItem voices = 1;
+}
+
+// ─── Delete ───────────────────────────────────────────────────────────────────
+
+message DeleteVoiceRequest {
+  string id      = 1;
+  string user_id = 2;
+}
+
+message DeleteVoiceResponse {
+  bool success = 1;
+}
+
+// ─── Service ──────────────────────────────────────────────────────────────────
+
+service VoiceService {
+  rpc GetAllVoices(GetAllVoicesRequest) returns (GetAllVoicesResponse);
+  rpc DeleteVoice(DeleteVoiceRequest)   returns (DeleteVoiceResponse);
+}

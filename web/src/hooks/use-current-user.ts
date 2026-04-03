@@ -1,14 +1,25 @@
-import { useQuery } from "@tanstack/react-query"
-import { useAuth } from "@/lib/auth-context"
-import { rpcClient } from "@/lib/rpc"
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth-context";
+import { rpcClient } from "@/lib/rpc";
+
+export type CurrentUser = {
+  userId: string;
+  email: string;
+  name: string;
+};
 
 export function useCurrentUser() {
-  const { accessToken } = useAuth()
+  const { accessToken } = useAuth();
 
   return useQuery({
-    queryKey: ["currentUser", accessToken],
-    queryFn: async () => {
-      if (!accessToken) return null
+    queryKey: ["currentUser", !!accessToken],
+    enabled: !!accessToken,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 1,
+    queryFn: async (): Promise<CurrentUser | null> => {
+      if (!accessToken) return null;
 
       const response = await rpcClient.getCurrentUser(
         {},
@@ -17,10 +28,9 @@ export function useCurrentUser() {
             Authorization: `Bearer ${accessToken}`,
           },
         },
-      )
+      );
 
-      return response
+      return response as CurrentUser;
     },
-    enabled: !!accessToken,
-  })
+  });
 }

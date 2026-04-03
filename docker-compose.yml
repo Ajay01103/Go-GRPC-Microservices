@@ -1,7 +1,7 @@
 services:
-  postgres:
+  postgres-auth:
     image: postgres:16-alpine
-    container_name: go_grpc_postgres
+    container_name: go_grpc_postgres_auth
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -10,9 +10,45 @@ services:
     ports:
       - "${POSTGRES_PORT:-5433}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_auth_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-authdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-voice:
+    image: postgres:16-alpine
+    container_name: go_grpc_postgres_voice
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: voicedb
+    ports:
+      - "${VOICE_DB_PORT:-5434}:5432"
+    volumes:
+      - postgres_voice_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d voicedb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-generation:
+    image: postgres:16-alpine
+    container_name: go_grpc_postgres_generation
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: generationdb
+    ports:
+      - "${GENERATION_DB_PORT:-5435}:5432"
+    volumes:
+      - postgres_generation_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d generationdb"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -46,6 +82,8 @@ services:
 
 
 volumes:
-  postgres_data:
+  postgres_auth_data:
+  postgres_voice_data:
+  postgres_generation_data:
   redis_data:
   redisinsight_data:

@@ -113,7 +113,7 @@ func main() {
 	}
 
 	go func() {
-		logger.Info("start ConnectRPC server", zap.String("addr", addr))
+		logger.Info("AUTH SERVICE started at ConnectRPC server", zap.String("addr", addr))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Error("cannot start server", zap.Error(err))
 			os.Exit(1)

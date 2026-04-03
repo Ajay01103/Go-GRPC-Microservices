@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package generation;
+
+option go_package = "github.com/go-grpc-sqlc/generation/gen/pb;pb";
+
+message HelloGenerationRequest {
+  string name = 1;
+}
+
+message HelloGenerationResponse {
+  string message = 1;
+}
+
+service GenerationService {
+  rpc HelloGeneration(HelloGenerationRequest) returns (HelloGenerationResponse);
+}
