@@ -36,3 +36,21 @@ RETURNING id, user_id, name, description, category, language, variant, s3_object
 DELETE FROM voices
 WHERE id = $1
   AND user_id = $2;
+
+-- name: GetSystemVoiceByName :one
+SELECT * FROM voices
+WHERE name = $1 AND user_id = 'SYSTEM'
+LIMIT 1;
+
+-- name: UpdateSystemVoiceS3Key :exec
+UPDATE voices
+SET s3_object_key = $2,
+    description = $3,
+    category = $4,
+    language = $5,
+    updated_at = NOW()
+WHERE id = $1;
+
+-- name: DeleteSystemVoiceByID :exec
+DELETE FROM voices
+WHERE id = $1 AND user_id = 'SYSTEM';

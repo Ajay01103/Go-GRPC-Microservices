@@ -55,6 +55,16 @@ func (q *Queries) CreateVoice(ctx context.Context, arg CreateVoiceParams) (Voice
 	return i, err
 }
 
+const deleteSystemVoiceByID = `-- name: DeleteSystemVoiceByID :exec
+DELETE FROM voices
+WHERE id = $1 AND user_id = 'SYSTEM'
+`
+
+func (q *Queries) DeleteSystemVoiceByID(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, deleteSystemVoiceByID, id)
+	return err
+}
+
 const deleteVoice = `-- name: DeleteVoice :exec
 DELETE FROM voices
 WHERE id = $1
@@ -69,6 +79,30 @@ type DeleteVoiceParams struct {
 func (q *Queries) DeleteVoice(ctx context.Context, arg DeleteVoiceParams) error {
 	_, err := q.db.Exec(ctx, deleteVoice, arg.ID, arg.UserID)
 	return err
+}
+
+const getSystemVoiceByName = `-- name: GetSystemVoiceByName :one
+SELECT id, user_id, name, description, category, language, variant, s3_object_key, created_at, updated_at FROM voices
+WHERE name = $1 AND user_id = 'SYSTEM'
+LIMIT 1
+`
+
+func (q *Queries) GetSystemVoiceByName(ctx context.Context, name string) (Voice, error) {
+	row := q.db.QueryRow(ctx, getSystemVoiceByName, name)
+	var i Voice
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Description,
+		&i.Category,
+		&i.Language,
+		&i.Variant,
+		&i.S3ObjectKey,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const getVoice = `-- name: GetVoice :one
@@ -220,4 +254,33 @@ func (q *Queries) ListCustomVoicesSearch(ctx context.Context, arg ListCustomVoic
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateSystemVoiceS3Key = `-- name: UpdateSystemVoiceS3Key :exec
+UPDATE voices
+SET s3_object_key = $2,
+    description = $3,
+    category = $4,
+    language = $5,
+    updated_at = NOW()
+WHERE id = $1
+`
+
+type UpdateSystemVoiceS3KeyParams struct {
+	ID          string        `json:"id"`
+	S3ObjectKey pgtype.Text   `json:"s3_object_key"`
+	Description pgtype.Text   `json:"description"`
+	Category    VoiceCategory `json:"category"`
+	Language    string        `json:"language"`
+}
+
+func (q *Queries) UpdateSystemVoiceS3Key(ctx context.Context, arg UpdateSystemVoiceS3KeyParams) error {
+	_, err := q.db.Exec(ctx, updateSystemVoiceS3Key,
+		arg.ID,
+		arg.S3ObjectKey,
+		arg.Description,
+		arg.Category,
+		arg.Language,
+	)
+	return err
 }
