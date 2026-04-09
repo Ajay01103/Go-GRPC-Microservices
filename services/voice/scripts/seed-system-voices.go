@@ -20,6 +20,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 
+	voiceconfig "github.com/go-grpc-sqlc/voice/config"
 	db "github.com/go-grpc-sqlc/voice/gen/sqlc"
 )
 
@@ -62,12 +63,11 @@ var canonicalSystemVoiceNames = []string{
 	"Lucy", "Madison", "Marisol", "Meera", "Walter",
 }
 
-func mustEnv(key string) string {
-	v := os.Getenv(key)
-	if v == "" {
-		log.Fatalf("missing required env var: %s", key)
+func mustValue(name, value string) string {
+	if value == "" {
+		log.Fatalf("missing required config value: %s", name)
 	}
-	return v
+	return value
 }
 
 func systemVoicesDir() string {
@@ -159,13 +159,17 @@ func seedSystemVoice(ctx context.Context, q *db.Queries, b2Client *s3.Client, bu
 }
 
 func main() {
+	cfg, err := voiceconfig.Load()
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
 
-	dbURL := mustEnv("VOICE_DB_URL")
-	s3Endpoint := mustEnv("S3_ENDPOINT")
-	s3Region := mustEnv("S3_REGION")
-	s3Bucket := mustEnv("S3_BUCKET")
-	s3AccessKey := mustEnv("S3_ACCESS_KEY_ID")
-	s3SecretKey := mustEnv("S3_SECRET_ACCESS_KEY")
+	dbURL := mustValue("VOICE_DB_URL", cfg.DBUrl)
+	s3Endpoint := mustValue("S3_ENDPOINT", cfg.S3Endpoint)
+	s3Region := mustValue("S3_REGION", cfg.S3Region)
+	s3Bucket := mustValue("S3_BUCKET", cfg.S3Bucket)
+	s3AccessKey := mustValue("S3_ACCESS_KEY_ID", cfg.S3AccessKey)
+	s3SecretKey := mustValue("S3_SECRET_ACCESS_KEY", cfg.S3SecretKey)
 
 	ctx := context.Background()
 

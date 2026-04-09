@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"connectrpc.com/connect"
+	"github.com/go-grpc-sqlc/pkg/interceptor"
 	"go.uber.org/zap"
 
 	"github.com/go-grpc-sqlc/voice/gen/pb"
@@ -30,12 +31,27 @@ func (s *VoiceServer) GetAllVoices(
 	ctx context.Context,
 	req *connect.Request[pb.GetAllVoicesRequest],
 ) (*connect.Response[pb.GetAllVoicesResponse], error) {
-	if req.Msg.UserId == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("user_id is required"))
+	payload, ok := interceptor.UserPayloadFromContext(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("missing auth payload"))
+	}
+
+	requestedUserID := req.Msg.UserId
+	if requestedUserID == "" {
+		requestedUserID = payload.UserID.String()
+	}
+	scope := repository.ListScopeAll
+
+	if requestedUserID != "SYSTEM" && requestedUserID != payload.UserID.String() {
+		return nil, connect.NewError(connect.CodePermissionDenied, errors.New("cannot access another user's voices"))
+	}
+	if requestedUserID == "SYSTEM" {
+		scope = repository.ListScopeSystem
 	}
 
 	voices, err := s.svc.GetAll(ctx, service.ListVoicesParams{
-		UserID: req.Msg.UserId,
+		UserID: requestedUserID,
+		Scope:  scope,
 		Query:  req.Msg.Query,
 	})
 	if err != nil {
@@ -63,14 +79,19 @@ func (s *VoiceServer) DeleteVoice(
 	ctx context.Context,
 	req *connect.Request[pb.DeleteVoiceRequest],
 ) (*connect.Response[pb.DeleteVoiceResponse], error) {
+	payload, ok := interceptor.UserPayloadFromContext(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("missing auth payload"))
+	}
+
 	if req.Msg.Id == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("id is required"))
 	}
-	if req.Msg.UserId == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("user_id is required"))
+	if req.Msg.UserId != "" && req.Msg.UserId != payload.UserID.String() {
+		return nil, connect.NewError(connect.CodePermissionDenied, errors.New("cannot delete another user's voice"))
 	}
 
-	err := s.svc.Delete(ctx, req.Msg.Id, req.Msg.UserId)
+	err := s.svc.Delete(ctx, req.Msg.Id, payload.UserID.String())
 	if err != nil {
 		if errors.Is(err, repository.ErrVoiceNotFound) {
 			return nil, connect.NewError(connect.CodeNotFound, errors.New("voice not found"))

@@ -6,6 +6,9 @@ import "github.com/spf13/viper"
 type Config struct {
 	DBUrl       string `mapstructure:"VOICE_DB_URL"`
 	GRPCPort    string `mapstructure:"VOICE_GRPC_PORT"`
+	JWTSecret   string `mapstructure:"JWT_SECRET"`
+	RedisURL    string `mapstructure:"VOICE_REDIS_URL"`
+	CORSOrigin  string `mapstructure:"VOICE_CORS_ORIGIN"`
 	S3Endpoint  string `mapstructure:"S3_ENDPOINT"`
 	S3Region    string `mapstructure:"S3_REGION"`
 	S3Bucket    string `mapstructure:"S3_BUCKET"`
@@ -25,6 +28,7 @@ func Load() (Config, error) {
 
 	// Defaults
 	viper.SetDefault("VOICE_GRPC_PORT", "50052")
+	viper.SetDefault("VOICE_CORS_ORIGIN", "*")
 	viper.SetDefault("S3_REGION", "us-west-004")
 	viper.SetDefault("S3_ENDPOINT", "https://s3.us-west-004.backblazeb2.com")
 

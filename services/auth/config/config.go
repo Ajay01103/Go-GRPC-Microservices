@@ -11,7 +11,7 @@ type Config struct {
 	DBUrl                string        `mapstructure:"AUTH_DB_URL"`
 	RedisUrl             string        `mapstructure:"REDIS_URL"`
 	JWTSecret            string        `mapstructure:"JWT_SECRET"`
-	GRPCPort             string        `mapstructure:"GRPC_PORT"`
+	GRPCPort             string        `mapstructure:"AUTH_GRPC_PORT"`
 	AccessTokenDuration  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
 }
@@ -27,9 +27,14 @@ func Load() (Config, error) {
 	viper.AutomaticEnv()
 
 	// Defaults
-	viper.SetDefault("GRPC_PORT", "50051")
+	viper.SetDefault("AUTH_GRPC_PORT", "50051")
 	viper.SetDefault("ACCESS_TOKEN_DURATION", "15m")
 	viper.SetDefault("REFRESH_TOKEN_DURATION", "168h")
+
+	// Backward-compatible fallback for older GRPC_PORT env var.
+	if !viper.IsSet("AUTH_GRPC_PORT") && viper.IsSet("GRPC_PORT") {
+		viper.Set("AUTH_GRPC_PORT", viper.GetString("GRPC_PORT"))
+	}
 
 	var cfg Config
 	if err := viper.Unmarshal(&cfg); err != nil {

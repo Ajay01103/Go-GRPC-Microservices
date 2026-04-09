@@ -17,9 +17,11 @@ import (
 
 	"github.com/go-grpc-sqlc/pkg/interceptor"
 	pkglogger "github.com/go-grpc-sqlc/pkg/logger"
+	"github.com/go-grpc-sqlc/pkg/token"
 	voiceconfig "github.com/go-grpc-sqlc/voice/config"
 	"github.com/go-grpc-sqlc/voice/gen/pb/pbconnect"
 	db "github.com/go-grpc-sqlc/voice/gen/sqlc"
+	"github.com/go-grpc-sqlc/voice/internal/redisstore"
 	"github.com/go-grpc-sqlc/voice/internal/repository"
 	"github.com/go-grpc-sqlc/voice/internal/s3"
 	"github.com/go-grpc-sqlc/voice/internal/server"
@@ -62,6 +64,35 @@ func main() {
 	// ── Repository & Service ──────────────────────────────────────────────────
 	queries := db.New(dbPool)
 	voiceRepo := repository.NewVoiceRepo(queries)
+	activeRepo := repository.Repository(voiceRepo)
+
+	if cfg.RedisURL == "" {
+		logger.Info("redis cache disabled", zap.String("reason", "VOICE_REDIS_URL not set"))
+	} else {
+		redisClient, redisErr := redisstore.NewClientFromURL(cfg.RedisURL)
+		if redisErr != nil {
+			logger.Warn("redis cache disabled", zap.Error(redisErr))
+		} else {
+			defer redisClient.Close()
+
+			if pingErr := redisClient.Ping(context.Background()).Err(); pingErr != nil {
+				logger.Warn("redis cache disabled", zap.Error(pingErr))
+			} else {
+				cachedRepo := repository.NewCachedVoiceRepo(voiceRepo, redisClient, logger)
+				if bootstrapErr := repository.BootstrapRediSearchIndex(context.Background(), redisClient); bootstrapErr != nil {
+					if repository.IsRediSearchUnsupportedError(bootstrapErr) {
+						cachedRepo.SetRediSearchEnabled(false)
+						logger.Info("redisearch unavailable; search will use postgres fallback", zap.Error(bootstrapErr))
+					} else {
+						logger.Warn("redisearch bootstrap failed; DB fallback remains active", zap.Error(bootstrapErr))
+					}
+				}
+
+				activeRepo = cachedRepo
+				logger.Info("redis cache enabled")
+			}
+		}
+	}
 
 	// ── S3 (Backblaze B2) ─────────────────────────────────────────────────────
 	s3Client, err := s3.New(cfg)
@@ -71,24 +102,31 @@ func main() {
 	logger.Info("S3 client initialised", zap.String("endpoint", cfg.S3Endpoint))
 
 	// ── Service Layer ─────────────────────────────────────────────────────────
-	voiceSvc := service.New(voiceRepo, s3Client, logger)
+	voiceSvc := service.New(activeRepo, s3Client, logger)
 
 	// ── ConnectRPC Server ─────────────────────────────────────────────────────
 	mux := http.NewServeMux()
 
 	voiceServer := server.NewVoiceServer(voiceSvc, logger)
 	loggingInterceptor := interceptor.NewLoggingInterceptor(logger)
+	tokenMaker, err := token.NewJWTMaker(cfg.JWTSecret)
+	if err != nil {
+		logger.Fatal("failed to initialize JWT token maker", zap.Error(err))
+	}
+	authInterceptor := interceptor.AuthInterceptor(tokenMaker, map[string]bool{})
 
 	path, handler := pbconnect.NewVoiceServiceHandler(
 		voiceServer,
-		connect.WithInterceptors(loggingInterceptor),
+		connect.WithInterceptors(loggingInterceptor, authInterceptor),
 	)
 	mux.Handle(path, handler)
+
+	wrappedHandler := server.WithCORS(h2c.NewHandler(mux, &http2.Server{}), cfg.CORSOrigin)
 
 	addr := fmt.Sprintf(":%s", cfg.GRPCPort)
 	srv := &http.Server{
 		Addr:    addr,
-		Handler: h2c.NewHandler(mux, &http2.Server{}),
+		Handler: wrappedHandler,
 	}
 
 	go func() {

@@ -14,6 +14,7 @@ import (
 // ListVoicesParams bundles inputs for the GetAll operation.
 type ListVoicesParams struct {
 	UserID string
+	Scope  repository.ListScope
 	Query  string
 }
 
@@ -29,13 +30,13 @@ type VoiceItem struct {
 
 // VoiceService handles all business logic for voices.
 type VoiceService struct {
-	repo   *repository.VoiceRepo
+	repo   repository.Repository
 	s3     *s3.Client
 	logger *zap.Logger
 }
 
 // New constructs a VoiceService.
-func New(repo *repository.VoiceRepo, s3Client *s3.Client, logger *zap.Logger) *VoiceService {
+func New(repo repository.Repository, s3Client *s3.Client, logger *zap.Logger) *VoiceService {
 	return &VoiceService{
 		repo:   repo,
 		s3:     s3Client,
@@ -47,6 +48,7 @@ func New(repo *repository.VoiceRepo, s3Client *s3.Client, logger *zap.Logger) *V
 func (s *VoiceService) GetAll(ctx context.Context, params ListVoicesParams) ([]VoiceItem, error) {
 	rows, err := s.repo.ListVoices(ctx, repository.ListVoicesParams{
 		UserID: params.UserID,
+		Scope:  params.Scope,
 		Query:  params.Query,
 	})
 	if err != nil {

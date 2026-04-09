@@ -13,10 +13,29 @@ import (
 // ErrVoiceNotFound is returned when a voice lookup yields no result.
 var ErrVoiceNotFound = errors.New("voice not found")
 
+const systemUserID = "SYSTEM"
+
+// ListScope controls which logical voice set is returned.
+type ListScope string
+
+const (
+	ListScopeCustom ListScope = "custom"
+	ListScopeSystem ListScope = "system"
+	ListScopeAll    ListScope = "all"
+)
+
 // ListVoicesParams bundles parameters for listing a user's voices.
 type ListVoicesParams struct {
 	UserID string
+	Scope  ListScope
 	Query  string // empty = no search filter
+}
+
+// Repository defines the data access contract for voices.
+type Repository interface {
+	ListVoices(ctx context.Context, params ListVoicesParams) ([]db.ListCustomVoicesRow, error)
+	GetVoiceByIDAndUser(ctx context.Context, id, userID string) (db.Voice, error)
+	DeleteVoice(ctx context.Context, id, userID string) error
 }
 
 // VoiceRepo wraps the sqlc Querier to provide a clean repository interface.
@@ -29,13 +48,48 @@ func NewVoiceRepo(q db.Querier) *VoiceRepo {
 	return &VoiceRepo{q: q}
 }
 
-// ListVoices returns all custom voices for a user, optionally filtered by query.
+// ListVoices returns voices for the requested scope, optionally filtered by query.
 func (r *VoiceRepo) ListVoices(ctx context.Context, params ListVoicesParams) ([]db.ListCustomVoicesRow, error) {
-	if params.Query != "" {
+	scope := params.Scope
+	if scope == "" {
+		scope = ListScopeAll
+	}
+
+	switch scope {
+	case ListScopeCustom:
+		return r.listVoicesForUser(ctx, params.UserID, params.Query)
+	case ListScopeSystem:
+		return r.listVoicesForUser(ctx, systemUserID, params.Query)
+	case ListScopeAll:
+		if params.UserID == systemUserID {
+			return r.listVoicesForUser(ctx, systemUserID, params.Query)
+		}
+
+		customRows, err := r.listVoicesForUser(ctx, params.UserID, params.Query)
+		if err != nil {
+			return nil, err
+		}
+
+		systemRows, err := r.listVoicesForUser(ctx, systemUserID, params.Query)
+		if err != nil {
+			return nil, err
+		}
+
+		rows := make([]db.ListCustomVoicesRow, 0, len(customRows)+len(systemRows))
+		rows = append(rows, customRows...)
+		rows = append(rows, systemRows...)
+		return rows, nil
+	default:
+		return nil, fmt.Errorf("repository: unsupported list scope %q", scope)
+	}
+}
+
+func (r *VoiceRepo) listVoicesForUser(ctx context.Context, userID, query string) ([]db.ListCustomVoicesRow, error) {
+	if query != "" {
 		searchRows, err := r.q.ListCustomVoicesSearch(ctx, db.ListCustomVoicesSearchParams{
-			UserID: params.UserID,
+			UserID: userID,
 			Column2: pgtype.Text{
-				String: params.Query,
+				String: query,
 				Valid:  true,
 			},
 		})
@@ -58,7 +112,7 @@ func (r *VoiceRepo) ListVoices(ctx context.Context, params ListVoicesParams) ([]
 		return rows, nil
 	}
 
-	rows, err := r.q.ListCustomVoices(ctx, params.UserID)
+	rows, err := r.q.ListCustomVoices(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("repository: list voices: %w", err)
 	}
