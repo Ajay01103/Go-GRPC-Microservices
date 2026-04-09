@@ -3,8 +3,19 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AuthResponse, GetCurrentUserRequest, GetCurrentUserResponse, LoginRequest, LogoutRequest, LogoutResponse, RefreshTokenRequest, RegisterRequest, ValidateTokenRequest, ValidateTokenResponse } from "./auth_pb";
-import { MethodKind } from "@bufbuild/protobuf";
+import {
+  AuthResponse,
+  GetCurrentUserRequest,
+  GetCurrentUserResponse,
+  LoginRequest,
+  LogoutRequest,
+  LogoutResponse,
+  RefreshTokenRequest,
+  RegisterRequest,
+  ValidateTokenRequest,
+  ValidateTokenResponse,
+} from "./auth_pb"
+import { MethodKind } from "@bufbuild/protobuf"
 
 /**
  * @generated from service auth.AuthService
@@ -79,6 +90,5 @@ export const AuthService = {
       O: GetCurrentUserResponse,
       kind: MethodKind.Unary,
     },
-  }
-} as const;
-
+  },
+} as const

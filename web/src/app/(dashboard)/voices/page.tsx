@@ -1,7 +1,10 @@
-import React from "react";
+import { VoicesView } from "@/modules/voices/views/voices-view"
+import { Metadata } from "next"
+
+export const metadata: Metadata = { title: "Voices" }
 
 const VoicesPage = () => {
-  return <div>VoicesPage</div>;
-};
+  return <VoicesView />
+}
 
-export default VoicesPage;
+export default VoicesPage

@@ -3,7 +3,6 @@ name: tanstack-form
 description: Headless, performant, and type-safe form state management for TS/JS, React, Vue, Angular, Solid, Lit, and Svelte.
 ---
 
-
 ## Overview
 
 TanStack Form is a headless form library with deep TypeScript integration. It provides field-level and form-level validation (sync/async), array fields, linked/dependent fields, fine-grained reactivity, and schema validation adapter support (Zod, Valibot, Yup).
@@ -24,14 +23,14 @@ npm install @tanstack/valibot-form-adapter valibot
 ## Core: useForm
 
 ```tsx
-import { useForm } from '@tanstack/react-form'
+import { useForm } from "@tanstack/react-form"
 
 function MyForm() {
   const form = useForm({
     defaultValues: {
-      firstName: '',
-      lastName: '',
-      email: '',
+      firstName: "",
+      lastName: "",
+      email: "",
       age: 0,
     },
     onSubmit: async ({ value }) => {
@@ -39,7 +38,7 @@ function MyForm() {
       await submitToServer(value)
     },
     onSubmitInvalid: ({ value, formApi }) => {
-      console.log('Validation failed:', formApi.state.errors)
+      console.log("Validation failed:", formApi.state.errors)
     },
   })
 
@@ -49,14 +48,15 @@ function MyForm() {
         e.preventDefault()
         e.stopPropagation()
         form.handleSubmit()
-      }}
-    >
+      }}>
       {/* Fields */}
       <form.Subscribe
         selector={(state) => ({ canSubmit: state.canSubmit, isSubmitting: state.isSubmitting })}
         children={({ canSubmit, isSubmitting }) => (
-          <button type="submit" disabled={!canSubmit}>
-            {isSubmitting ? 'Submitting...' : 'Submit'}
+          <button
+            type="submit"
+            disabled={!canSubmit}>
+            {isSubmitting ? "Submitting..." : "Submit"}
           </button>
         )}
       />
@@ -107,12 +107,12 @@ function MyForm() {
 
 ### Validation Timing
 
-| Cause | When |
-|-------|------|
+| Cause      | When                     |
+| ---------- | ------------------------ |
 | `onChange` | After every value change |
-| `onBlur` | When field loses focus |
-| `onSubmit` | During submission |
-| `onMount` | When field mounts |
+| `onBlur`   | When field loses focus   |
+| `onSubmit` | During submission        |
+| `onMount`  | When field mounts        |
 
 ### Synchronous Validation
 
@@ -121,11 +121,11 @@ function MyForm() {
   name="age"
   validators={{
     onChange: ({ value }) => {
-      if (value < 18) return 'Must be 18 or older'
+      if (value < 18) return "Must be 18 or older"
       return undefined // undefined = valid
     },
     onBlur: ({ value }) => {
-      if (!value) return 'Required'
+      if (!value) return "Required"
       return undefined
     },
   }}
@@ -142,14 +142,16 @@ function MyForm() {
     onChangeAsync: async ({ value }) => {
       const res = await fetch(`/api/check-username?q=${value}`)
       const { available } = await res.json()
-      if (!available) return 'Username taken'
+      if (!available) return "Username taken"
       return undefined
     },
-  }}
->
+  }}>
   {(field) => (
     <>
-      <input value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+      <input
+        value={field.state.value}
+        onChange={(e) => field.handleChange(e.target.value)}
+      />
       {field.state.meta.isValidating && <span>Checking...</span>}
     </>
   )}
@@ -188,11 +190,11 @@ const form = useForm({
 
 ```tsx
 const form = useForm({
-  defaultValues: { password: '', confirmPassword: '' },
+  defaultValues: { password: "", confirmPassword: "" },
   validators: {
     onChange: ({ value }) => {
       if (value.password !== value.confirmPassword) {
-        return 'Passwords do not match'
+        return "Passwords do not match"
       }
       return undefined
     },
@@ -206,10 +208,10 @@ const form = useForm({
 <form.Field
   name="confirmPassword"
   validators={{
-    onChangeListenTo: ['password'], // Re-validate when password changes
+    onChangeListenTo: ["password"], // Re-validate when password changes
     onChange: ({ value, fieldApi }) => {
-      const password = fieldApi.form.getFieldValue('password')
-      if (value !== password) return 'Passwords do not match'
+      const password = fieldApi.form.getFieldValue("password")
+      if (value !== password) return "Passwords do not match"
       return undefined
     },
   }}
@@ -219,7 +221,9 @@ const form = useForm({
 ## Array Fields
 
 ```tsx
-<form.Field name="people" mode="array">
+<form.Field
+  name="people"
+  mode="array">
   {(field) => (
     <div>
       {field.state.value.map((_, index) => (
@@ -232,12 +236,16 @@ const form = useForm({
               />
             )}
           </form.Field>
-          <button type="button" onClick={() => field.removeValue(index)}>
+          <button
+            type="button"
+            onClick={() => field.removeValue(index)}>
             Remove
           </button>
         </div>
       ))}
-      <button type="button" onClick={() => field.pushValue({ name: '', age: 0 })}>
+      <button
+        type="button"
+        onClick={() => field.pushValue({ name: "", age: 0 })}>
         Add Person
       </button>
     </div>
@@ -248,12 +256,12 @@ const form = useForm({
 ### Array Methods
 
 ```typescript
-field.pushValue(item)              // Add to end
-field.insertValue(index, item)     // Insert at index
-field.replaceValue(index, item)    // Replace at index
-field.removeValue(index)           // Remove at index
-field.swapValues(indexA, indexB)    // Swap positions
-field.moveValue(from, to)          // Move position
+field.pushValue(item) // Add to end
+field.insertValue(index, item) // Insert at index
+field.replaceValue(index, item) // Replace at index
+field.removeValue(index) // Remove at index
+field.swapValues(indexA, indexB) // Swap positions
+field.moveValue(from, to) // Move position
 ```
 
 ## Listeners (Side Effects)
@@ -264,8 +272,8 @@ field.moveValue(from, to)          // Move position
   listeners={{
     onChange: ({ value }) => {
       // Side effect: reset dependent fields
-      form.setFieldValue('state', '')
-      form.setFieldValue('postalCode', '')
+      form.setFieldValue("state", "")
+      form.setFieldValue("postalCode", "")
     },
   }}
 />
@@ -275,7 +283,7 @@ field.moveValue(from, to)          // Move position
 
 ```tsx
 // Render-prop subscription (fine-grained)
-<form.Subscribe
+;<form.Subscribe
   selector={(state) => ({ canSubmit: state.canSubmit, isDirty: state.isDirty })}
   children={({ canSubmit, isDirty }) => (
     <div>
@@ -301,7 +309,7 @@ interface FormState {
   errorMap: Record<string, ValidationError>
   isFormValid: boolean
   isFieldsValid: boolean
-  isValid: boolean               // isFormValid && isFieldsValid
+  isValid: boolean // isFormValid && isFieldsValid
   isTouched: boolean
   isPristine: boolean
   isDirty: boolean
@@ -309,7 +317,7 @@ interface FormState {
   isSubmitted: boolean
   isSubmitSuccessful: boolean
   submissionAttempts: number
-  canSubmit: boolean             // isValid && !isSubmitting
+  canSubmit: boolean // isValid && !isSubmitting
 }
 ```
 
@@ -346,16 +354,18 @@ form.deleteField(field)
 ## Shared Form Options (formOptions)
 
 ```tsx
-import { formOptions } from '@tanstack/react-form'
+import { formOptions } from "@tanstack/react-form"
 
 const sharedOpts = formOptions({
-  defaultValues: { firstName: '', lastName: '' },
+  defaultValues: { firstName: "", lastName: "" },
 })
 
 // Reuse across components
 const form = useForm({
   ...sharedOpts,
-  onSubmit: async ({ value }) => { /* ... */ },
+  onSubmit: async ({ value }) => {
+    /* ... */
+  },
 })
 ```
 
@@ -363,14 +373,14 @@ const form = useForm({
 
 ```tsx
 // TanStack Start / Next.js server action
-import { ServerValidateError } from '@tanstack/react-form/nextjs'
+import { ServerValidateError } from "@tanstack/react-form/nextjs"
 
 export async function validateForm(data: FormData) {
-  const email = data.get('email') as string
+  const email = data.get("email") as string
   if (await checkEmailExists(email)) {
     throw new ServerValidateError({
-      form: 'Submission failed',
-      fields: { email: 'Email already registered' },
+      form: "Submission failed",
+      fields: { email: "Email already registered" },
     })
   }
 }

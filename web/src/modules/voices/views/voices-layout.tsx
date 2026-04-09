@@ -1,4 +1,4 @@
-import { PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/page-header"
 
 export function VoicesLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -6,5 +6,5 @@ export function VoicesLayout({ children }: { children: React.ReactNode }) {
       <PageHeader title="Voices" />
       {children}
     </div>
-  );
+  )
 }

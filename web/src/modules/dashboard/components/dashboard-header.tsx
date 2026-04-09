@@ -1,13 +1,13 @@
-"use client";
+"use client"
 
-import { Headphones, ThumbsUp } from "lucide-react";
-import Link from "next/link";
+import { Headphones, ThumbsUp } from "lucide-react"
+import Link from "next/link"
 
-import { Button } from "@/components/ui/button";
-import { useCurrentUser } from "@/hooks/use-current-user";
+import { Button } from "@/components/ui/button"
+import { useCurrentUser } from "@/hooks/use-current-user"
 
 export function DashboardHeader() {
-  const { data: user, isLoading } = useCurrentUser();
+  const { data: user, isLoading } = useCurrentUser()
 
   return (
     <div className="flex items-start justify-between">
@@ -19,13 +19,19 @@ export function DashboardHeader() {
       </div>
 
       <div className="lg:flex items-center gap-3 hidden">
-        <Button variant="outline" size="sm" asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          asChild>
           <Link href="mailto:business@codewithantonio.com">
             <ThumbsUp />
             <span className="hidden lg:block">Feedback</span>
           </Link>
         </Button>
-        <Button variant="outline" size="sm" asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          asChild>
           <Link href="mailto:business@codewithantonio.com">
             <Headphones />
             <span className="hidden lg:block">Need help?</span>
@@ -33,5 +39,5 @@ export function DashboardHeader() {
         </Button>
       </div>
     </div>
-  );
+  )
 }

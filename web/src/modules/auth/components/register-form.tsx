@@ -61,8 +61,8 @@ export default function RegisterPage() {
         // Persist access token in memory
         setAccessToken(response.accessToken)
 
-        // Redirect to homepage
-        router.push("/")
+        // Redirect to dashboard after successful authentication
+        router.push("/dashboard")
       } catch (error) {
         console.error("Register failed:", error)
       }

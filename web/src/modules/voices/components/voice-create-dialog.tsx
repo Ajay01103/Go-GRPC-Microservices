@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import {
   Dialog,
@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog"
 import {
   Drawer,
   DrawerClose,
@@ -17,36 +17,33 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from "@/components/ui/drawer";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { VoiceCreateForm } from "./voice-create-form";
-import { Button } from "@/components/ui/button";
+} from "@/components/ui/drawer"
+import { useIsMobile } from "@/hooks/use-mobile"
+import { VoiceCreateForm } from "./voice-create-form"
+import { Button } from "@/components/ui/button"
 // import { useCheckout } from "@/features/billing/hooks/use-checkout";
-import { toast } from "sonner";
+import { toast } from "sonner"
 
 interface VoiceCreateDialogProps {
-  children?: React.ReactNode;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  children?: React.ReactNode
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
-export function VoiceCreateDialog({
-  children,
-  open,
-  onOpenChange,
-}: VoiceCreateDialogProps) {
-  const isMobile = useIsMobile();
+export function VoiceCreateDialog({ children, open, onOpenChange }: VoiceCreateDialogProps) {
+  const isMobile = useIsMobile()
 
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
+      <Drawer
+        open={open}
+        onOpenChange={onOpenChange}>
         {children && <DrawerTrigger asChild>{children}</DrawerTrigger>}
         <DrawerContent className="flex max-h-[92dvh] flex-col">
           <DrawerHeader>
             <DrawerTitle>Create custom voice</DrawerTitle>
             <DrawerDescription>
-              Upload or record an audio sample to add a new voice to your
-              library.
+              Upload or record an audio sample to add a new voice to your library.
             </DrawerDescription>
           </DrawerHeader>
 
@@ -65,11 +62,13 @@ export function VoiceCreateDialog({
           />
         </DrawerContent>
       </Drawer>
-    );
+    )
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="flex w-[min(92vw,640px)] max-w-none flex-col p-0 sm:max-h-[90vh]">
         <DialogHeader className="px-6 pt-6 pb-3 text-left">
@@ -86,5 +85,5 @@ export function VoiceCreateDialog({
         />
       </DialogContent>
     </Dialog>
-  );
+  )
 }

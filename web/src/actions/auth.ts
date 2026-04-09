@@ -2,10 +2,11 @@
 
 import { cookies } from "next/headers"
 import { rpcClient } from "@/lib/rpc"
+import { REFRESH_TOKEN_COOKIE_NAME } from "@/lib/auth-cookie"
 
 export async function setAuthCookies(refreshToken: string) {
   const cookieStore = await cookies()
-  cookieStore.set("refreshToken", refreshToken, {
+  cookieStore.set(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -16,14 +17,14 @@ export async function setAuthCookies(refreshToken: string) {
 
 export async function refreshAccessTokenAction() {
   const cookieStore = await cookies()
-  const refreshToken = cookieStore.get("refreshToken")?.value
+  const refreshToken = cookieStore.get(REFRESH_TOKEN_COOKIE_NAME)?.value
   if (!refreshToken) return null
 
   try {
     const response = await rpcClient.refreshToken({ refreshToken })
 
     // Update the cookie with the newly issued refresh token
-    cookieStore.set("refreshToken", response.refreshToken, {
+    cookieStore.set(REFRESH_TOKEN_COOKIE_NAME, response.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -34,14 +35,14 @@ export async function refreshAccessTokenAction() {
     return response.accessToken
   } catch (error) {
     console.error("Failed to refresh token", error)
-    cookieStore.delete("refreshToken")
+    cookieStore.delete(REFRESH_TOKEN_COOKIE_NAME)
     return null
   }
 }
 
 export async function logoutAction() {
   const cookieStore = await cookies()
-  const refreshToken = cookieStore.get("refreshToken")?.value
+  const refreshToken = cookieStore.get(REFRESH_TOKEN_COOKIE_NAME)?.value
 
   if (refreshToken) {
     try {
@@ -53,5 +54,5 @@ export async function logoutAction() {
     }
   }
 
-  cookieStore.delete("refreshToken")
+  cookieStore.delete(REFRESH_TOKEN_COOKIE_NAME)
 }

@@ -1,8 +1,13 @@
 "use client"
 
 import {
-  createContext, useContext, useState,
-  useEffect, useRef, useCallback, ReactNode
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  ReactNode,
 } from "react"
 import { refreshAccessTokenAction } from "@/actions/auth"
 
@@ -36,25 +41,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const refreshInMs = exp * 1000 - Date.now() - 30_000 // 30s before expiry
     if (silentRefreshRef.current) clearTimeout(silentRefreshRef.current)
 
-    silentRefreshRef.current = setTimeout(async () => {
-      const newToken = await refreshAccessTokenAction()
-      if (newToken) {
-        setAccessTokenState(newToken)
-        scheduleRefresh(newToken)
-      } else {
-        setAccessTokenState(null)
-      }
-    }, Math.max(refreshInMs, 0))
+    silentRefreshRef.current = setTimeout(
+      async () => {
+        const newToken = await refreshAccessTokenAction()
+        if (newToken) {
+          setAccessTokenState(newToken)
+          scheduleRefresh(newToken)
+        } else {
+          setAccessTokenState(null)
+        }
+      },
+      Math.max(refreshInMs, 0),
+    )
   }, [])
 
-  const setAccessToken = useCallback((token: string | null) => {
-    setAccessTokenState(token)
-    if (token) {
-      scheduleRefresh(token)
-    } else {
-      if (silentRefreshRef.current) clearTimeout(silentRefreshRef.current)
-    }
-  }, [scheduleRefresh])
+  const setAccessToken = useCallback(
+    (token: string | null) => {
+      setAccessTokenState(token)
+      if (token) {
+        scheduleRefresh(token)
+      } else {
+        if (silentRefreshRef.current) clearTimeout(silentRefreshRef.current)
+      }
+    },
+    [scheduleRefresh],
+  )
 
   // Run once on mount only
   useEffect(() => {
@@ -77,12 +88,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []) // ← empty, intentional
 
   return (
-    <AuthContext.Provider value={{
-      accessToken,
-      isAuthenticated: accessToken !== null,
-      isLoadingAuth,
-      setAccessToken,
-    }}>
+    <AuthContext.Provider
+      value={{
+        accessToken,
+        isAuthenticated: accessToken !== null,
+        isLoadingAuth,
+        setAccessToken,
+      }}>
       {children}
     </AuthContext.Provider>
   )

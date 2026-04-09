@@ -7,10 +7,8 @@ AUTH_PB_OUT := $(AUTH_SVC)/gen/pb
 VOICE_PB_OUT := $(VOICE_SVC)/gen/pb
 GEN_PB_OUT  := $(GEN_SVC)/gen/pb
 
--include services/auth/.env
--include services/voice/.env
--include services/generation/.env
-export
+# Do not globally export per-service .env values here; Goose variables can
+# collide across services and cause migrations to run against the wrong DB.
 
 .PHONY: help proto sqlc migrate-up migrate-down migrate-status build run-auth run-voice run-gen docker-up docker-down docker-logs tidy
 
@@ -37,24 +35,24 @@ sqlc: ## Generate type-safe Go from SQL for all services
 # ─── Database Migrations (Goose) ──────────────────────────────────────────────
 
 migrate-up: ## Run all pending migrations
-	cd $(AUTH_SVC) && goose up
-	cd $(VOICE_SVC) && goose up
-	cd $(GEN_SVC) && goose up
+	cd $(AUTH_SVC) && goose -env .env -dir db/migrations up
+	cd $(VOICE_SVC) && goose -env .env -dir db/migrations up
+	cd $(GEN_SVC) && goose -env .env -dir db/migrations up
 
 migrate-down: ## Rollbacking migrations to prev versions
-	cd $(AUTH_SVC) && goose down
-	cd $(VOICE_SVC) && goose down
-	cd $(GEN_SVC) && goose down
+	cd $(AUTH_SVC) && goose -env .env -dir db/migrations down
+	cd $(VOICE_SVC) && goose -env .env -dir db/migrations down
+	cd $(GEN_SVC) && goose -env .env -dir db/migrations down
 
 migrate-reset: ## Goose migration down
-	cd $(AUTH_SVC) && goose reset
-	cd $(VOICE_SVC) && goose reset
-	cd $(GEN_SVC) && goose reset
+	cd $(AUTH_SVC) && goose -env .env -dir db/migrations reset
+	cd $(VOICE_SVC) && goose -env .env -dir db/migrations reset
+	cd $(GEN_SVC) && goose -env .env -dir db/migrations reset
 
 migrate-status: ## Show migration status
-	cd $(AUTH_SVC) && goose status
-	cd $(VOICE_SVC) && goose status
-	cd $(GEN_SVC) && goose status
+	cd $(AUTH_SVC) && goose -env .env -dir db/migrations status
+	cd $(VOICE_SVC) && goose -env .env -dir db/migrations status
+	cd $(GEN_SVC) && goose -env .env -dir db/migrations status
 
 # ─── Build & Run ──────────────────────────────────────────────────────────────
 
@@ -71,6 +69,9 @@ run-voice: ## Start Voice service
 
 run-gen: ## Start Generation service
 	cd $(GEN_SVC) && go run ./cmd/
+
+seed-voices: ## Seed system voices into the voice database
+	cd $(VOICE_SVC) && go run ./scripts/seed-system-voices.go
 
 tidy: ## Tidy Go modules
 	cd $(AUTH_SVC) && go mod tidy

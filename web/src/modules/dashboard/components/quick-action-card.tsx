@@ -1,18 +1,13 @@
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import Link from "next/link"
+import { ArrowRight } from "lucide-react"
 
-import { Button } from "@/components/ui/button";
-import type { QuickAction } from "@/modules/dashboard/data/quick-actions";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button"
+import type { QuickAction } from "@/modules/dashboard/data/quick-actions"
+import { cn } from "@/lib/utils"
 
-type QuickActionCardProps = QuickAction;
+type QuickActionCardProps = QuickAction
 
-export function QuickActionCard({
-  title,
-  description,
-  gradient,
-  href,
-}: QuickActionCardProps) {
+export function QuickActionCard({ title, description, gradient, href }: QuickActionCardProps) {
   return (
     <div className="flex gap-4 rounded-xl border bg-card p-3">
       {/* Visual placeholder with gradient */}
@@ -20,8 +15,7 @@ export function QuickActionCard({
         className={cn(
           "relative h-31 w-41 shrink-0 overflow-hidden rounded-xl bg-linear-to-br",
           gradient,
-        )}
-      >
+        )}>
         {/* Decorative elements */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="size-12 rounded-full bg-white/30" />
@@ -33,11 +27,13 @@ export function QuickActionCard({
       <div className="flex flex-col justify-between py-1">
         <div className="space-y-1">
           <h3 className="text-sm font-medium">{title}</h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            {description}
-          </p>
+          <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
         </div>
-        <Button variant="outline" size="xs" className="w-fit" asChild>
+        <Button
+          variant="outline"
+          size="xs"
+          className="w-fit"
+          asChild>
           <Link href={href}>
             Try now
             <ArrowRight className="size-3" />
@@ -45,5 +41,5 @@ export function QuickActionCard({
         </Button>
       </div>
     </div>
-  );
+  )
 }

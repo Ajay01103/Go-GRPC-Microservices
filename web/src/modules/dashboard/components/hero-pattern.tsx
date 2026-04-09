@@ -1,4 +1,4 @@
-import { WavyBackground } from "@/components/ui/wavy-background";
+import { WavyBackground } from "@/components/ui/wavy-background"
 
 export function HeroPattern() {
   return (
@@ -15,5 +15,5 @@ export function HeroPattern() {
         className="hidden"
       />
     </div>
-  );
+  )
 }

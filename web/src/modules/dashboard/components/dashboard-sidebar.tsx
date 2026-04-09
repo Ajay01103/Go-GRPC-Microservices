@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import {
   Sidebar,
@@ -13,10 +13,10 @@ import {
   SidebarMenuItem,
   SidebarRail,
   SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { UserButton } from "@/components/user-button";
-import { VoiceCreateDialog } from "@/modules/voices/components/voice-create-dialog";
+} from "@/components/ui/sidebar"
+import { Skeleton } from "@/components/ui/skeleton"
+import { UserButton } from "@/components/user-button"
+import { VoiceCreateDialog } from "@/modules/voices/components/voice-create-dialog"
 // import { UsageContainer } from "@/features/billing/components/usage-container"
 // import { OrganizationSwitcher, useClerk, UserButton } from "@clerk/nextjs"
 import {
@@ -27,23 +27,23 @@ import {
   Volume2,
   Settings,
   Headphones,
-} from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+} from "lucide-react"
+import Image from "next/image"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { useState } from "react"
 
 interface MenuItem {
-  title: string;
-  url?: string;
-  icon: LucideIcon;
-  onClick?: () => void;
+  title: string
+  url?: string
+  icon: LucideIcon
+  onClick?: () => void
 }
 
 interface NavSectionProps {
-  label?: string;
-  items: MenuItem[];
-  pathname: string;
+  label?: string
+  items: MenuItem[]
+  pathname: string
 }
 
 const NavSection = ({ label, items, pathname }: NavSectionProps) => {
@@ -61,14 +61,9 @@ const NavSection = ({ label, items, pathname }: NavSectionProps) => {
               {item.url ? (
                 <Link href={item.url}>
                   <SidebarMenuButton
-                    isActive={
-                      item.url === "/"
-                        ? pathname === "/"
-                        : pathname.startsWith(item.url)
-                    }
+                    isActive={item.url === "/" ? pathname === "/" : pathname.startsWith(item.url)}
                     tooltip={item.title}
-                    className="h-9 px-3 py-2 text-[13px] tracking-tight font-medium border border-transparent data-[active=true]:border-border data-[active=true]:shadow-[0px_1px_1px_0px_rgba(44,54,53,0.03),inset_0px_0px_0px_2px_white]"
-                  >
+                    className="h-9 px-3 py-2 text-[13px] tracking-tight font-medium border border-transparent data-[active=true]:border-border data-[active=true]:shadow-[0px_1px_1px_0px_rgba(44,54,53,0.03),inset_0px_0px_0px_2px_white]">
                     <item.icon />
                     <span>{item.title}</span>
                   </SidebarMenuButton>
@@ -78,8 +73,7 @@ const NavSection = ({ label, items, pathname }: NavSectionProps) => {
                   isActive={false}
                   onClick={item.onClick}
                   tooltip={item.title}
-                  className="h-9 px-3 py-2 text-[13px] tracking-tight font-medium border border-transparent data-[active=true]:border-border data-[active=true]:shadow-[0px_1px_1px_0px_rgba(44,54,53,0.03),inset_0px_0px_0px_2px_white]"
-                >
+                  className="h-9 px-3 py-2 text-[13px] tracking-tight font-medium border border-transparent data-[active=true]:border-border data-[active=true]:shadow-[0px_1px_1px_0px_rgba(44,54,53,0.03),inset_0px_0px_0px_2px_white]">
                   <item.icon />
                   <span>{item.title}</span>
                 </SidebarMenuButton>
@@ -89,13 +83,13 @@ const NavSection = ({ label, items, pathname }: NavSectionProps) => {
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
-  );
-};
+  )
+}
 
 export const DashboardSidebar = () => {
-  const pathname = usePathname();
+  const pathname = usePathname()
   // const clerk = useClerk()
-  const [voiceDialogOpen, setVoiceDialogOpen] = useState(false);
+  const [voiceDialogOpen, setVoiceDialogOpen] = useState(false)
 
   const mainMenuItems: MenuItem[] = [
     {
@@ -118,7 +112,7 @@ export const DashboardSidebar = () => {
       icon: Volume2,
       onClick: () => setVoiceDialogOpen(true),
     },
-  ];
+  ]
 
   const othersMenuItems: MenuItem[] = [
     {
@@ -131,7 +125,7 @@ export const DashboardSidebar = () => {
       url: "mailto:business@codewithantonio.com",
       icon: Headphones,
     },
-  ];
+  ]
 
   return (
     <>
@@ -182,7 +176,10 @@ export const DashboardSidebar = () => {
         </SidebarHeader>
         <div className="border-b border-dashed border-border" />
         <SidebarContent>
-          <NavSection items={mainMenuItems} pathname={pathname} />
+          <NavSection
+            items={mainMenuItems}
+            pathname={pathname}
+          />
           <NavSection
             label="Others"
             items={othersMenuItems}
@@ -201,5 +198,5 @@ export const DashboardSidebar = () => {
         <SidebarRail />
       </Sidebar>
     </>
-  );
-};
+  )
+}

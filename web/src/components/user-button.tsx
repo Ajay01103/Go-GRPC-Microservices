@@ -1,35 +1,31 @@
-"use client";
+"use client"
 
-import { useMemo } from "react";
-import { createAvatar } from "@dicebear/core";
-import { initials } from "@dicebear/collection";
-import { LogOut, Mail, UserCircle2 } from "lucide-react";
+import { useMemo } from "react"
+import { createAvatar } from "@dicebear/core"
+import { initials } from "@dicebear/collection"
+import { LogOut, Mail, UserCircle2 } from "lucide-react"
 
-import { useCurrentUser } from "@/hooks/use-current-user";
-import { useAuth } from "@/lib/auth-context";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { useLogout } from "@/hooks/use-logout";
-import { useRouter } from "next/navigation";
+import { useCurrentUser } from "@/hooks/use-current-user"
+import { useAuth } from "@/lib/auth-context"
+import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { useLogout } from "@/hooks/use-logout"
+import { useRouter } from "next/navigation"
 
 function getInitials(name?: string) {
-  if (!name) return "U";
-  const parts = name.trim().split(/\s+/).slice(0, 2);
-  return parts.map((p) => p[0]?.toUpperCase() ?? "").join("") || "U";
+  if (!name) return "U"
+  const parts = name.trim().split(/\s+/).slice(0, 2)
+  return parts.map((p) => p[0]?.toUpperCase() ?? "").join("") || "U"
 }
 
 export function UserButton() {
-  const { data: user, isLoading } = useCurrentUser();
-  const logoutMutation = useLogout();
-  const router = useRouter();
+  const { data: user, isLoading } = useCurrentUser()
+  const logoutMutation = useLogout()
+  const router = useRouter()
 
-  const displayName = user?.name ?? "User";
-  const initialsText = useMemo(() => getInitials(displayName), [displayName]);
+  const displayName = user?.name ?? "User"
+  const initialsText = useMemo(() => getInitials(displayName), [displayName])
 
   const avatarUri = useMemo(() => {
     const svg = createAvatar(initials, {
@@ -40,52 +36,54 @@ export function UserButton() {
       chars: 2,
       backgroundColor: ["b6e3f4", "c0aede", "d1d4f9", "ffd5dc", "ffdfbf"],
       textColor: ["1f2937"],
-    }).toDataUri();
+    }).toDataUri()
 
-    return svg;
-  }, [displayName]);
+    return svg
+  }, [displayName])
 
   const handleLogout = async () => {
-    await logoutMutation.mutateAsync();
-    router.refresh();
-  };
+    await logoutMutation.mutateAsync()
+    router.refresh()
+  }
 
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          className="h-10 w-full justify-start gap-3 rounded-xl px-2"
-        >
+          className="h-10 w-full justify-start gap-3 rounded-xl px-2">
           <Avatar className="size-8">
-            <AvatarImage src={avatarUri} alt={displayName} />
+            <AvatarImage
+              src={avatarUri}
+              alt={displayName}
+            />
             <AvatarFallback>{isLoading ? "..." : initialsText}</AvatarFallback>
           </Avatar>
 
           <div className="min-w-0 flex-1 text-left">
-            <p className="truncate text-sm font-medium">
-              {isLoading ? "Loading..." : displayName}
-            </p>
-            <p className="truncate text-xs text-muted-foreground">
-              {user?.email ?? "No email"}
-            </p>
+            <p className="truncate text-sm font-medium">{isLoading ? "Loading..." : displayName}</p>
+            <p className="truncate text-xs text-muted-foreground">{user?.email ?? "No email"}</p>
           </div>
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent side="right" align="end" className="w-72 rounded-xl p-2">
+      <PopoverContent
+        side="right"
+        align="end"
+        className="w-72 rounded-xl p-2">
         <div className="rounded-lg border p-3">
           <div className="flex items-center gap-3">
             <Avatar className="size-10">
-              <AvatarImage src={avatarUri} alt={displayName} />
+              <AvatarImage
+                src={avatarUri}
+                alt={displayName}
+              />
               <AvatarFallback>{initialsText}</AvatarFallback>
             </Avatar>
 
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">{displayName}</p>
-              <p className="truncate text-xs text-muted-foreground">
-                {user?.email ?? "No email"}
-              </p>
+              <p className="truncate text-xs text-muted-foreground">{user?.email ?? "No email"}</p>
             </div>
           </div>
 
@@ -105,12 +103,11 @@ export function UserButton() {
           variant="ghost"
           className="mt-2 w-full justify-start text-destructive hover:text-destructive"
           onClick={handleLogout}
-          disabled={logoutMutation.isPending}
-        >
+          disabled={logoutMutation.isPending}>
           <LogOut className="size-4" />
           {logoutMutation.isPending ? "Logging out..." : "Logout"}
         </Button>
       </PopoverContent>
     </Popover>
-  );
+  )
 }

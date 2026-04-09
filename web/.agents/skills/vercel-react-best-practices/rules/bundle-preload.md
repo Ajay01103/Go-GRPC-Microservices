@@ -14,8 +14,8 @@ Preload heavy bundles before they're needed to reduce perceived latency.
 ```tsx
 function EditorButton({ onClick }: { onClick: () => void }) {
   const preload = () => {
-    if (typeof window !== 'undefined') {
-      void import('./monaco-editor')
+    if (typeof window !== "undefined") {
+      void import("./monaco-editor")
     }
   }
 
@@ -23,8 +23,7 @@ function EditorButton({ onClick }: { onClick: () => void }) {
     <button
       onMouseEnter={preload}
       onFocus={preload}
-      onClick={onClick}
-    >
+      onClick={onClick}>
       Open Editor
     </button>
   )
@@ -36,14 +35,12 @@ function EditorButton({ onClick }: { onClick: () => void }) {
 ```tsx
 function FlagsProvider({ children, flags }: Props) {
   useEffect(() => {
-    if (flags.editorEnabled && typeof window !== 'undefined') {
-      void import('./monaco-editor').then(mod => mod.init())
+    if (flags.editorEnabled && typeof window !== "undefined") {
+      void import("./monaco-editor").then((mod) => mod.init())
     }
   }, [flags.editorEnabled])
 
-  return <FlagsContext.Provider value={flags}>
-    {children}
-  </FlagsContext.Provider>
+  return <FlagsContext.Provider value={flags}>{children}</FlagsContext.Provider>
 }
 ```
 

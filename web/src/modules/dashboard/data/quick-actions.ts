@@ -1,8 +1,8 @@
 export interface QuickAction {
-  title: string;
-  description: string;
-  gradient: string;
-  href: string;
+  title: string
+  description: string
+  gradient: string
+  href: string
 }
 
 export const quickActions: QuickAction[] = [
@@ -42,4 +42,4 @@ export const quickActions: QuickAction[] = [
     gradient: "from-lime-400 to-lime-100",
     href: "/text-to-speech?text=Close your eyes and take a deep breath in. Hold it gently... and release. Feel the weight of the day slowly melting away. With each breath, you're sinking deeper into calm. There is nowhere else you need to be. Just here. Just now. Breathe in peace, breathe out tension.",
   },
-];
+]
