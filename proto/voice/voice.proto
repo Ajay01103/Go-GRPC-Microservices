@@ -53,9 +53,21 @@ message DeleteVoiceResponse {
   bool success = 1;
 }
 
+// ─── Playback URL ────────────────────────────────────────────────────────────
+
+message GetVoicePlaybackUrlRequest {
+  string voice_id = 1;
+}
+
+message GetVoicePlaybackUrlResponse {
+  string url             = 1;
+  int64  expires_at_unix = 2;
+}
+
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 service VoiceService {
   rpc GetAllVoices(GetAllVoicesRequest) returns (GetAllVoicesResponse);
   rpc DeleteVoice(DeleteVoiceRequest)   returns (DeleteVoiceResponse);
+  rpc GetVoicePlaybackUrl(GetVoicePlaybackUrlRequest) returns (GetVoicePlaybackUrlResponse);
 }

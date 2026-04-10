@@ -10,6 +10,7 @@ import {
   getProtoVoiceCategoryLabel,
   getProtoVoiceVariantLabel,
 } from "@/modules/voices/data/voice-categories"
+import { VoiceAudioPreview } from "./voice-audio-preview"
 
 export type VoiceItemType = PlainMessage<VoiceItem>
 
@@ -84,9 +85,11 @@ export function VoiceCard({ voice }: VoiceCardProps) {
             ) : null}
             <span className="inline-flex items-center gap-1 rounded-full border bg-background px-2.5 py-1 font-medium">
               <Mic className="size-3.5" />
-              ID: {voice.id}
+              {voice.id}
             </span>
           </div>
+
+          <VoiceAudioPreview voiceId={voice.id} />
         </div>
       </div>
 

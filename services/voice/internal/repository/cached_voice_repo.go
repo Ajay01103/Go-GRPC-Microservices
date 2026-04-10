@@ -15,7 +15,7 @@ import (
 
 const (
 	voiceCacheTTL = 10 * time.Minute
-	listCacheTTL  = 5 * time.Minute
+	listCacheTTL  = 15 * time.Minute
 	voiceDocTTL   = 30 * time.Minute
 )
 
@@ -54,6 +54,21 @@ func listCacheKey(scope ListScope, userID string) string {
 		scope = ListScopeAll
 	}
 	return fmt.Sprintf("voices:list:%s:%s", scope, userID)
+}
+
+// GetVoiceByID fetches a voice by id, then caches and indexes it.
+func (c *CachedVoiceRepo) GetVoiceByID(ctx context.Context, id string) (db.Voice, error) {
+	voice, err := c.repo.GetVoiceByID(ctx, id)
+	if err != nil {
+		return db.Voice{}, err
+	}
+
+	c.cacheVoice(ctx, voice)
+	if c.redisSearchEnabled {
+		c.upsertVoiceDoc(ctx, voice)
+	}
+
+	return voice, nil
 }
 
 // GetVoiceByIDAndUser performs cache-aside lookup for a single voice.
@@ -110,10 +125,12 @@ func (c *CachedVoiceRepo) ListVoices(ctx context.Context, params ListVoicesParam
 		return rows, nil
 	}
 
-	if params.Scope == ListScopeCustom {
+	// Only index unambiguous scoped reads. All-scope mixes ownership and cannot
+	// be safely tagged without owner metadata in list rows.
+	switch params.Scope {
+	case ListScopeCustom:
 		c.upsertRowsAsDocs(ctx, rows, params.UserID)
-	}
-	if params.Scope == ListScopeSystem {
+	case ListScopeSystem:
 		c.upsertRowsAsDocs(ctx, rows, systemUserID)
 	}
 

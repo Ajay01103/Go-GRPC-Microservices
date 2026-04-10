@@ -401,6 +401,102 @@ func (x *DeleteVoiceResponse) GetSuccess() bool {
 	return false
 }
 
+type GetVoicePlaybackUrlRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VoiceId       string                 `protobuf:"bytes,1,opt,name=voice_id,json=voiceId,proto3" json:"voice_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetVoicePlaybackUrlRequest) Reset() {
+	*x = GetVoicePlaybackUrlRequest{}
+	mi := &file_voice_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetVoicePlaybackUrlRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVoicePlaybackUrlRequest) ProtoMessage() {}
+
+func (x *GetVoicePlaybackUrlRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_voice_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVoicePlaybackUrlRequest.ProtoReflect.Descriptor instead.
+func (*GetVoicePlaybackUrlRequest) Descriptor() ([]byte, []int) {
+	return file_voice_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GetVoicePlaybackUrlRequest) GetVoiceId() string {
+	if x != nil {
+		return x.VoiceId
+	}
+	return ""
+}
+
+type GetVoicePlaybackUrlResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	ExpiresAtUnix int64                  `protobuf:"varint,2,opt,name=expires_at_unix,json=expiresAtUnix,proto3" json:"expires_at_unix,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetVoicePlaybackUrlResponse) Reset() {
+	*x = GetVoicePlaybackUrlResponse{}
+	mi := &file_voice_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetVoicePlaybackUrlResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVoicePlaybackUrlResponse) ProtoMessage() {}
+
+func (x *GetVoicePlaybackUrlResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_voice_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVoicePlaybackUrlResponse.ProtoReflect.Descriptor instead.
+func (*GetVoicePlaybackUrlResponse) Descriptor() ([]byte, []int) {
+	return file_voice_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GetVoicePlaybackUrlResponse) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+func (x *GetVoicePlaybackUrlResponse) GetExpiresAtUnix() int64 {
+	if x != nil {
+		return x.ExpiresAtUnix
+	}
+	return 0
+}
+
 var File_voice_proto protoreflect.FileDescriptor
 
 const file_voice_proto_rawDesc = "" +
@@ -422,7 +518,12 @@ const file_voice_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\"/\n" +
 	"\x13DeleteVoiceResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess*\x87\x01\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"7\n" +
+	"\x1aGetVoicePlaybackUrlRequest\x12\x19\n" +
+	"\bvoice_id\x18\x01 \x01(\tR\avoiceId\"W\n" +
+	"\x1bGetVoicePlaybackUrlResponse\x12\x10\n" +
+	"\x03url\x18\x01 \x01(\tR\x03url\x12&\n" +
+	"\x0fexpires_at_unix\x18\x02 \x01(\x03R\rexpiresAtUnix*\x87\x01\n" +
 	"\rVoiceCategory\x12\x1e\n" +
 	"\x1aVOICE_CATEGORY_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16VOICE_CATEGORY_GENERAL\x10\x01\x12\x1c\n" +
@@ -432,10 +533,11 @@ const file_voice_proto_rawDesc = "" +
 	"\x19VOICE_VARIANT_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12VOICE_VARIANT_MALE\x10\x01\x12\x18\n" +
 	"\x14VOICE_VARIANT_FEMALE\x10\x02\x12\x19\n" +
-	"\x15VOICE_VARIANT_NEUTRAL\x10\x032\x9d\x01\n" +
+	"\x15VOICE_VARIANT_NEUTRAL\x10\x032\xfb\x01\n" +
 	"\fVoiceService\x12G\n" +
 	"\fGetAllVoices\x12\x1a.voice.GetAllVoicesRequest\x1a\x1b.voice.GetAllVoicesResponse\x12D\n" +
-	"\vDeleteVoice\x12\x19.voice.DeleteVoiceRequest\x1a\x1a.voice.DeleteVoiceResponseB)Z'github.com/go-grpc-sqlc/voice/gen/pb;pbb\x06proto3"
+	"\vDeleteVoice\x12\x19.voice.DeleteVoiceRequest\x1a\x1a.voice.DeleteVoiceResponse\x12\\\n" +
+	"\x13GetVoicePlaybackUrl\x12!.voice.GetVoicePlaybackUrlRequest\x1a\".voice.GetVoicePlaybackUrlResponseB)Z'github.com/go-grpc-sqlc/voice/gen/pb;pbb\x06proto3"
 
 var (
 	file_voice_proto_rawDescOnce sync.Once
@@ -450,15 +552,17 @@ func file_voice_proto_rawDescGZIP() []byte {
 }
 
 var file_voice_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_voice_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_voice_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_voice_proto_goTypes = []any{
-	(VoiceCategory)(0),           // 0: voice.VoiceCategory
-	(VoiceVariant)(0),            // 1: voice.VoiceVariant
-	(*VoiceItem)(nil),            // 2: voice.VoiceItem
-	(*GetAllVoicesRequest)(nil),  // 3: voice.GetAllVoicesRequest
-	(*GetAllVoicesResponse)(nil), // 4: voice.GetAllVoicesResponse
-	(*DeleteVoiceRequest)(nil),   // 5: voice.DeleteVoiceRequest
-	(*DeleteVoiceResponse)(nil),  // 6: voice.DeleteVoiceResponse
+	(VoiceCategory)(0),                  // 0: voice.VoiceCategory
+	(VoiceVariant)(0),                   // 1: voice.VoiceVariant
+	(*VoiceItem)(nil),                   // 2: voice.VoiceItem
+	(*GetAllVoicesRequest)(nil),         // 3: voice.GetAllVoicesRequest
+	(*GetAllVoicesResponse)(nil),        // 4: voice.GetAllVoicesResponse
+	(*DeleteVoiceRequest)(nil),          // 5: voice.DeleteVoiceRequest
+	(*DeleteVoiceResponse)(nil),         // 6: voice.DeleteVoiceResponse
+	(*GetVoicePlaybackUrlRequest)(nil),  // 7: voice.GetVoicePlaybackUrlRequest
+	(*GetVoicePlaybackUrlResponse)(nil), // 8: voice.GetVoicePlaybackUrlResponse
 }
 var file_voice_proto_depIdxs = []int32{
 	0, // 0: voice.VoiceItem.category:type_name -> voice.VoiceCategory
@@ -466,10 +570,12 @@ var file_voice_proto_depIdxs = []int32{
 	2, // 2: voice.GetAllVoicesResponse.voices:type_name -> voice.VoiceItem
 	3, // 3: voice.VoiceService.GetAllVoices:input_type -> voice.GetAllVoicesRequest
 	5, // 4: voice.VoiceService.DeleteVoice:input_type -> voice.DeleteVoiceRequest
-	4, // 5: voice.VoiceService.GetAllVoices:output_type -> voice.GetAllVoicesResponse
-	6, // 6: voice.VoiceService.DeleteVoice:output_type -> voice.DeleteVoiceResponse
-	5, // [5:7] is the sub-list for method output_type
-	3, // [3:5] is the sub-list for method input_type
+	7, // 5: voice.VoiceService.GetVoicePlaybackUrl:input_type -> voice.GetVoicePlaybackUrlRequest
+	4, // 6: voice.VoiceService.GetAllVoices:output_type -> voice.GetAllVoicesResponse
+	6, // 7: voice.VoiceService.DeleteVoice:output_type -> voice.DeleteVoiceResponse
+	8, // 8: voice.VoiceService.GetVoicePlaybackUrl:output_type -> voice.GetVoicePlaybackUrlResponse
+	6, // [6:9] is the sub-list for method output_type
+	3, // [3:6] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
 	3, // [3:3] is the sub-list for extension extendee
 	0, // [0:3] is the sub-list for field type_name
@@ -486,7 +592,7 @@ func file_voice_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_voice_proto_rawDesc), len(file_voice_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   5,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

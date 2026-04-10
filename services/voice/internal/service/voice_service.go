@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	db "github.com/go-grpc-sqlc/voice/gen/sqlc"
 	"github.com/go-grpc-sqlc/voice/internal/repository"
@@ -35,6 +36,8 @@ type VoiceService struct {
 	logger *zap.Logger
 }
 
+var ErrVoiceAccessDenied = errors.New("voice access denied")
+
 // New constructs a VoiceService.
 func New(repo repository.Repository, s3Client *s3.Client, logger *zap.Logger) *VoiceService {
 	return &VoiceService{
@@ -42,6 +45,32 @@ func New(repo repository.Repository, s3Client *s3.Client, logger *zap.Logger) *V
 		s3:     s3Client,
 		logger: logger,
 	}
+}
+
+// GetPlaybackURL returns a short-lived signed URL for a voice audio object.
+func (s *VoiceService) GetPlaybackURL(ctx context.Context, voiceID, requesterUserID string) (string, int64, error) {
+	voice, err := s.repo.GetVoiceByID(ctx, voiceID)
+	if err != nil {
+		if errors.Is(err, repository.ErrVoiceNotFound) {
+			return "", 0, repository.ErrVoiceNotFound
+		}
+		return "", 0, fmt.Errorf("service: fetch voice for playback: %w", err)
+	}
+
+	if voice.UserID != requesterUserID && voice.UserID != "SYSTEM" {
+		return "", 0, ErrVoiceAccessDenied
+	}
+
+	if !voice.S3ObjectKey.Valid || voice.S3ObjectKey.String == "" {
+		return "", 0, repository.ErrVoiceNotFound
+	}
+
+	url, err := s.s3.GetSignedURL(ctx, voice.S3ObjectKey.String)
+	if err != nil {
+		return "", 0, fmt.Errorf("service: sign playback url: %w", err)
+	}
+
+	return url, time.Now().Add(time.Hour).Unix(), nil
 }
 
 // GetAll returns all voices for the given user, optionally filtered by query.

@@ -1,13 +1,30 @@
 import { AudioLines, Mic, Volume2 } from "lucide-react"
 
 import { VoiceCard, VoiceItemType } from "./voice-card"
+import { VoiceCardSkeleton } from "./voice-card-skeleton"
 
 interface VoicesListProps {
   title: string
   voices: VoiceItemType[]
+  isLoading?: boolean
 }
 
-export function VoicesList({ title, voices }: VoicesListProps) {
+export function VoicesList({ title, voices, isLoading = false }: VoicesListProps) {
+  // Show skeletons while loading
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {Array.from({ length: 2 }).map((_, index) => (
+            <VoiceCardSkeleton key={index} />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // Show empty state only when not loading and no voices
   if (!voices.length) {
     return (
       <div className="space-y-4">
@@ -28,7 +45,9 @@ export function VoicesList({ title, voices }: VoicesListProps) {
             </div>
           </div>
 
-          <p className="text-lg font-semibold tracking-tight text-foreground">No voices found</p>
+          <p className="text-lg font-semibold tracking-tight text-foreground">
+            No voices found
+          </p>
 
           <p className="max-w-md text-center text-sm text-muted-foreground">
             {title} will appear here

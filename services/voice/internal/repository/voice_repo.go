@@ -34,6 +34,7 @@ type ListVoicesParams struct {
 // Repository defines the data access contract for voices.
 type Repository interface {
 	ListVoices(ctx context.Context, params ListVoicesParams) ([]db.ListCustomVoicesRow, error)
+	GetVoiceByID(ctx context.Context, id string) (db.Voice, error)
 	GetVoiceByIDAndUser(ctx context.Context, id, userID string) (db.Voice, error)
 	DeleteVoice(ctx context.Context, id, userID string) error
 }
@@ -117,6 +118,18 @@ func (r *VoiceRepo) listVoicesForUser(ctx context.Context, userID, query string)
 		return nil, fmt.Errorf("repository: list voices: %w", err)
 	}
 	return rows, nil
+}
+
+// GetVoiceByID fetches a voice by id, or ErrVoiceNotFound if not present.
+func (r *VoiceRepo) GetVoiceByID(ctx context.Context, id string) (db.Voice, error) {
+	voice, err := r.q.GetVoice(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return db.Voice{}, ErrVoiceNotFound
+		}
+		return db.Voice{}, fmt.Errorf("repository: get voice by id: %w", err)
+	}
+	return voice, nil
 }
 
 // GetVoiceByIDAndUser fetches a voice owned by the specified user, or ErrVoiceNotFound.

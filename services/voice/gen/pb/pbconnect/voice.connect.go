@@ -39,12 +39,16 @@ const (
 	// VoiceServiceDeleteVoiceProcedure is the fully-qualified name of the VoiceService's DeleteVoice
 	// RPC.
 	VoiceServiceDeleteVoiceProcedure = "/voice.VoiceService/DeleteVoice"
+	// VoiceServiceGetVoicePlaybackUrlProcedure is the fully-qualified name of the VoiceService's
+	// GetVoicePlaybackUrl RPC.
+	VoiceServiceGetVoicePlaybackUrlProcedure = "/voice.VoiceService/GetVoicePlaybackUrl"
 )
 
 // VoiceServiceClient is a client for the voice.VoiceService service.
 type VoiceServiceClient interface {
 	GetAllVoices(context.Context, *connect.Request[pb.GetAllVoicesRequest]) (*connect.Response[pb.GetAllVoicesResponse], error)
 	DeleteVoice(context.Context, *connect.Request[pb.DeleteVoiceRequest]) (*connect.Response[pb.DeleteVoiceResponse], error)
+	GetVoicePlaybackUrl(context.Context, *connect.Request[pb.GetVoicePlaybackUrlRequest]) (*connect.Response[pb.GetVoicePlaybackUrlResponse], error)
 }
 
 // NewVoiceServiceClient constructs a client for the voice.VoiceService service. By default, it uses
@@ -70,13 +74,20 @@ func NewVoiceServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(voiceServiceMethods.ByName("DeleteVoice")),
 			connect.WithClientOptions(opts...),
 		),
+		getVoicePlaybackUrl: connect.NewClient[pb.GetVoicePlaybackUrlRequest, pb.GetVoicePlaybackUrlResponse](
+			httpClient,
+			baseURL+VoiceServiceGetVoicePlaybackUrlProcedure,
+			connect.WithSchema(voiceServiceMethods.ByName("GetVoicePlaybackUrl")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // voiceServiceClient implements VoiceServiceClient.
 type voiceServiceClient struct {
-	getAllVoices *connect.Client[pb.GetAllVoicesRequest, pb.GetAllVoicesResponse]
-	deleteVoice  *connect.Client[pb.DeleteVoiceRequest, pb.DeleteVoiceResponse]
+	getAllVoices        *connect.Client[pb.GetAllVoicesRequest, pb.GetAllVoicesResponse]
+	deleteVoice         *connect.Client[pb.DeleteVoiceRequest, pb.DeleteVoiceResponse]
+	getVoicePlaybackUrl *connect.Client[pb.GetVoicePlaybackUrlRequest, pb.GetVoicePlaybackUrlResponse]
 }
 
 // GetAllVoices calls voice.VoiceService.GetAllVoices.
@@ -89,10 +100,16 @@ func (c *voiceServiceClient) DeleteVoice(ctx context.Context, req *connect.Reque
 	return c.deleteVoice.CallUnary(ctx, req)
 }
 
+// GetVoicePlaybackUrl calls voice.VoiceService.GetVoicePlaybackUrl.
+func (c *voiceServiceClient) GetVoicePlaybackUrl(ctx context.Context, req *connect.Request[pb.GetVoicePlaybackUrlRequest]) (*connect.Response[pb.GetVoicePlaybackUrlResponse], error) {
+	return c.getVoicePlaybackUrl.CallUnary(ctx, req)
+}
+
 // VoiceServiceHandler is an implementation of the voice.VoiceService service.
 type VoiceServiceHandler interface {
 	GetAllVoices(context.Context, *connect.Request[pb.GetAllVoicesRequest]) (*connect.Response[pb.GetAllVoicesResponse], error)
 	DeleteVoice(context.Context, *connect.Request[pb.DeleteVoiceRequest]) (*connect.Response[pb.DeleteVoiceResponse], error)
+	GetVoicePlaybackUrl(context.Context, *connect.Request[pb.GetVoicePlaybackUrlRequest]) (*connect.Response[pb.GetVoicePlaybackUrlResponse], error)
 }
 
 // NewVoiceServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -114,12 +131,20 @@ func NewVoiceServiceHandler(svc VoiceServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(voiceServiceMethods.ByName("DeleteVoice")),
 		connect.WithHandlerOptions(opts...),
 	)
+	voiceServiceGetVoicePlaybackUrlHandler := connect.NewUnaryHandler(
+		VoiceServiceGetVoicePlaybackUrlProcedure,
+		svc.GetVoicePlaybackUrl,
+		connect.WithSchema(voiceServiceMethods.ByName("GetVoicePlaybackUrl")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/voice.VoiceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case VoiceServiceGetAllVoicesProcedure:
 			voiceServiceGetAllVoicesHandler.ServeHTTP(w, r)
 		case VoiceServiceDeleteVoiceProcedure:
 			voiceServiceDeleteVoiceHandler.ServeHTTP(w, r)
+		case VoiceServiceGetVoicePlaybackUrlProcedure:
+			voiceServiceGetVoicePlaybackUrlHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -135,4 +160,8 @@ func (UnimplementedVoiceServiceHandler) GetAllVoices(context.Context, *connect.R
 
 func (UnimplementedVoiceServiceHandler) DeleteVoice(context.Context, *connect.Request[pb.DeleteVoiceRequest]) (*connect.Response[pb.DeleteVoiceResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("voice.VoiceService.DeleteVoice is not implemented"))
+}
+
+func (UnimplementedVoiceServiceHandler) GetVoicePlaybackUrl(context.Context, *connect.Request[pb.GetVoicePlaybackUrlRequest]) (*connect.Response[pb.GetVoicePlaybackUrlResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("voice.VoiceService.GetVoicePlaybackUrl is not implemented"))
 }

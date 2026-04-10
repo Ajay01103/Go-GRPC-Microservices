@@ -12,30 +12,27 @@ function VoicesContent() {
   const [query] = useQueryState("query", voicesSearchParams.query)
   const { data: currentUser } = useCurrentUser()
 
-  const { data: customVoices = [] } = useVoices({
+  const { data: customVoices = [], isPending: isCustomLoading } = useVoices({
     userId: currentUser?.userId ?? "",
     query,
   })
 
-  const { data: systemVoices = [] } = useVoices({
+  const { data: systemVoices = [], isPending: isSystemLoading } = useVoices({
     userId: "SYSTEM",
     query,
   })
-
-  const data = {
-    custom: customVoices,
-    system: systemVoices,
-  }
 
   return (
     <>
       <VoicesList
         title="Team Voices"
-        voices={data.custom}
+        voices={customVoices}
+        isLoading={isCustomLoading}
       />
       <VoicesList
         title="Built-in Voices"
-        voices={data.system}
+        voices={systemVoices}
+        isLoading={isSystemLoading}
       />
     </>
   )

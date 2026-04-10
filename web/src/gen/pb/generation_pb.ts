@@ -3,15 +3,8 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import type {
-  BinaryReadOptions,
-  FieldList,
-  JsonReadOptions,
-  JsonValue,
-  PartialMessage,
-  PlainMessage,
-} from "@bufbuild/protobuf"
-import { Message, proto3 } from "@bufbuild/protobuf"
+import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
+import { Message, proto3 } from "@bufbuild/protobuf";
 
 /**
  * @generated from message generation.HelloGenerationRequest
@@ -20,45 +13,33 @@ export class HelloGenerationRequest extends Message<HelloGenerationRequest> {
   /**
    * @generated from field: string name = 1;
    */
-  name = ""
+  name = "";
 
   constructor(data?: PartialMessage<HelloGenerationRequest>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "generation.HelloGenerationRequest"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "generation.HelloGenerationRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ])
+  ]);
 
-  static fromBinary(
-    bytes: Uint8Array,
-    options?: Partial<BinaryReadOptions>,
-  ): HelloGenerationRequest {
-    return new HelloGenerationRequest().fromBinary(bytes, options)
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): HelloGenerationRequest {
+    return new HelloGenerationRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(
-    jsonValue: JsonValue,
-    options?: Partial<JsonReadOptions>,
-  ): HelloGenerationRequest {
-    return new HelloGenerationRequest().fromJson(jsonValue, options)
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): HelloGenerationRequest {
+    return new HelloGenerationRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(
-    jsonString: string,
-    options?: Partial<JsonReadOptions>,
-  ): HelloGenerationRequest {
-    return new HelloGenerationRequest().fromJsonString(jsonString, options)
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): HelloGenerationRequest {
+    return new HelloGenerationRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: HelloGenerationRequest | PlainMessage<HelloGenerationRequest> | undefined,
-    b: HelloGenerationRequest | PlainMessage<HelloGenerationRequest> | undefined,
-  ): boolean {
-    return proto3.util.equals(HelloGenerationRequest, a, b)
+  static equals(a: HelloGenerationRequest | PlainMessage<HelloGenerationRequest> | undefined, b: HelloGenerationRequest | PlainMessage<HelloGenerationRequest> | undefined): boolean {
+    return proto3.util.equals(HelloGenerationRequest, a, b);
   }
 }
 
@@ -69,44 +50,33 @@ export class HelloGenerationResponse extends Message<HelloGenerationResponse> {
   /**
    * @generated from field: string message = 1;
    */
-  message = ""
+  message = "";
 
   constructor(data?: PartialMessage<HelloGenerationResponse>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "generation.HelloGenerationResponse"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "generation.HelloGenerationResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "message", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ])
+  ]);
 
-  static fromBinary(
-    bytes: Uint8Array,
-    options?: Partial<BinaryReadOptions>,
-  ): HelloGenerationResponse {
-    return new HelloGenerationResponse().fromBinary(bytes, options)
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): HelloGenerationResponse {
+    return new HelloGenerationResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(
-    jsonValue: JsonValue,
-    options?: Partial<JsonReadOptions>,
-  ): HelloGenerationResponse {
-    return new HelloGenerationResponse().fromJson(jsonValue, options)
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): HelloGenerationResponse {
+    return new HelloGenerationResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(
-    jsonString: string,
-    options?: Partial<JsonReadOptions>,
-  ): HelloGenerationResponse {
-    return new HelloGenerationResponse().fromJsonString(jsonString, options)
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): HelloGenerationResponse {
+    return new HelloGenerationResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: HelloGenerationResponse | PlainMessage<HelloGenerationResponse> | undefined,
-    b: HelloGenerationResponse | PlainMessage<HelloGenerationResponse> | undefined,
-  ): boolean {
-    return proto3.util.equals(HelloGenerationResponse, a, b)
+  static equals(a: HelloGenerationResponse | PlainMessage<HelloGenerationResponse> | undefined, b: HelloGenerationResponse | PlainMessage<HelloGenerationResponse> | undefined): boolean {
+    return proto3.util.equals(HelloGenerationResponse, a, b);
   }
 }
+

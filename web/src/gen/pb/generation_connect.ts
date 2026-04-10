@@ -3,8 +3,8 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { HelloGenerationRequest, HelloGenerationResponse } from "./generation_pb"
-import { MethodKind } from "@bufbuild/protobuf"
+import { HelloGenerationRequest, HelloGenerationResponse } from "./generation_pb";
+import { MethodKind } from "@bufbuild/protobuf";
 
 /**
  * @generated from service generation.GenerationService
@@ -21,5 +21,6 @@ export const GenerationService = {
       O: HelloGenerationResponse,
       kind: MethodKind.Unary,
     },
-  },
-} as const
+  }
+} as const;
+

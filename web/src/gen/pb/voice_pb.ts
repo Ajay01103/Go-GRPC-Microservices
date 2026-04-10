@@ -3,15 +3,8 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import type {
-  BinaryReadOptions,
-  FieldList,
-  JsonReadOptions,
-  JsonValue,
-  PartialMessage,
-  PlainMessage,
-} from "@bufbuild/protobuf"
-import { Message, proto3 } from "@bufbuild/protobuf"
+import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
+import { Message, proto3, protoInt64 } from "@bufbuild/protobuf";
 
 /**
  * @generated from enum voice.VoiceCategory
@@ -43,7 +36,7 @@ proto3.util.setEnumType(VoiceCategory, "voice.VoiceCategory", [
   { no: 1, name: "VOICE_CATEGORY_GENERAL" },
   { no: 2, name: "VOICE_CATEGORY_NARRATION" },
   { no: 3, name: "VOICE_CATEGORY_CHARACTER" },
-])
+]);
 
 /**
  * @generated from enum voice.VoiceVariant
@@ -75,7 +68,7 @@ proto3.util.setEnumType(VoiceVariant, "voice.VoiceVariant", [
   { no: 1, name: "VOICE_VARIANT_MALE" },
   { no: 2, name: "VOICE_VARIANT_FEMALE" },
   { no: 3, name: "VOICE_VARIANT_NEUTRAL" },
-])
+]);
 
 /**
  * @generated from message voice.VoiceItem
@@ -84,40 +77,40 @@ export class VoiceItem extends Message<VoiceItem> {
   /**
    * @generated from field: string id = 1;
    */
-  id = ""
+  id = "";
 
   /**
    * @generated from field: string name = 2;
    */
-  name = ""
+  name = "";
 
   /**
    * @generated from field: string description = 3;
    */
-  description = ""
+  description = "";
 
   /**
    * @generated from field: voice.VoiceCategory category = 4;
    */
-  category = VoiceCategory.UNSPECIFIED
+  category = VoiceCategory.UNSPECIFIED;
 
   /**
    * @generated from field: string language = 5;
    */
-  language = ""
+  language = "";
 
   /**
    * @generated from field: voice.VoiceVariant variant = 6;
    */
-  variant = VoiceVariant.UNSPECIFIED
+  variant = VoiceVariant.UNSPECIFIED;
 
   constructor(data?: PartialMessage<VoiceItem>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "voice.VoiceItem"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "voice.VoiceItem";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
@@ -125,25 +118,22 @@ export class VoiceItem extends Message<VoiceItem> {
     { no: 4, name: "category", kind: "enum", T: proto3.getEnumType(VoiceCategory) },
     { no: 5, name: "language", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 6, name: "variant", kind: "enum", T: proto3.getEnumType(VoiceVariant) },
-  ])
+  ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): VoiceItem {
-    return new VoiceItem().fromBinary(bytes, options)
+    return new VoiceItem().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): VoiceItem {
-    return new VoiceItem().fromJson(jsonValue, options)
+    return new VoiceItem().fromJson(jsonValue, options);
   }
 
   static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): VoiceItem {
-    return new VoiceItem().fromJsonString(jsonString, options)
+    return new VoiceItem().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: VoiceItem | PlainMessage<VoiceItem> | undefined,
-    b: VoiceItem | PlainMessage<VoiceItem> | undefined,
-  ): boolean {
-    return proto3.util.equals(VoiceItem, a, b)
+  static equals(a: VoiceItem | PlainMessage<VoiceItem> | undefined, b: VoiceItem | PlainMessage<VoiceItem> | undefined): boolean {
+    return proto3.util.equals(VoiceItem, a, b);
   }
 }
 
@@ -154,47 +144,41 @@ export class GetAllVoicesRequest extends Message<GetAllVoicesRequest> {
   /**
    * @generated from field: string user_id = 1;
    */
-  userId = ""
+  userId = "";
 
   /**
    * optional search term
    *
    * @generated from field: string query = 2;
    */
-  query = ""
+  query = "";
 
   constructor(data?: PartialMessage<GetAllVoicesRequest>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "voice.GetAllVoicesRequest"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "voice.GetAllVoicesRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "user_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "query", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ])
+  ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetAllVoicesRequest {
-    return new GetAllVoicesRequest().fromBinary(bytes, options)
+    return new GetAllVoicesRequest().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetAllVoicesRequest {
-    return new GetAllVoicesRequest().fromJson(jsonValue, options)
+    return new GetAllVoicesRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(
-    jsonString: string,
-    options?: Partial<JsonReadOptions>,
-  ): GetAllVoicesRequest {
-    return new GetAllVoicesRequest().fromJsonString(jsonString, options)
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetAllVoicesRequest {
+    return new GetAllVoicesRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: GetAllVoicesRequest | PlainMessage<GetAllVoicesRequest> | undefined,
-    b: GetAllVoicesRequest | PlainMessage<GetAllVoicesRequest> | undefined,
-  ): boolean {
-    return proto3.util.equals(GetAllVoicesRequest, a, b)
+  static equals(a: GetAllVoicesRequest | PlainMessage<GetAllVoicesRequest> | undefined, b: GetAllVoicesRequest | PlainMessage<GetAllVoicesRequest> | undefined): boolean {
+    return proto3.util.equals(GetAllVoicesRequest, a, b);
   }
 }
 
@@ -205,39 +189,33 @@ export class GetAllVoicesResponse extends Message<GetAllVoicesResponse> {
   /**
    * @generated from field: repeated voice.VoiceItem voices = 1;
    */
-  voices: VoiceItem[] = []
+  voices: VoiceItem[] = [];
 
   constructor(data?: PartialMessage<GetAllVoicesResponse>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "voice.GetAllVoicesResponse"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "voice.GetAllVoicesResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "voices", kind: "message", T: VoiceItem, repeated: true },
-  ])
+  ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetAllVoicesResponse {
-    return new GetAllVoicesResponse().fromBinary(bytes, options)
+    return new GetAllVoicesResponse().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetAllVoicesResponse {
-    return new GetAllVoicesResponse().fromJson(jsonValue, options)
+    return new GetAllVoicesResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(
-    jsonString: string,
-    options?: Partial<JsonReadOptions>,
-  ): GetAllVoicesResponse {
-    return new GetAllVoicesResponse().fromJsonString(jsonString, options)
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetAllVoicesResponse {
+    return new GetAllVoicesResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: GetAllVoicesResponse | PlainMessage<GetAllVoicesResponse> | undefined,
-    b: GetAllVoicesResponse | PlainMessage<GetAllVoicesResponse> | undefined,
-  ): boolean {
-    return proto3.util.equals(GetAllVoicesResponse, a, b)
+  static equals(a: GetAllVoicesResponse | PlainMessage<GetAllVoicesResponse> | undefined, b: GetAllVoicesResponse | PlainMessage<GetAllVoicesResponse> | undefined): boolean {
+    return proto3.util.equals(GetAllVoicesResponse, a, b);
   }
 }
 
@@ -248,45 +226,39 @@ export class DeleteVoiceRequest extends Message<DeleteVoiceRequest> {
   /**
    * @generated from field: string id = 1;
    */
-  id = ""
+  id = "";
 
   /**
    * @generated from field: string user_id = 2;
    */
-  userId = ""
+  userId = "";
 
   constructor(data?: PartialMessage<DeleteVoiceRequest>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "voice.DeleteVoiceRequest"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "voice.DeleteVoiceRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "user_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ])
+  ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): DeleteVoiceRequest {
-    return new DeleteVoiceRequest().fromBinary(bytes, options)
+    return new DeleteVoiceRequest().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): DeleteVoiceRequest {
-    return new DeleteVoiceRequest().fromJson(jsonValue, options)
+    return new DeleteVoiceRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(
-    jsonString: string,
-    options?: Partial<JsonReadOptions>,
-  ): DeleteVoiceRequest {
-    return new DeleteVoiceRequest().fromJsonString(jsonString, options)
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): DeleteVoiceRequest {
+    return new DeleteVoiceRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: DeleteVoiceRequest | PlainMessage<DeleteVoiceRequest> | undefined,
-    b: DeleteVoiceRequest | PlainMessage<DeleteVoiceRequest> | undefined,
-  ): boolean {
-    return proto3.util.equals(DeleteVoiceRequest, a, b)
+  static equals(a: DeleteVoiceRequest | PlainMessage<DeleteVoiceRequest> | undefined, b: DeleteVoiceRequest | PlainMessage<DeleteVoiceRequest> | undefined): boolean {
+    return proto3.util.equals(DeleteVoiceRequest, a, b);
   }
 }
 
@@ -297,38 +269,113 @@ export class DeleteVoiceResponse extends Message<DeleteVoiceResponse> {
   /**
    * @generated from field: bool success = 1;
    */
-  success = false
+  success = false;
 
   constructor(data?: PartialMessage<DeleteVoiceResponse>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "voice.DeleteVoiceResponse"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "voice.DeleteVoiceResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "success", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
-  ])
+  ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): DeleteVoiceResponse {
-    return new DeleteVoiceResponse().fromBinary(bytes, options)
+    return new DeleteVoiceResponse().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): DeleteVoiceResponse {
-    return new DeleteVoiceResponse().fromJson(jsonValue, options)
+    return new DeleteVoiceResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(
-    jsonString: string,
-    options?: Partial<JsonReadOptions>,
-  ): DeleteVoiceResponse {
-    return new DeleteVoiceResponse().fromJsonString(jsonString, options)
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): DeleteVoiceResponse {
+    return new DeleteVoiceResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: DeleteVoiceResponse | PlainMessage<DeleteVoiceResponse> | undefined,
-    b: DeleteVoiceResponse | PlainMessage<DeleteVoiceResponse> | undefined,
-  ): boolean {
-    return proto3.util.equals(DeleteVoiceResponse, a, b)
+  static equals(a: DeleteVoiceResponse | PlainMessage<DeleteVoiceResponse> | undefined, b: DeleteVoiceResponse | PlainMessage<DeleteVoiceResponse> | undefined): boolean {
+    return proto3.util.equals(DeleteVoiceResponse, a, b);
   }
 }
+
+/**
+ * @generated from message voice.GetVoicePlaybackUrlRequest
+ */
+export class GetVoicePlaybackUrlRequest extends Message<GetVoicePlaybackUrlRequest> {
+  /**
+   * @generated from field: string voice_id = 1;
+   */
+  voiceId = "";
+
+  constructor(data?: PartialMessage<GetVoicePlaybackUrlRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "voice.GetVoicePlaybackUrlRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "voice_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetVoicePlaybackUrlRequest {
+    return new GetVoicePlaybackUrlRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetVoicePlaybackUrlRequest {
+    return new GetVoicePlaybackUrlRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetVoicePlaybackUrlRequest {
+    return new GetVoicePlaybackUrlRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetVoicePlaybackUrlRequest | PlainMessage<GetVoicePlaybackUrlRequest> | undefined, b: GetVoicePlaybackUrlRequest | PlainMessage<GetVoicePlaybackUrlRequest> | undefined): boolean {
+    return proto3.util.equals(GetVoicePlaybackUrlRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message voice.GetVoicePlaybackUrlResponse
+ */
+export class GetVoicePlaybackUrlResponse extends Message<GetVoicePlaybackUrlResponse> {
+  /**
+   * @generated from field: string url = 1;
+   */
+  url = "";
+
+  /**
+   * @generated from field: int64 expires_at_unix = 2;
+   */
+  expiresAtUnix = protoInt64.zero;
+
+  constructor(data?: PartialMessage<GetVoicePlaybackUrlResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "voice.GetVoicePlaybackUrlResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "url", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "expires_at_unix", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetVoicePlaybackUrlResponse {
+    return new GetVoicePlaybackUrlResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetVoicePlaybackUrlResponse {
+    return new GetVoicePlaybackUrlResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetVoicePlaybackUrlResponse {
+    return new GetVoicePlaybackUrlResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetVoicePlaybackUrlResponse | PlainMessage<GetVoicePlaybackUrlResponse> | undefined, b: GetVoicePlaybackUrlResponse | PlainMessage<GetVoicePlaybackUrlResponse> | undefined): boolean {
+    return proto3.util.equals(GetVoicePlaybackUrlResponse, a, b);
+  }
+}
+

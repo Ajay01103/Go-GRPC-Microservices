@@ -40,7 +40,7 @@ func (s *VoiceServer) GetAllVoices(
 	if requestedUserID == "" {
 		requestedUserID = payload.UserID.String()
 	}
-	scope := repository.ListScopeAll
+	scope := repository.ListScopeCustom
 
 	if requestedUserID != "SYSTEM" && requestedUserID != payload.UserID.String() {
 		return nil, connect.NewError(connect.CodePermissionDenied, errors.New("cannot access another user's voices"))
@@ -101,6 +101,38 @@ func (s *VoiceServer) DeleteVoice(
 	}
 
 	return connect.NewResponse(&pb.DeleteVoiceResponse{Success: true}), nil
+}
+
+// GetVoicePlaybackUrl returns a short-lived signed playback URL for a voice.
+func (s *VoiceServer) GetVoicePlaybackUrl(
+	ctx context.Context,
+	req *connect.Request[pb.GetVoicePlaybackUrlRequest],
+) (*connect.Response[pb.GetVoicePlaybackUrlResponse], error) {
+	payload, ok := interceptor.UserPayloadFromContext(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("missing auth payload"))
+	}
+
+	if req.Msg.VoiceId == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("voice id is required"))
+	}
+
+	url, expiresAt, err := s.svc.GetPlaybackURL(ctx, req.Msg.VoiceId, payload.UserID.String())
+	if err != nil {
+		if errors.Is(err, repository.ErrVoiceNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, errors.New("voice not found"))
+		}
+		if errors.Is(err, service.ErrVoiceAccessDenied) {
+			return nil, connect.NewError(connect.CodePermissionDenied, errors.New("cannot access this voice"))
+		}
+		s.logger.Error("GetVoicePlaybackUrl failed", zap.Error(err))
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&pb.GetVoicePlaybackUrlResponse{
+		Url:           url,
+		ExpiresAtUnix: expiresAt,
+	}), nil
 }
 
 // ─── enum converters ──────────────────────────────────────────────────────────

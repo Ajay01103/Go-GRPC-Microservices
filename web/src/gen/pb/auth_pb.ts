@@ -3,15 +3,8 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import type {
-  BinaryReadOptions,
-  FieldList,
-  JsonReadOptions,
-  JsonValue,
-  PartialMessage,
-  PlainMessage,
-} from "@bufbuild/protobuf"
-import { Message, proto3 } from "@bufbuild/protobuf"
+import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
+import { Message, proto3 } from "@bufbuild/protobuf";
 
 /**
  * @generated from message auth.RegisterRequest
@@ -20,48 +13,45 @@ export class RegisterRequest extends Message<RegisterRequest> {
   /**
    * @generated from field: string email = 1;
    */
-  email = ""
+  email = "";
 
   /**
    * @generated from field: string name = 2;
    */
-  name = ""
+  name = "";
 
   /**
    * @generated from field: string password = 3;
    */
-  password = ""
+  password = "";
 
   constructor(data?: PartialMessage<RegisterRequest>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "auth.RegisterRequest"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "auth.RegisterRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "email", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "password", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ])
+  ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RegisterRequest {
-    return new RegisterRequest().fromBinary(bytes, options)
+    return new RegisterRequest().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): RegisterRequest {
-    return new RegisterRequest().fromJson(jsonValue, options)
+    return new RegisterRequest().fromJson(jsonValue, options);
   }
 
   static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): RegisterRequest {
-    return new RegisterRequest().fromJsonString(jsonString, options)
+    return new RegisterRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: RegisterRequest | PlainMessage<RegisterRequest> | undefined,
-    b: RegisterRequest | PlainMessage<RegisterRequest> | undefined,
-  ): boolean {
-    return proto3.util.equals(RegisterRequest, a, b)
+  static equals(a: RegisterRequest | PlainMessage<RegisterRequest> | undefined, b: RegisterRequest | PlainMessage<RegisterRequest> | undefined): boolean {
+    return proto3.util.equals(RegisterRequest, a, b);
   }
 }
 
@@ -72,42 +62,39 @@ export class LoginRequest extends Message<LoginRequest> {
   /**
    * @generated from field: string email = 1;
    */
-  email = ""
+  email = "";
 
   /**
    * @generated from field: string password = 2;
    */
-  password = ""
+  password = "";
 
   constructor(data?: PartialMessage<LoginRequest>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "auth.LoginRequest"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "auth.LoginRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "email", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "password", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ])
+  ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): LoginRequest {
-    return new LoginRequest().fromBinary(bytes, options)
+    return new LoginRequest().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): LoginRequest {
-    return new LoginRequest().fromJson(jsonValue, options)
+    return new LoginRequest().fromJson(jsonValue, options);
   }
 
   static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): LoginRequest {
-    return new LoginRequest().fromJsonString(jsonString, options)
+    return new LoginRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: LoginRequest | PlainMessage<LoginRequest> | undefined,
-    b: LoginRequest | PlainMessage<LoginRequest> | undefined,
-  ): boolean {
-    return proto3.util.equals(LoginRequest, a, b)
+  static equals(a: LoginRequest | PlainMessage<LoginRequest> | undefined, b: LoginRequest | PlainMessage<LoginRequest> | undefined): boolean {
+    return proto3.util.equals(LoginRequest, a, b);
   }
 }
 
@@ -120,39 +107,33 @@ export class RefreshTokenRequest extends Message<RefreshTokenRequest> {
   /**
    * @generated from field: string refresh_token = 1;
    */
-  refreshToken = ""
+  refreshToken = "";
 
   constructor(data?: PartialMessage<RefreshTokenRequest>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "auth.RefreshTokenRequest"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "auth.RefreshTokenRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "refresh_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ])
+  ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RefreshTokenRequest {
-    return new RefreshTokenRequest().fromBinary(bytes, options)
+    return new RefreshTokenRequest().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): RefreshTokenRequest {
-    return new RefreshTokenRequest().fromJson(jsonValue, options)
+    return new RefreshTokenRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(
-    jsonString: string,
-    options?: Partial<JsonReadOptions>,
-  ): RefreshTokenRequest {
-    return new RefreshTokenRequest().fromJsonString(jsonString, options)
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): RefreshTokenRequest {
+    return new RefreshTokenRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: RefreshTokenRequest | PlainMessage<RefreshTokenRequest> | undefined,
-    b: RefreshTokenRequest | PlainMessage<RefreshTokenRequest> | undefined,
-  ): boolean {
-    return proto3.util.equals(RefreshTokenRequest, a, b)
+  static equals(a: RefreshTokenRequest | PlainMessage<RefreshTokenRequest> | undefined, b: RefreshTokenRequest | PlainMessage<RefreshTokenRequest> | undefined): boolean {
+    return proto3.util.equals(RefreshTokenRequest, a, b);
   }
 }
 
@@ -166,36 +147,33 @@ export class LogoutRequest extends Message<LogoutRequest> {
   /**
    * @generated from field: string refresh_token = 1;
    */
-  refreshToken = ""
+  refreshToken = "";
 
   constructor(data?: PartialMessage<LogoutRequest>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "auth.LogoutRequest"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "auth.LogoutRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "refresh_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ])
+  ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): LogoutRequest {
-    return new LogoutRequest().fromBinary(bytes, options)
+    return new LogoutRequest().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): LogoutRequest {
-    return new LogoutRequest().fromJson(jsonValue, options)
+    return new LogoutRequest().fromJson(jsonValue, options);
   }
 
   static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): LogoutRequest {
-    return new LogoutRequest().fromJsonString(jsonString, options)
+    return new LogoutRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: LogoutRequest | PlainMessage<LogoutRequest> | undefined,
-    b: LogoutRequest | PlainMessage<LogoutRequest> | undefined,
-  ): boolean {
-    return proto3.util.equals(LogoutRequest, a, b)
+  static equals(a: LogoutRequest | PlainMessage<LogoutRequest> | undefined, b: LogoutRequest | PlainMessage<LogoutRequest> | undefined): boolean {
+    return proto3.util.equals(LogoutRequest, a, b);
   }
 }
 
@@ -206,39 +184,33 @@ export class ValidateTokenRequest extends Message<ValidateTokenRequest> {
   /**
    * @generated from field: string access_token = 1;
    */
-  accessToken = ""
+  accessToken = "";
 
   constructor(data?: PartialMessage<ValidateTokenRequest>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "auth.ValidateTokenRequest"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "auth.ValidateTokenRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "access_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ])
+  ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ValidateTokenRequest {
-    return new ValidateTokenRequest().fromBinary(bytes, options)
+    return new ValidateTokenRequest().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ValidateTokenRequest {
-    return new ValidateTokenRequest().fromJson(jsonValue, options)
+    return new ValidateTokenRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(
-    jsonString: string,
-    options?: Partial<JsonReadOptions>,
-  ): ValidateTokenRequest {
-    return new ValidateTokenRequest().fromJsonString(jsonString, options)
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ValidateTokenRequest {
+    return new ValidateTokenRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: ValidateTokenRequest | PlainMessage<ValidateTokenRequest> | undefined,
-    b: ValidateTokenRequest | PlainMessage<ValidateTokenRequest> | undefined,
-  ): boolean {
-    return proto3.util.equals(ValidateTokenRequest, a, b)
+  static equals(a: ValidateTokenRequest | PlainMessage<ValidateTokenRequest> | undefined, b: ValidateTokenRequest | PlainMessage<ValidateTokenRequest> | undefined): boolean {
+    return proto3.util.equals(ValidateTokenRequest, a, b);
   }
 }
 
@@ -247,37 +219,29 @@ export class ValidateTokenRequest extends Message<ValidateTokenRequest> {
  */
 export class GetCurrentUserRequest extends Message<GetCurrentUserRequest> {
   constructor(data?: PartialMessage<GetCurrentUserRequest>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "auth.GetCurrentUserRequest"
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [])
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "auth.GetCurrentUserRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
 
-  static fromBinary(
-    bytes: Uint8Array,
-    options?: Partial<BinaryReadOptions>,
-  ): GetCurrentUserRequest {
-    return new GetCurrentUserRequest().fromBinary(bytes, options)
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetCurrentUserRequest {
+    return new GetCurrentUserRequest().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetCurrentUserRequest {
-    return new GetCurrentUserRequest().fromJson(jsonValue, options)
+    return new GetCurrentUserRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(
-    jsonString: string,
-    options?: Partial<JsonReadOptions>,
-  ): GetCurrentUserRequest {
-    return new GetCurrentUserRequest().fromJsonString(jsonString, options)
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetCurrentUserRequest {
+    return new GetCurrentUserRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: GetCurrentUserRequest | PlainMessage<GetCurrentUserRequest> | undefined,
-    b: GetCurrentUserRequest | PlainMessage<GetCurrentUserRequest> | undefined,
-  ): boolean {
-    return proto3.util.equals(GetCurrentUserRequest, a, b)
+  static equals(a: GetCurrentUserRequest | PlainMessage<GetCurrentUserRequest> | undefined, b: GetCurrentUserRequest | PlainMessage<GetCurrentUserRequest> | undefined): boolean {
+    return proto3.util.equals(GetCurrentUserRequest, a, b);
   }
 }
 
@@ -288,57 +252,45 @@ export class GetCurrentUserResponse extends Message<GetCurrentUserResponse> {
   /**
    * @generated from field: string user_id = 1;
    */
-  userId = ""
+  userId = "";
 
   /**
    * @generated from field: string email = 2;
    */
-  email = ""
+  email = "";
 
   /**
    * @generated from field: string name = 3;
    */
-  name = ""
+  name = "";
 
   constructor(data?: PartialMessage<GetCurrentUserResponse>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "auth.GetCurrentUserResponse"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "auth.GetCurrentUserResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "user_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "email", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ])
+  ]);
 
-  static fromBinary(
-    bytes: Uint8Array,
-    options?: Partial<BinaryReadOptions>,
-  ): GetCurrentUserResponse {
-    return new GetCurrentUserResponse().fromBinary(bytes, options)
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetCurrentUserResponse {
+    return new GetCurrentUserResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(
-    jsonValue: JsonValue,
-    options?: Partial<JsonReadOptions>,
-  ): GetCurrentUserResponse {
-    return new GetCurrentUserResponse().fromJson(jsonValue, options)
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetCurrentUserResponse {
+    return new GetCurrentUserResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(
-    jsonString: string,
-    options?: Partial<JsonReadOptions>,
-  ): GetCurrentUserResponse {
-    return new GetCurrentUserResponse().fromJsonString(jsonString, options)
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetCurrentUserResponse {
+    return new GetCurrentUserResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: GetCurrentUserResponse | PlainMessage<GetCurrentUserResponse> | undefined,
-    b: GetCurrentUserResponse | PlainMessage<GetCurrentUserResponse> | undefined,
-  ): boolean {
-    return proto3.util.equals(GetCurrentUserResponse, a, b)
+  static equals(a: GetCurrentUserResponse | PlainMessage<GetCurrentUserResponse> | undefined, b: GetCurrentUserResponse | PlainMessage<GetCurrentUserResponse> | undefined): boolean {
+    return proto3.util.equals(GetCurrentUserResponse, a, b);
   }
 }
 
@@ -351,60 +303,57 @@ export class AuthResponse extends Message<AuthResponse> {
   /**
    * @generated from field: string access_token = 1;
    */
-  accessToken = ""
+  accessToken = "";
 
   /**
    * @generated from field: string refresh_token = 2;
    */
-  refreshToken = ""
+  refreshToken = "";
 
   /**
    * @generated from field: string user_id = 3;
    */
-  userId = ""
+  userId = "";
 
   /**
    * @generated from field: string name = 4;
    */
-  name = ""
+  name = "";
 
   /**
    * @generated from field: string email = 5;
    */
-  email = ""
+  email = "";
 
   constructor(data?: PartialMessage<AuthResponse>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "auth.AuthResponse"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "auth.AuthResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "access_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "refresh_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "user_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 4, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 5, name: "email", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ])
+  ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AuthResponse {
-    return new AuthResponse().fromBinary(bytes, options)
+    return new AuthResponse().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): AuthResponse {
-    return new AuthResponse().fromJson(jsonValue, options)
+    return new AuthResponse().fromJson(jsonValue, options);
   }
 
   static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): AuthResponse {
-    return new AuthResponse().fromJsonString(jsonString, options)
+    return new AuthResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: AuthResponse | PlainMessage<AuthResponse> | undefined,
-    b: AuthResponse | PlainMessage<AuthResponse> | undefined,
-  ): boolean {
-    return proto3.util.equals(AuthResponse, a, b)
+  static equals(a: AuthResponse | PlainMessage<AuthResponse> | undefined, b: AuthResponse | PlainMessage<AuthResponse> | undefined): boolean {
+    return proto3.util.equals(AuthResponse, a, b);
   }
 }
 
@@ -415,36 +364,33 @@ export class LogoutResponse extends Message<LogoutResponse> {
   /**
    * @generated from field: string message = 1;
    */
-  message = ""
+  message = "";
 
   constructor(data?: PartialMessage<LogoutResponse>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "auth.LogoutResponse"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "auth.LogoutResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "message", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ])
+  ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): LogoutResponse {
-    return new LogoutResponse().fromBinary(bytes, options)
+    return new LogoutResponse().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): LogoutResponse {
-    return new LogoutResponse().fromJson(jsonValue, options)
+    return new LogoutResponse().fromJson(jsonValue, options);
   }
 
   static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): LogoutResponse {
-    return new LogoutResponse().fromJsonString(jsonString, options)
+    return new LogoutResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: LogoutResponse | PlainMessage<LogoutResponse> | undefined,
-    b: LogoutResponse | PlainMessage<LogoutResponse> | undefined,
-  ): boolean {
-    return proto3.util.equals(LogoutResponse, a, b)
+  static equals(a: LogoutResponse | PlainMessage<LogoutResponse> | undefined, b: LogoutResponse | PlainMessage<LogoutResponse> | undefined): boolean {
+    return proto3.util.equals(LogoutResponse, a, b);
   }
 }
 
@@ -455,59 +401,51 @@ export class ValidateTokenResponse extends Message<ValidateTokenResponse> {
   /**
    * @generated from field: bool valid = 1;
    */
-  valid = false
+  valid = false;
 
   /**
    * @generated from field: string user_id = 2;
    */
-  userId = ""
+  userId = "";
 
   /**
    * @generated from field: string email = 3;
    */
-  email = ""
+  email = "";
 
   /**
    * @generated from field: string name = 4;
    */
-  name = ""
+  name = "";
 
   constructor(data?: PartialMessage<ValidateTokenResponse>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "auth.ValidateTokenResponse"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "auth.ValidateTokenResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "valid", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
     { no: 2, name: "user_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "email", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 4, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ])
+  ]);
 
-  static fromBinary(
-    bytes: Uint8Array,
-    options?: Partial<BinaryReadOptions>,
-  ): ValidateTokenResponse {
-    return new ValidateTokenResponse().fromBinary(bytes, options)
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ValidateTokenResponse {
+    return new ValidateTokenResponse().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ValidateTokenResponse {
-    return new ValidateTokenResponse().fromJson(jsonValue, options)
+    return new ValidateTokenResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(
-    jsonString: string,
-    options?: Partial<JsonReadOptions>,
-  ): ValidateTokenResponse {
-    return new ValidateTokenResponse().fromJsonString(jsonString, options)
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ValidateTokenResponse {
+    return new ValidateTokenResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: ValidateTokenResponse | PlainMessage<ValidateTokenResponse> | undefined,
-    b: ValidateTokenResponse | PlainMessage<ValidateTokenResponse> | undefined,
-  ): boolean {
-    return proto3.util.equals(ValidateTokenResponse, a, b)
+  static equals(a: ValidateTokenResponse | PlainMessage<ValidateTokenResponse> | undefined, b: ValidateTokenResponse | PlainMessage<ValidateTokenResponse> | undefined): boolean {
+    return proto3.util.equals(ValidateTokenResponse, a, b);
   }
 }
+
