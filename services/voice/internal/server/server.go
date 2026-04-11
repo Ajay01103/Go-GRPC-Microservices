@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"connectrpc.com/connect"
 	"github.com/go-grpc-sqlc/pkg/interceptor"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/go-grpc-sqlc/voice/gen/pb"
 	"github.com/go-grpc-sqlc/voice/gen/pb/pbconnect"
+	db "github.com/go-grpc-sqlc/voice/gen/sqlc"
 	"github.com/go-grpc-sqlc/voice/internal/repository"
 	"github.com/go-grpc-sqlc/voice/internal/service"
 )
@@ -135,6 +137,61 @@ func (s *VoiceServer) GetVoicePlaybackUrl(
 	}), nil
 }
 
+// CreateVoice creates a new custom voice from uploaded audio data.
+func (s *VoiceServer) CreateVoice(
+	ctx context.Context,
+	req *connect.Request[pb.CreateVoiceRequest],
+) (*connect.Response[pb.CreateVoiceResponse], error) {
+	payload, ok := interceptor.UserPayloadFromContext(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("missing auth payload"))
+	}
+
+	if strings.TrimSpace(req.Msg.Name) == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("name is required"))
+	}
+	if strings.TrimSpace(req.Msg.Language) == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("language is required"))
+	}
+	if len(req.Msg.AudioData) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("audio_data is required"))
+	}
+
+	category, ok := categoryFromProto(req.Msg.Category)
+	if !ok {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("invalid category"))
+	}
+
+	created, err := s.svc.CreateVoice(ctx, service.CreateVoiceParams{
+		UserID:      payload.UserID.String(),
+		Name:        req.Msg.Name,
+		Description: req.Msg.Description,
+		Category:    category,
+		Language:    req.Msg.Language,
+		AudioData:   req.Msg.AudioData,
+		ContentType: req.Msg.ContentType,
+	})
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidCreateVoiceInput) {
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
+
+		s.logger.Error("CreateVoice failed", zap.Error(err))
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&pb.CreateVoiceResponse{
+		Voice: &pb.VoiceItem{
+			Id:          created.ID,
+			Name:        created.Name,
+			Description: created.Description,
+			Category:    categoryToProto(created.Category),
+			Language:    created.Language,
+			Variant:     variantToProto(created.Variant),
+		},
+	}), nil
+}
+
 // ─── enum converters ──────────────────────────────────────────────────────────
 
 func categoryToProto(s string) pb.VoiceCategory {
@@ -145,6 +202,21 @@ func categoryToProto(s string) pb.VoiceCategory {
 		return pb.VoiceCategory_VOICE_CATEGORY_CHARACTER
 	default:
 		return pb.VoiceCategory_VOICE_CATEGORY_GENERAL
+	}
+}
+
+func categoryFromProto(c pb.VoiceCategory) (db.VoiceCategory, bool) {
+	switch c {
+	case pb.VoiceCategory_VOICE_CATEGORY_UNSPECIFIED:
+		return db.VoiceCategoryGENERAL, true
+	case pb.VoiceCategory_VOICE_CATEGORY_GENERAL:
+		return db.VoiceCategoryGENERAL, true
+	case pb.VoiceCategory_VOICE_CATEGORY_NARRATION:
+		return db.VoiceCategoryNARRATION, true
+	case pb.VoiceCategory_VOICE_CATEGORY_CHARACTER:
+		return db.VoiceCategoryCHARACTER, true
+	default:
+		return "", false
 	}
 }
 

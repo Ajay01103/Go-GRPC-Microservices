@@ -5,21 +5,27 @@
 package db
 
 import (
-	"database/sql"
-	"time"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Generation struct {
-	ID                string         `json:"id"`
-	UserID            string         `json:"user_id"`
-	VoiceID           sql.NullString `json:"voice_id"`
-	VoiceName         string         `json:"voice_name"`
-	Text              string         `json:"text"`
-	R2ObjectKey       sql.NullString `json:"r2_object_key"`
-	Temperature       float64        `json:"temperature"`
-	TopP              float64        `json:"top_p"`
-	TopK              int32          `json:"top_k"`
-	RepetitionPenalty float64        `json:"repetition_penalty"`
-	CreatedAt         time.Time      `json:"created_at"`
-	UpdatedAt         time.Time      `json:"updated_at"`
+	ID                string             `json:"id"`
+	UserID            string             `json:"user_id"`
+	VoiceID           pgtype.Text        `json:"voice_id"`
+	VoiceName         string             `json:"voice_name"`
+	Text              string             `json:"text"`
+	S3ObjectKey       pgtype.Text        `json:"s3_object_key"`
+	Temperature       float64            `json:"temperature"`
+	TopP              float64            `json:"top_p"`
+	TopK              int32              `json:"top_k"`
+	RepetitionPenalty float64            `json:"repetition_penalty"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt         pgtype.Timestamptz `json:"updated_at"`
+	JobID             string             `json:"job_id"`
+	Status            string             `json:"status"`
+	AudioUrl          pgtype.Text        `json:"audio_url"`
+	ErrorMessage      pgtype.Text        `json:"error_message"`
+	QueuedAt          pgtype.Timestamptz `json:"queued_at"`
+	StartedAt         pgtype.Timestamptz `json:"started_at"`
+	CompletedAt       pgtype.Timestamptz `json:"completed_at"`
 }

@@ -497,6 +497,134 @@ func (x *GetVoicePlaybackUrlResponse) GetExpiresAtUnix() int64 {
 	return 0
 }
 
+type CreateVoiceRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	Category      VoiceCategory          `protobuf:"varint,3,opt,name=category,proto3,enum=voice.VoiceCategory" json:"category,omitempty"`
+	Language      string                 `protobuf:"bytes,4,opt,name=language,proto3" json:"language,omitempty"`
+	AudioData     []byte                 `protobuf:"bytes,5,opt,name=audio_data,json=audioData,proto3" json:"audio_data,omitempty"`
+	ContentType   string                 `protobuf:"bytes,6,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateVoiceRequest) Reset() {
+	*x = CreateVoiceRequest{}
+	mi := &file_voice_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateVoiceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateVoiceRequest) ProtoMessage() {}
+
+func (x *CreateVoiceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_voice_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateVoiceRequest.ProtoReflect.Descriptor instead.
+func (*CreateVoiceRequest) Descriptor() ([]byte, []int) {
+	return file_voice_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *CreateVoiceRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateVoiceRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *CreateVoiceRequest) GetCategory() VoiceCategory {
+	if x != nil {
+		return x.Category
+	}
+	return VoiceCategory_VOICE_CATEGORY_UNSPECIFIED
+}
+
+func (x *CreateVoiceRequest) GetLanguage() string {
+	if x != nil {
+		return x.Language
+	}
+	return ""
+}
+
+func (x *CreateVoiceRequest) GetAudioData() []byte {
+	if x != nil {
+		return x.AudioData
+	}
+	return nil
+}
+
+func (x *CreateVoiceRequest) GetContentType() string {
+	if x != nil {
+		return x.ContentType
+	}
+	return ""
+}
+
+type CreateVoiceResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Voice         *VoiceItem             `protobuf:"bytes,1,opt,name=voice,proto3" json:"voice,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateVoiceResponse) Reset() {
+	*x = CreateVoiceResponse{}
+	mi := &file_voice_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateVoiceResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateVoiceResponse) ProtoMessage() {}
+
+func (x *CreateVoiceResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_voice_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateVoiceResponse.ProtoReflect.Descriptor instead.
+func (*CreateVoiceResponse) Descriptor() ([]byte, []int) {
+	return file_voice_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *CreateVoiceResponse) GetVoice() *VoiceItem {
+	if x != nil {
+		return x.Voice
+	}
+	return nil
+}
+
 var File_voice_proto protoreflect.FileDescriptor
 
 const file_voice_proto_rawDesc = "" +
@@ -523,7 +651,17 @@ const file_voice_proto_rawDesc = "" +
 	"\bvoice_id\x18\x01 \x01(\tR\avoiceId\"W\n" +
 	"\x1bGetVoicePlaybackUrlResponse\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12&\n" +
-	"\x0fexpires_at_unix\x18\x02 \x01(\x03R\rexpiresAtUnix*\x87\x01\n" +
+	"\x0fexpires_at_unix\x18\x02 \x01(\x03R\rexpiresAtUnix\"\xda\x01\n" +
+	"\x12CreateVoiceRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x02 \x01(\tR\vdescription\x120\n" +
+	"\bcategory\x18\x03 \x01(\x0e2\x14.voice.VoiceCategoryR\bcategory\x12\x1a\n" +
+	"\blanguage\x18\x04 \x01(\tR\blanguage\x12\x1d\n" +
+	"\n" +
+	"audio_data\x18\x05 \x01(\fR\taudioData\x12!\n" +
+	"\fcontent_type\x18\x06 \x01(\tR\vcontentType\"=\n" +
+	"\x13CreateVoiceResponse\x12&\n" +
+	"\x05voice\x18\x01 \x01(\v2\x10.voice.VoiceItemR\x05voice*\x87\x01\n" +
 	"\rVoiceCategory\x12\x1e\n" +
 	"\x1aVOICE_CATEGORY_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16VOICE_CATEGORY_GENERAL\x10\x01\x12\x1c\n" +
@@ -533,11 +671,12 @@ const file_voice_proto_rawDesc = "" +
 	"\x19VOICE_VARIANT_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12VOICE_VARIANT_MALE\x10\x01\x12\x18\n" +
 	"\x14VOICE_VARIANT_FEMALE\x10\x02\x12\x19\n" +
-	"\x15VOICE_VARIANT_NEUTRAL\x10\x032\xfb\x01\n" +
+	"\x15VOICE_VARIANT_NEUTRAL\x10\x032\xc1\x02\n" +
 	"\fVoiceService\x12G\n" +
 	"\fGetAllVoices\x12\x1a.voice.GetAllVoicesRequest\x1a\x1b.voice.GetAllVoicesResponse\x12D\n" +
 	"\vDeleteVoice\x12\x19.voice.DeleteVoiceRequest\x1a\x1a.voice.DeleteVoiceResponse\x12\\\n" +
-	"\x13GetVoicePlaybackUrl\x12!.voice.GetVoicePlaybackUrlRequest\x1a\".voice.GetVoicePlaybackUrlResponseB)Z'github.com/go-grpc-sqlc/voice/gen/pb;pbb\x06proto3"
+	"\x13GetVoicePlaybackUrl\x12!.voice.GetVoicePlaybackUrlRequest\x1a\".voice.GetVoicePlaybackUrlResponse\x12D\n" +
+	"\vCreateVoice\x12\x19.voice.CreateVoiceRequest\x1a\x1a.voice.CreateVoiceResponseB)Z'github.com/go-grpc-sqlc/voice/gen/pb;pbb\x06proto3"
 
 var (
 	file_voice_proto_rawDescOnce sync.Once
@@ -552,7 +691,7 @@ func file_voice_proto_rawDescGZIP() []byte {
 }
 
 var file_voice_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_voice_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_voice_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_voice_proto_goTypes = []any{
 	(VoiceCategory)(0),                  // 0: voice.VoiceCategory
 	(VoiceVariant)(0),                   // 1: voice.VoiceVariant
@@ -563,22 +702,28 @@ var file_voice_proto_goTypes = []any{
 	(*DeleteVoiceResponse)(nil),         // 6: voice.DeleteVoiceResponse
 	(*GetVoicePlaybackUrlRequest)(nil),  // 7: voice.GetVoicePlaybackUrlRequest
 	(*GetVoicePlaybackUrlResponse)(nil), // 8: voice.GetVoicePlaybackUrlResponse
+	(*CreateVoiceRequest)(nil),          // 9: voice.CreateVoiceRequest
+	(*CreateVoiceResponse)(nil),         // 10: voice.CreateVoiceResponse
 }
 var file_voice_proto_depIdxs = []int32{
-	0, // 0: voice.VoiceItem.category:type_name -> voice.VoiceCategory
-	1, // 1: voice.VoiceItem.variant:type_name -> voice.VoiceVariant
-	2, // 2: voice.GetAllVoicesResponse.voices:type_name -> voice.VoiceItem
-	3, // 3: voice.VoiceService.GetAllVoices:input_type -> voice.GetAllVoicesRequest
-	5, // 4: voice.VoiceService.DeleteVoice:input_type -> voice.DeleteVoiceRequest
-	7, // 5: voice.VoiceService.GetVoicePlaybackUrl:input_type -> voice.GetVoicePlaybackUrlRequest
-	4, // 6: voice.VoiceService.GetAllVoices:output_type -> voice.GetAllVoicesResponse
-	6, // 7: voice.VoiceService.DeleteVoice:output_type -> voice.DeleteVoiceResponse
-	8, // 8: voice.VoiceService.GetVoicePlaybackUrl:output_type -> voice.GetVoicePlaybackUrlResponse
-	6, // [6:9] is the sub-list for method output_type
-	3, // [3:6] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	0,  // 0: voice.VoiceItem.category:type_name -> voice.VoiceCategory
+	1,  // 1: voice.VoiceItem.variant:type_name -> voice.VoiceVariant
+	2,  // 2: voice.GetAllVoicesResponse.voices:type_name -> voice.VoiceItem
+	0,  // 3: voice.CreateVoiceRequest.category:type_name -> voice.VoiceCategory
+	2,  // 4: voice.CreateVoiceResponse.voice:type_name -> voice.VoiceItem
+	3,  // 5: voice.VoiceService.GetAllVoices:input_type -> voice.GetAllVoicesRequest
+	5,  // 6: voice.VoiceService.DeleteVoice:input_type -> voice.DeleteVoiceRequest
+	7,  // 7: voice.VoiceService.GetVoicePlaybackUrl:input_type -> voice.GetVoicePlaybackUrlRequest
+	9,  // 8: voice.VoiceService.CreateVoice:input_type -> voice.CreateVoiceRequest
+	4,  // 9: voice.VoiceService.GetAllVoices:output_type -> voice.GetAllVoicesResponse
+	6,  // 10: voice.VoiceService.DeleteVoice:output_type -> voice.DeleteVoiceResponse
+	8,  // 11: voice.VoiceService.GetVoicePlaybackUrl:output_type -> voice.GetVoicePlaybackUrlResponse
+	10, // 12: voice.VoiceService.CreateVoice:output_type -> voice.CreateVoiceResponse
+	9,  // [9:13] is the sub-list for method output_type
+	5,  // [5:9] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_voice_proto_init() }
@@ -592,7 +737,7 @@ func file_voice_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_voice_proto_rawDesc), len(file_voice_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

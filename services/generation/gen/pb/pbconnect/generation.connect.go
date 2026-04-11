@@ -33,14 +33,26 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// GenerationServiceHelloGenerationProcedure is the fully-qualified name of the GenerationService's
-	// HelloGeneration RPC.
-	GenerationServiceHelloGenerationProcedure = "/generation.GenerationService/HelloGeneration"
+	// GenerationServiceGetGenerationProcedure is the fully-qualified name of the GenerationService's
+	// GetGeneration RPC.
+	GenerationServiceGetGenerationProcedure = "/generation.GenerationService/GetGeneration"
+	// GenerationServiceListGenerationsProcedure is the fully-qualified name of the GenerationService's
+	// ListGenerations RPC.
+	GenerationServiceListGenerationsProcedure = "/generation.GenerationService/ListGenerations"
+	// GenerationServiceGenerateSpeechProcedure is the fully-qualified name of the GenerationService's
+	// GenerateSpeech RPC.
+	GenerationServiceGenerateSpeechProcedure = "/generation.GenerationService/GenerateSpeech"
+	// GenerationServiceGetJobStatusProcedure is the fully-qualified name of the GenerationService's
+	// GetJobStatus RPC.
+	GenerationServiceGetJobStatusProcedure = "/generation.GenerationService/GetJobStatus"
 )
 
 // GenerationServiceClient is a client for the generation.GenerationService service.
 type GenerationServiceClient interface {
-	HelloGeneration(context.Context, *connect.Request[pb.HelloGenerationRequest]) (*connect.Response[pb.HelloGenerationResponse], error)
+	GetGeneration(context.Context, *connect.Request[pb.GetGenerationRequest]) (*connect.Response[pb.GetGenerationResponse], error)
+	ListGenerations(context.Context, *connect.Request[pb.ListGenerationsRequest]) (*connect.Response[pb.ListGenerationsResponse], error)
+	GenerateSpeech(context.Context, *connect.Request[pb.GenerateSpeechRequest]) (*connect.Response[pb.GenerateSpeechResponse], error)
+	GetJobStatus(context.Context, *connect.Request[pb.GetJobStatusRequest]) (*connect.Response[pb.GetJobStatusResponse], error)
 }
 
 // NewGenerationServiceClient constructs a client for the generation.GenerationService service. By
@@ -54,10 +66,28 @@ func NewGenerationServiceClient(httpClient connect.HTTPClient, baseURL string, o
 	baseURL = strings.TrimRight(baseURL, "/")
 	generationServiceMethods := pb.File_generation_proto.Services().ByName("GenerationService").Methods()
 	return &generationServiceClient{
-		helloGeneration: connect.NewClient[pb.HelloGenerationRequest, pb.HelloGenerationResponse](
+		getGeneration: connect.NewClient[pb.GetGenerationRequest, pb.GetGenerationResponse](
 			httpClient,
-			baseURL+GenerationServiceHelloGenerationProcedure,
-			connect.WithSchema(generationServiceMethods.ByName("HelloGeneration")),
+			baseURL+GenerationServiceGetGenerationProcedure,
+			connect.WithSchema(generationServiceMethods.ByName("GetGeneration")),
+			connect.WithClientOptions(opts...),
+		),
+		listGenerations: connect.NewClient[pb.ListGenerationsRequest, pb.ListGenerationsResponse](
+			httpClient,
+			baseURL+GenerationServiceListGenerationsProcedure,
+			connect.WithSchema(generationServiceMethods.ByName("ListGenerations")),
+			connect.WithClientOptions(opts...),
+		),
+		generateSpeech: connect.NewClient[pb.GenerateSpeechRequest, pb.GenerateSpeechResponse](
+			httpClient,
+			baseURL+GenerationServiceGenerateSpeechProcedure,
+			connect.WithSchema(generationServiceMethods.ByName("GenerateSpeech")),
+			connect.WithClientOptions(opts...),
+		),
+		getJobStatus: connect.NewClient[pb.GetJobStatusRequest, pb.GetJobStatusResponse](
+			httpClient,
+			baseURL+GenerationServiceGetJobStatusProcedure,
+			connect.WithSchema(generationServiceMethods.ByName("GetJobStatus")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -65,17 +95,38 @@ func NewGenerationServiceClient(httpClient connect.HTTPClient, baseURL string, o
 
 // generationServiceClient implements GenerationServiceClient.
 type generationServiceClient struct {
-	helloGeneration *connect.Client[pb.HelloGenerationRequest, pb.HelloGenerationResponse]
+	getGeneration   *connect.Client[pb.GetGenerationRequest, pb.GetGenerationResponse]
+	listGenerations *connect.Client[pb.ListGenerationsRequest, pb.ListGenerationsResponse]
+	generateSpeech  *connect.Client[pb.GenerateSpeechRequest, pb.GenerateSpeechResponse]
+	getJobStatus    *connect.Client[pb.GetJobStatusRequest, pb.GetJobStatusResponse]
 }
 
-// HelloGeneration calls generation.GenerationService.HelloGeneration.
-func (c *generationServiceClient) HelloGeneration(ctx context.Context, req *connect.Request[pb.HelloGenerationRequest]) (*connect.Response[pb.HelloGenerationResponse], error) {
-	return c.helloGeneration.CallUnary(ctx, req)
+// GetGeneration calls generation.GenerationService.GetGeneration.
+func (c *generationServiceClient) GetGeneration(ctx context.Context, req *connect.Request[pb.GetGenerationRequest]) (*connect.Response[pb.GetGenerationResponse], error) {
+	return c.getGeneration.CallUnary(ctx, req)
+}
+
+// ListGenerations calls generation.GenerationService.ListGenerations.
+func (c *generationServiceClient) ListGenerations(ctx context.Context, req *connect.Request[pb.ListGenerationsRequest]) (*connect.Response[pb.ListGenerationsResponse], error) {
+	return c.listGenerations.CallUnary(ctx, req)
+}
+
+// GenerateSpeech calls generation.GenerationService.GenerateSpeech.
+func (c *generationServiceClient) GenerateSpeech(ctx context.Context, req *connect.Request[pb.GenerateSpeechRequest]) (*connect.Response[pb.GenerateSpeechResponse], error) {
+	return c.generateSpeech.CallUnary(ctx, req)
+}
+
+// GetJobStatus calls generation.GenerationService.GetJobStatus.
+func (c *generationServiceClient) GetJobStatus(ctx context.Context, req *connect.Request[pb.GetJobStatusRequest]) (*connect.Response[pb.GetJobStatusResponse], error) {
+	return c.getJobStatus.CallUnary(ctx, req)
 }
 
 // GenerationServiceHandler is an implementation of the generation.GenerationService service.
 type GenerationServiceHandler interface {
-	HelloGeneration(context.Context, *connect.Request[pb.HelloGenerationRequest]) (*connect.Response[pb.HelloGenerationResponse], error)
+	GetGeneration(context.Context, *connect.Request[pb.GetGenerationRequest]) (*connect.Response[pb.GetGenerationResponse], error)
+	ListGenerations(context.Context, *connect.Request[pb.ListGenerationsRequest]) (*connect.Response[pb.ListGenerationsResponse], error)
+	GenerateSpeech(context.Context, *connect.Request[pb.GenerateSpeechRequest]) (*connect.Response[pb.GenerateSpeechResponse], error)
+	GetJobStatus(context.Context, *connect.Request[pb.GetJobStatusRequest]) (*connect.Response[pb.GetJobStatusResponse], error)
 }
 
 // NewGenerationServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -85,16 +136,40 @@ type GenerationServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewGenerationServiceHandler(svc GenerationServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	generationServiceMethods := pb.File_generation_proto.Services().ByName("GenerationService").Methods()
-	generationServiceHelloGenerationHandler := connect.NewUnaryHandler(
-		GenerationServiceHelloGenerationProcedure,
-		svc.HelloGeneration,
-		connect.WithSchema(generationServiceMethods.ByName("HelloGeneration")),
+	generationServiceGetGenerationHandler := connect.NewUnaryHandler(
+		GenerationServiceGetGenerationProcedure,
+		svc.GetGeneration,
+		connect.WithSchema(generationServiceMethods.ByName("GetGeneration")),
+		connect.WithHandlerOptions(opts...),
+	)
+	generationServiceListGenerationsHandler := connect.NewUnaryHandler(
+		GenerationServiceListGenerationsProcedure,
+		svc.ListGenerations,
+		connect.WithSchema(generationServiceMethods.ByName("ListGenerations")),
+		connect.WithHandlerOptions(opts...),
+	)
+	generationServiceGenerateSpeechHandler := connect.NewUnaryHandler(
+		GenerationServiceGenerateSpeechProcedure,
+		svc.GenerateSpeech,
+		connect.WithSchema(generationServiceMethods.ByName("GenerateSpeech")),
+		connect.WithHandlerOptions(opts...),
+	)
+	generationServiceGetJobStatusHandler := connect.NewUnaryHandler(
+		GenerationServiceGetJobStatusProcedure,
+		svc.GetJobStatus,
+		connect.WithSchema(generationServiceMethods.ByName("GetJobStatus")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/generation.GenerationService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case GenerationServiceHelloGenerationProcedure:
-			generationServiceHelloGenerationHandler.ServeHTTP(w, r)
+		case GenerationServiceGetGenerationProcedure:
+			generationServiceGetGenerationHandler.ServeHTTP(w, r)
+		case GenerationServiceListGenerationsProcedure:
+			generationServiceListGenerationsHandler.ServeHTTP(w, r)
+		case GenerationServiceGenerateSpeechProcedure:
+			generationServiceGenerateSpeechHandler.ServeHTTP(w, r)
+		case GenerationServiceGetJobStatusProcedure:
+			generationServiceGetJobStatusHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -104,6 +179,18 @@ func NewGenerationServiceHandler(svc GenerationServiceHandler, opts ...connect.H
 // UnimplementedGenerationServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedGenerationServiceHandler struct{}
 
-func (UnimplementedGenerationServiceHandler) HelloGeneration(context.Context, *connect.Request[pb.HelloGenerationRequest]) (*connect.Response[pb.HelloGenerationResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("generation.GenerationService.HelloGeneration is not implemented"))
+func (UnimplementedGenerationServiceHandler) GetGeneration(context.Context, *connect.Request[pb.GetGenerationRequest]) (*connect.Response[pb.GetGenerationResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("generation.GenerationService.GetGeneration is not implemented"))
+}
+
+func (UnimplementedGenerationServiceHandler) ListGenerations(context.Context, *connect.Request[pb.ListGenerationsRequest]) (*connect.Response[pb.ListGenerationsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("generation.GenerationService.ListGenerations is not implemented"))
+}
+
+func (UnimplementedGenerationServiceHandler) GenerateSpeech(context.Context, *connect.Request[pb.GenerateSpeechRequest]) (*connect.Response[pb.GenerateSpeechResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("generation.GenerationService.GenerateSpeech is not implemented"))
+}
+
+func (UnimplementedGenerationServiceHandler) GetJobStatus(context.Context, *connect.Request[pb.GetJobStatusRequest]) (*connect.Response[pb.GetJobStatusResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("generation.GenerationService.GetJobStatus is not implemented"))
 }

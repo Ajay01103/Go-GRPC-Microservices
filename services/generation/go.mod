@@ -6,6 +6,7 @@ require (
 	connectrpc.com/connect v1.19.1
 	go.uber.org/zap v1.27.1
 	golang.org/x/net v0.52.0
+	github.com/redis/go-redis/v9 v9.16.0
 	google.golang.org/protobuf v1.36.11
 )
 

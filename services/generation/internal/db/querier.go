@@ -9,7 +9,13 @@ import (
 )
 
 type Querier interface {
-	GetGeneration(ctx context.Context, id string) (Generation, error)
+	CreateGenerationJob(ctx context.Context, arg CreateGenerationJobParams) (Generation, error)
+	GetGenerationByIDAndUser(ctx context.Context, arg GetGenerationByIDAndUserParams) (Generation, error)
+	GetGenerationByJobIDAndUser(ctx context.Context, arg GetGenerationByJobIDAndUserParams) (Generation, error)
+	ListGenerationsByUser(ctx context.Context, userID string) ([]Generation, error)
+	MarkGenerationCompleted(ctx context.Context, arg MarkGenerationCompletedParams) error
+	MarkGenerationFailed(ctx context.Context, arg MarkGenerationFailedParams) error
+	MarkGenerationProcessing(ctx context.Context, id string) error
 }
 
 var _ Querier = (*Queries)(nil)

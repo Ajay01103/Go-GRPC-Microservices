@@ -4,11 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path"
+	"strings"
 	"time"
 
 	db "github.com/go-grpc-sqlc/voice/gen/sqlc"
 	"github.com/go-grpc-sqlc/voice/internal/repository"
 	"github.com/go-grpc-sqlc/voice/internal/s3"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"go.uber.org/zap"
 )
 
@@ -29,6 +33,17 @@ type VoiceItem struct {
 	Variant     string
 }
 
+// CreateVoiceParams bundles inputs for custom voice creation.
+type CreateVoiceParams struct {
+	UserID      string
+	Name        string
+	Description string
+	Category    db.VoiceCategory
+	Language    string
+	AudioData   []byte
+	ContentType string
+}
+
 // VoiceService handles all business logic for voices.
 type VoiceService struct {
 	repo   repository.Repository
@@ -37,6 +52,9 @@ type VoiceService struct {
 }
 
 var ErrVoiceAccessDenied = errors.New("voice access denied")
+var ErrInvalidCreateVoiceInput = errors.New("invalid create voice input")
+
+const maxCreateVoiceAudioBytes = 20 * 1024 * 1024
 
 // New constructs a VoiceService.
 func New(repo repository.Repository, s3Client *s3.Client, logger *zap.Logger) *VoiceService {
@@ -119,13 +137,67 @@ func (s *VoiceService) Delete(ctx context.Context, id, userID string) error {
 	return nil
 }
 
+// CreateVoice uploads a user audio sample and stores its metadata.
+func (s *VoiceService) CreateVoice(ctx context.Context, params CreateVoiceParams) (VoiceItem, error) {
+	name := strings.TrimSpace(params.Name)
+	language := strings.TrimSpace(params.Language)
+
+	if strings.TrimSpace(params.UserID) == "" || name == "" || language == "" {
+		return VoiceItem{}, ErrInvalidCreateVoiceInput
+	}
+	if len(params.AudioData) == 0 || len(params.AudioData) > maxCreateVoiceAudioBytes {
+		return VoiceItem{}, ErrInvalidCreateVoiceInput
+	}
+	if params.Category == "" {
+		params.Category = db.VoiceCategoryGENERAL
+	}
+
+	voiceID := uuid.NewString()
+	s3Key := buildS3ObjectKey(params.UserID, voiceID, params.ContentType)
+
+	if err := s.s3.Upload(ctx, s3.UploadOptions{
+		Key:         s3Key,
+		Body:        params.AudioData,
+		ContentType: normalizeContentType(params.ContentType),
+	}); err != nil {
+		return VoiceItem{}, fmt.Errorf("service: upload voice audio: %w", err)
+	}
+
+	created, err := s.repo.CreateVoice(ctx, repository.CreateVoiceParams{
+		ID:          voiceID,
+		UserID:      params.UserID,
+		Name:        name,
+		Description: strings.TrimSpace(params.Description),
+		Category:    params.Category,
+		Language:    language,
+		Variant:     db.VoiceVariantNEUTRAL,
+		S3ObjectKey: s3Key,
+	})
+	if err != nil {
+		if cleanupErr := s.s3.Delete(ctx, s3Key); cleanupErr != nil {
+			s.logger.Warn("failed to cleanup uploaded audio after create error",
+				zap.String("voice_id", voiceID),
+				zap.String("s3_key", s3Key),
+				zap.Error(cleanupErr),
+			)
+		}
+		return VoiceItem{}, fmt.Errorf("service: create voice record: %w", err)
+	}
+
+	return VoiceItem{
+		ID:          created.ID,
+		Name:        created.Name,
+		Description: textOrEmpty(created.Description),
+		Category:    string(created.Category),
+		Language:    created.Language,
+		Variant:     string(created.Variant),
+	}, nil
+}
+
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 func rowToItem(r db.ListCustomVoicesRow) VoiceItem {
-	desc := ""
-	if r.Description.Valid {
-		desc = r.Description.String
-	}
+	desc := textOrEmpty(r.Description)
 	return VoiceItem{
 		ID:          r.ID,
 		Name:        r.Name,
@@ -134,4 +206,41 @@ func rowToItem(r db.ListCustomVoicesRow) VoiceItem {
 		Language:    r.Language,
 		Variant:     string(r.Variant),
 	}
+}
+
+func textOrEmpty(v pgtype.Text) string {
+	if v.Valid {
+		return v.String
+	}
+	return ""
+}
+
+func buildS3ObjectKey(userID, voiceID, contentType string) string {
+	ext := extensionFromContentType(contentType)
+	return path.Join("voices", userID, fmt.Sprintf("%s%s", voiceID, ext))
+}
+
+func extensionFromContentType(contentType string) string {
+	switch strings.ToLower(strings.TrimSpace(contentType)) {
+	case "audio/mpeg", "audio/mp3":
+		return ".mp3"
+	case "audio/ogg":
+		return ".ogg"
+	case "audio/webm":
+		return ".webm"
+	case "audio/x-wav", "audio/wav":
+		return ".wav"
+	case "audio/mp4", "audio/aac":
+		return ".m4a"
+	default:
+		return ".wav"
+	}
+}
+
+func normalizeContentType(contentType string) string {
+	ct := strings.TrimSpace(contentType)
+	if ct == "" {
+		return "audio/wav"
+	}
+	return ct
 }

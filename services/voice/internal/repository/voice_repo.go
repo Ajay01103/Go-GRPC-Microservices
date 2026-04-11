@@ -31,11 +31,24 @@ type ListVoicesParams struct {
 	Query  string // empty = no search filter
 }
 
+// CreateVoiceParams bundles parameters for creating a custom voice.
+type CreateVoiceParams struct {
+	ID          string
+	UserID      string
+	Name        string
+	Description string
+	Category    db.VoiceCategory
+	Language    string
+	Variant     db.VoiceVariant
+	S3ObjectKey string
+}
+
 // Repository defines the data access contract for voices.
 type Repository interface {
 	ListVoices(ctx context.Context, params ListVoicesParams) ([]db.ListCustomVoicesRow, error)
 	GetVoiceByID(ctx context.Context, id string) (db.Voice, error)
 	GetVoiceByIDAndUser(ctx context.Context, id, userID string) (db.Voice, error)
+	CreateVoice(ctx context.Context, params CreateVoiceParams) (db.Voice, error)
 	DeleteVoice(ctx context.Context, id, userID string) error
 }
 
@@ -144,6 +157,31 @@ func (r *VoiceRepo) GetVoiceByIDAndUser(ctx context.Context, id, userID string) 
 		}
 		return db.Voice{}, fmt.Errorf("repository: get voice: %w", err)
 	}
+	return voice, nil
+}
+
+// CreateVoice creates a new custom voice record.
+func (r *VoiceRepo) CreateVoice(ctx context.Context, params CreateVoiceParams) (db.Voice, error) {
+	voice, err := r.q.CreateVoice(ctx, db.CreateVoiceParams{
+		ID:     params.ID,
+		UserID: params.UserID,
+		Name:   params.Name,
+		Description: pgtype.Text{
+			String: params.Description,
+			Valid:  params.Description != "",
+		},
+		Category: params.Category,
+		Language: params.Language,
+		Variant:  params.Variant,
+		S3ObjectKey: pgtype.Text{
+			String: params.S3ObjectKey,
+			Valid:  params.S3ObjectKey != "",
+		},
+	})
+	if err != nil {
+		return db.Voice{}, fmt.Errorf("repository: create voice: %w", err)
+	}
+
 	return voice, nil
 }
 

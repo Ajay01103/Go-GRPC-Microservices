@@ -21,71 +21,139 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type HelloGenerationRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
+type GenerationJobStatus int32
 
-func (x *HelloGenerationRequest) Reset() {
-	*x = HelloGenerationRequest{}
-	mi := &file_generation_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
+const (
+	GenerationJobStatus_GENERATION_JOB_STATUS_UNSPECIFIED GenerationJobStatus = 0
+	GenerationJobStatus_GENERATION_JOB_STATUS_QUEUED      GenerationJobStatus = 1
+	GenerationJobStatus_GENERATION_JOB_STATUS_PROCESSING  GenerationJobStatus = 2
+	GenerationJobStatus_GENERATION_JOB_STATUS_COMPLETED   GenerationJobStatus = 3
+	GenerationJobStatus_GENERATION_JOB_STATUS_FAILED      GenerationJobStatus = 4
+)
 
-func (x *HelloGenerationRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HelloGenerationRequest) ProtoMessage() {}
-
-func (x *HelloGenerationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_generation_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
+// Enum value maps for GenerationJobStatus.
+var (
+	GenerationJobStatus_name = map[int32]string{
+		0: "GENERATION_JOB_STATUS_UNSPECIFIED",
+		1: "GENERATION_JOB_STATUS_QUEUED",
+		2: "GENERATION_JOB_STATUS_PROCESSING",
+		3: "GENERATION_JOB_STATUS_COMPLETED",
+		4: "GENERATION_JOB_STATUS_FAILED",
 	}
-	return mi.MessageOf(x)
+	GenerationJobStatus_value = map[string]int32{
+		"GENERATION_JOB_STATUS_UNSPECIFIED": 0,
+		"GENERATION_JOB_STATUS_QUEUED":      1,
+		"GENERATION_JOB_STATUS_PROCESSING":  2,
+		"GENERATION_JOB_STATUS_COMPLETED":   3,
+		"GENERATION_JOB_STATUS_FAILED":      4,
+	}
+)
+
+func (x GenerationJobStatus) Enum() *GenerationJobStatus {
+	p := new(GenerationJobStatus)
+	*p = x
+	return p
 }
 
-// Deprecated: Use HelloGenerationRequest.ProtoReflect.Descriptor instead.
-func (*HelloGenerationRequest) Descriptor() ([]byte, []int) {
+func (x GenerationJobStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (GenerationJobStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_generation_proto_enumTypes[0].Descriptor()
+}
+
+func (GenerationJobStatus) Type() protoreflect.EnumType {
+	return &file_generation_proto_enumTypes[0]
+}
+
+func (x GenerationJobStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use GenerationJobStatus.Descriptor instead.
+func (GenerationJobStatus) EnumDescriptor() ([]byte, []int) {
 	return file_generation_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *HelloGenerationRequest) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-type HelloGenerationResponse struct {
+type GetGenerationRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HelloGenerationResponse) Reset() {
-	*x = HelloGenerationResponse{}
+func (x *GetGenerationRequest) Reset() {
+	*x = GetGenerationRequest{}
+	mi := &file_generation_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetGenerationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetGenerationRequest) ProtoMessage() {}
+
+func (x *GetGenerationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_generation_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetGenerationRequest.ProtoReflect.Descriptor instead.
+func (*GetGenerationRequest) Descriptor() ([]byte, []int) {
+	return file_generation_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *GetGenerationRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type GetGenerationResponse struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Id                string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	JobId             string                 `protobuf:"bytes,2,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	VoiceId           string                 `protobuf:"bytes,3,opt,name=voice_id,json=voiceId,proto3" json:"voice_id,omitempty"`
+	VoiceName         string                 `protobuf:"bytes,4,opt,name=voice_name,json=voiceName,proto3" json:"voice_name,omitempty"`
+	Text              string                 `protobuf:"bytes,5,opt,name=text,proto3" json:"text,omitempty"`
+	Temperature       float64                `protobuf:"fixed64,6,opt,name=temperature,proto3" json:"temperature,omitempty"`
+	TopP              float64                `protobuf:"fixed64,7,opt,name=top_p,json=topP,proto3" json:"top_p,omitempty"`
+	TopK              int32                  `protobuf:"varint,8,opt,name=top_k,json=topK,proto3" json:"top_k,omitempty"`
+	RepetitionPenalty float64                `protobuf:"fixed64,9,opt,name=repetition_penalty,json=repetitionPenalty,proto3" json:"repetition_penalty,omitempty"`
+	AudioUrl          string                 `protobuf:"bytes,10,opt,name=audio_url,json=audioUrl,proto3" json:"audio_url,omitempty"`
+	Status            GenerationJobStatus    `protobuf:"varint,11,opt,name=status,proto3,enum=generation.GenerationJobStatus" json:"status,omitempty"`
+	ErrorMessage      string                 `protobuf:"bytes,12,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	CreatedAtUnix     int64                  `protobuf:"varint,13,opt,name=created_at_unix,json=createdAtUnix,proto3" json:"created_at_unix,omitempty"`
+	UpdatedAtUnix     int64                  `protobuf:"varint,14,opt,name=updated_at_unix,json=updatedAtUnix,proto3" json:"updated_at_unix,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *GetGenerationResponse) Reset() {
+	*x = GetGenerationResponse{}
 	mi := &file_generation_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HelloGenerationResponse) String() string {
+func (x *GetGenerationResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HelloGenerationResponse) ProtoMessage() {}
+func (*GetGenerationResponse) ProtoMessage() {}
 
-func (x *HelloGenerationResponse) ProtoReflect() protoreflect.Message {
+func (x *GetGenerationResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_generation_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -97,16 +165,615 @@ func (x *HelloGenerationResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HelloGenerationResponse.ProtoReflect.Descriptor instead.
-func (*HelloGenerationResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetGenerationResponse.ProtoReflect.Descriptor instead.
+func (*GetGenerationResponse) Descriptor() ([]byte, []int) {
 	return file_generation_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *HelloGenerationResponse) GetMessage() string {
+func (x *GetGenerationResponse) GetId() string {
 	if x != nil {
-		return x.Message
+		return x.Id
 	}
 	return ""
+}
+
+func (x *GetGenerationResponse) GetJobId() string {
+	if x != nil {
+		return x.JobId
+	}
+	return ""
+}
+
+func (x *GetGenerationResponse) GetVoiceId() string {
+	if x != nil {
+		return x.VoiceId
+	}
+	return ""
+}
+
+func (x *GetGenerationResponse) GetVoiceName() string {
+	if x != nil {
+		return x.VoiceName
+	}
+	return ""
+}
+
+func (x *GetGenerationResponse) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+func (x *GetGenerationResponse) GetTemperature() float64 {
+	if x != nil {
+		return x.Temperature
+	}
+	return 0
+}
+
+func (x *GetGenerationResponse) GetTopP() float64 {
+	if x != nil {
+		return x.TopP
+	}
+	return 0
+}
+
+func (x *GetGenerationResponse) GetTopK() int32 {
+	if x != nil {
+		return x.TopK
+	}
+	return 0
+}
+
+func (x *GetGenerationResponse) GetRepetitionPenalty() float64 {
+	if x != nil {
+		return x.RepetitionPenalty
+	}
+	return 0
+}
+
+func (x *GetGenerationResponse) GetAudioUrl() string {
+	if x != nil {
+		return x.AudioUrl
+	}
+	return ""
+}
+
+func (x *GetGenerationResponse) GetStatus() GenerationJobStatus {
+	if x != nil {
+		return x.Status
+	}
+	return GenerationJobStatus_GENERATION_JOB_STATUS_UNSPECIFIED
+}
+
+func (x *GetGenerationResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+func (x *GetGenerationResponse) GetCreatedAtUnix() int64 {
+	if x != nil {
+		return x.CreatedAtUnix
+	}
+	return 0
+}
+
+func (x *GetGenerationResponse) GetUpdatedAtUnix() int64 {
+	if x != nil {
+		return x.UpdatedAtUnix
+	}
+	return 0
+}
+
+type GenerationItem struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Id                string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	JobId             string                 `protobuf:"bytes,2,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	VoiceId           string                 `protobuf:"bytes,3,opt,name=voice_id,json=voiceId,proto3" json:"voice_id,omitempty"`
+	VoiceName         string                 `protobuf:"bytes,4,opt,name=voice_name,json=voiceName,proto3" json:"voice_name,omitempty"`
+	Text              string                 `protobuf:"bytes,5,opt,name=text,proto3" json:"text,omitempty"`
+	Temperature       float64                `protobuf:"fixed64,6,opt,name=temperature,proto3" json:"temperature,omitempty"`
+	TopP              float64                `protobuf:"fixed64,7,opt,name=top_p,json=topP,proto3" json:"top_p,omitempty"`
+	TopK              int32                  `protobuf:"varint,8,opt,name=top_k,json=topK,proto3" json:"top_k,omitempty"`
+	RepetitionPenalty float64                `protobuf:"fixed64,9,opt,name=repetition_penalty,json=repetitionPenalty,proto3" json:"repetition_penalty,omitempty"`
+	AudioUrl          string                 `protobuf:"bytes,10,opt,name=audio_url,json=audioUrl,proto3" json:"audio_url,omitempty"`
+	Status            GenerationJobStatus    `protobuf:"varint,11,opt,name=status,proto3,enum=generation.GenerationJobStatus" json:"status,omitempty"`
+	CreatedAtUnix     int64                  `protobuf:"varint,12,opt,name=created_at_unix,json=createdAtUnix,proto3" json:"created_at_unix,omitempty"`
+	UpdatedAtUnix     int64                  `protobuf:"varint,13,opt,name=updated_at_unix,json=updatedAtUnix,proto3" json:"updated_at_unix,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *GenerationItem) Reset() {
+	*x = GenerationItem{}
+	mi := &file_generation_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GenerationItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GenerationItem) ProtoMessage() {}
+
+func (x *GenerationItem) ProtoReflect() protoreflect.Message {
+	mi := &file_generation_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GenerationItem.ProtoReflect.Descriptor instead.
+func (*GenerationItem) Descriptor() ([]byte, []int) {
+	return file_generation_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GenerationItem) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *GenerationItem) GetJobId() string {
+	if x != nil {
+		return x.JobId
+	}
+	return ""
+}
+
+func (x *GenerationItem) GetVoiceId() string {
+	if x != nil {
+		return x.VoiceId
+	}
+	return ""
+}
+
+func (x *GenerationItem) GetVoiceName() string {
+	if x != nil {
+		return x.VoiceName
+	}
+	return ""
+}
+
+func (x *GenerationItem) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+func (x *GenerationItem) GetTemperature() float64 {
+	if x != nil {
+		return x.Temperature
+	}
+	return 0
+}
+
+func (x *GenerationItem) GetTopP() float64 {
+	if x != nil {
+		return x.TopP
+	}
+	return 0
+}
+
+func (x *GenerationItem) GetTopK() int32 {
+	if x != nil {
+		return x.TopK
+	}
+	return 0
+}
+
+func (x *GenerationItem) GetRepetitionPenalty() float64 {
+	if x != nil {
+		return x.RepetitionPenalty
+	}
+	return 0
+}
+
+func (x *GenerationItem) GetAudioUrl() string {
+	if x != nil {
+		return x.AudioUrl
+	}
+	return ""
+}
+
+func (x *GenerationItem) GetStatus() GenerationJobStatus {
+	if x != nil {
+		return x.Status
+	}
+	return GenerationJobStatus_GENERATION_JOB_STATUS_UNSPECIFIED
+}
+
+func (x *GenerationItem) GetCreatedAtUnix() int64 {
+	if x != nil {
+		return x.CreatedAtUnix
+	}
+	return 0
+}
+
+func (x *GenerationItem) GetUpdatedAtUnix() int64 {
+	if x != nil {
+		return x.UpdatedAtUnix
+	}
+	return 0
+}
+
+type ListGenerationsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListGenerationsRequest) Reset() {
+	*x = ListGenerationsRequest{}
+	mi := &file_generation_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListGenerationsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListGenerationsRequest) ProtoMessage() {}
+
+func (x *ListGenerationsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_generation_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListGenerationsRequest.ProtoReflect.Descriptor instead.
+func (*ListGenerationsRequest) Descriptor() ([]byte, []int) {
+	return file_generation_proto_rawDescGZIP(), []int{3}
+}
+
+type ListGenerationsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Generations   []*GenerationItem      `protobuf:"bytes,1,rep,name=generations,proto3" json:"generations,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListGenerationsResponse) Reset() {
+	*x = ListGenerationsResponse{}
+	mi := &file_generation_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListGenerationsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListGenerationsResponse) ProtoMessage() {}
+
+func (x *ListGenerationsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_generation_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListGenerationsResponse.ProtoReflect.Descriptor instead.
+func (*ListGenerationsResponse) Descriptor() ([]byte, []int) {
+	return file_generation_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ListGenerationsResponse) GetGenerations() []*GenerationItem {
+	if x != nil {
+		return x.Generations
+	}
+	return nil
+}
+
+type GenerateSpeechRequest struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Text              string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
+	VoiceId           string                 `protobuf:"bytes,2,opt,name=voice_id,json=voiceId,proto3" json:"voice_id,omitempty"`
+	VoiceName         string                 `protobuf:"bytes,3,opt,name=voice_name,json=voiceName,proto3" json:"voice_name,omitempty"`
+	VoiceKey          string                 `protobuf:"bytes,4,opt,name=voice_key,json=voiceKey,proto3" json:"voice_key,omitempty"`
+	Temperature       float64                `protobuf:"fixed64,5,opt,name=temperature,proto3" json:"temperature,omitempty"`
+	TopP              float64                `protobuf:"fixed64,6,opt,name=top_p,json=topP,proto3" json:"top_p,omitempty"`
+	TopK              int32                  `protobuf:"varint,7,opt,name=top_k,json=topK,proto3" json:"top_k,omitempty"`
+	RepetitionPenalty float64                `protobuf:"fixed64,8,opt,name=repetition_penalty,json=repetitionPenalty,proto3" json:"repetition_penalty,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *GenerateSpeechRequest) Reset() {
+	*x = GenerateSpeechRequest{}
+	mi := &file_generation_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GenerateSpeechRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GenerateSpeechRequest) ProtoMessage() {}
+
+func (x *GenerateSpeechRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_generation_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GenerateSpeechRequest.ProtoReflect.Descriptor instead.
+func (*GenerateSpeechRequest) Descriptor() ([]byte, []int) {
+	return file_generation_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GenerateSpeechRequest) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+func (x *GenerateSpeechRequest) GetVoiceId() string {
+	if x != nil {
+		return x.VoiceId
+	}
+	return ""
+}
+
+func (x *GenerateSpeechRequest) GetVoiceName() string {
+	if x != nil {
+		return x.VoiceName
+	}
+	return ""
+}
+
+func (x *GenerateSpeechRequest) GetVoiceKey() string {
+	if x != nil {
+		return x.VoiceKey
+	}
+	return ""
+}
+
+func (x *GenerateSpeechRequest) GetTemperature() float64 {
+	if x != nil {
+		return x.Temperature
+	}
+	return 0
+}
+
+func (x *GenerateSpeechRequest) GetTopP() float64 {
+	if x != nil {
+		return x.TopP
+	}
+	return 0
+}
+
+func (x *GenerateSpeechRequest) GetTopK() int32 {
+	if x != nil {
+		return x.TopK
+	}
+	return 0
+}
+
+func (x *GenerateSpeechRequest) GetRepetitionPenalty() float64 {
+	if x != nil {
+		return x.RepetitionPenalty
+	}
+	return 0
+}
+
+type GenerateSpeechResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GenerationId  string                 `protobuf:"bytes,1,opt,name=generation_id,json=generationId,proto3" json:"generation_id,omitempty"`
+	JobId         string                 `protobuf:"bytes,2,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	Status        GenerationJobStatus    `protobuf:"varint,3,opt,name=status,proto3,enum=generation.GenerationJobStatus" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GenerateSpeechResponse) Reset() {
+	*x = GenerateSpeechResponse{}
+	mi := &file_generation_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GenerateSpeechResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GenerateSpeechResponse) ProtoMessage() {}
+
+func (x *GenerateSpeechResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_generation_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GenerateSpeechResponse.ProtoReflect.Descriptor instead.
+func (*GenerateSpeechResponse) Descriptor() ([]byte, []int) {
+	return file_generation_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GenerateSpeechResponse) GetGenerationId() string {
+	if x != nil {
+		return x.GenerationId
+	}
+	return ""
+}
+
+func (x *GenerateSpeechResponse) GetJobId() string {
+	if x != nil {
+		return x.JobId
+	}
+	return ""
+}
+
+func (x *GenerateSpeechResponse) GetStatus() GenerationJobStatus {
+	if x != nil {
+		return x.Status
+	}
+	return GenerationJobStatus_GENERATION_JOB_STATUS_UNSPECIFIED
+}
+
+type GetJobStatusRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	JobId         string                 `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetJobStatusRequest) Reset() {
+	*x = GetJobStatusRequest{}
+	mi := &file_generation_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetJobStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetJobStatusRequest) ProtoMessage() {}
+
+func (x *GetJobStatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_generation_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetJobStatusRequest.ProtoReflect.Descriptor instead.
+func (*GetJobStatusRequest) Descriptor() ([]byte, []int) {
+	return file_generation_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetJobStatusRequest) GetJobId() string {
+	if x != nil {
+		return x.JobId
+	}
+	return ""
+}
+
+type GetJobStatusResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GenerationId  string                 `protobuf:"bytes,1,opt,name=generation_id,json=generationId,proto3" json:"generation_id,omitempty"`
+	JobId         string                 `protobuf:"bytes,2,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	Status        GenerationJobStatus    `protobuf:"varint,3,opt,name=status,proto3,enum=generation.GenerationJobStatus" json:"status,omitempty"`
+	AudioUrl      string                 `protobuf:"bytes,4,opt,name=audio_url,json=audioUrl,proto3" json:"audio_url,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,5,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	UpdatedAtUnix int64                  `protobuf:"varint,6,opt,name=updated_at_unix,json=updatedAtUnix,proto3" json:"updated_at_unix,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetJobStatusResponse) Reset() {
+	*x = GetJobStatusResponse{}
+	mi := &file_generation_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetJobStatusResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetJobStatusResponse) ProtoMessage() {}
+
+func (x *GetJobStatusResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_generation_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetJobStatusResponse.ProtoReflect.Descriptor instead.
+func (*GetJobStatusResponse) Descriptor() ([]byte, []int) {
+	return file_generation_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *GetJobStatusResponse) GetGenerationId() string {
+	if x != nil {
+		return x.GenerationId
+	}
+	return ""
+}
+
+func (x *GetJobStatusResponse) GetJobId() string {
+	if x != nil {
+		return x.JobId
+	}
+	return ""
+}
+
+func (x *GetJobStatusResponse) GetStatus() GenerationJobStatus {
+	if x != nil {
+		return x.Status
+	}
+	return GenerationJobStatus_GENERATION_JOB_STATUS_UNSPECIFIED
+}
+
+func (x *GetJobStatusResponse) GetAudioUrl() string {
+	if x != nil {
+		return x.AudioUrl
+	}
+	return ""
+}
+
+func (x *GetJobStatusResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+func (x *GetJobStatusResponse) GetUpdatedAtUnix() int64 {
+	if x != nil {
+		return x.UpdatedAtUnix
+	}
+	return 0
 }
 
 var File_generation_proto protoreflect.FileDescriptor
@@ -114,13 +781,79 @@ var File_generation_proto protoreflect.FileDescriptor
 const file_generation_proto_rawDesc = "" +
 	"\n" +
 	"\x10generation.proto\x12\n" +
-	"generation\",\n" +
-	"\x16HelloGenerationRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"3\n" +
-	"\x17HelloGenerationResponse\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage2o\n" +
-	"\x11GenerationService\x12Z\n" +
-	"\x0fHelloGeneration\x12\".generation.HelloGenerationRequest\x1a#.generation.HelloGenerationResponseB.Z,github.com/go-grpc-sqlc/generation/gen/pb;pbb\x06proto3"
+	"generation\"&\n" +
+	"\x14GetGenerationRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xd2\x03\n" +
+	"\x15GetGenerationResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x15\n" +
+	"\x06job_id\x18\x02 \x01(\tR\x05jobId\x12\x19\n" +
+	"\bvoice_id\x18\x03 \x01(\tR\avoiceId\x12\x1d\n" +
+	"\n" +
+	"voice_name\x18\x04 \x01(\tR\tvoiceName\x12\x12\n" +
+	"\x04text\x18\x05 \x01(\tR\x04text\x12 \n" +
+	"\vtemperature\x18\x06 \x01(\x01R\vtemperature\x12\x13\n" +
+	"\x05top_p\x18\a \x01(\x01R\x04topP\x12\x13\n" +
+	"\x05top_k\x18\b \x01(\x05R\x04topK\x12-\n" +
+	"\x12repetition_penalty\x18\t \x01(\x01R\x11repetitionPenalty\x12\x1b\n" +
+	"\taudio_url\x18\n" +
+	" \x01(\tR\baudioUrl\x127\n" +
+	"\x06status\x18\v \x01(\x0e2\x1f.generation.GenerationJobStatusR\x06status\x12#\n" +
+	"\rerror_message\x18\f \x01(\tR\ferrorMessage\x12&\n" +
+	"\x0fcreated_at_unix\x18\r \x01(\x03R\rcreatedAtUnix\x12&\n" +
+	"\x0fupdated_at_unix\x18\x0e \x01(\x03R\rupdatedAtUnix\"\xa6\x03\n" +
+	"\x0eGenerationItem\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x15\n" +
+	"\x06job_id\x18\x02 \x01(\tR\x05jobId\x12\x19\n" +
+	"\bvoice_id\x18\x03 \x01(\tR\avoiceId\x12\x1d\n" +
+	"\n" +
+	"voice_name\x18\x04 \x01(\tR\tvoiceName\x12\x12\n" +
+	"\x04text\x18\x05 \x01(\tR\x04text\x12 \n" +
+	"\vtemperature\x18\x06 \x01(\x01R\vtemperature\x12\x13\n" +
+	"\x05top_p\x18\a \x01(\x01R\x04topP\x12\x13\n" +
+	"\x05top_k\x18\b \x01(\x05R\x04topK\x12-\n" +
+	"\x12repetition_penalty\x18\t \x01(\x01R\x11repetitionPenalty\x12\x1b\n" +
+	"\taudio_url\x18\n" +
+	" \x01(\tR\baudioUrl\x127\n" +
+	"\x06status\x18\v \x01(\x0e2\x1f.generation.GenerationJobStatusR\x06status\x12&\n" +
+	"\x0fcreated_at_unix\x18\f \x01(\x03R\rcreatedAtUnix\x12&\n" +
+	"\x0fupdated_at_unix\x18\r \x01(\x03R\rupdatedAtUnix\"\x18\n" +
+	"\x16ListGenerationsRequest\"W\n" +
+	"\x17ListGenerationsResponse\x12<\n" +
+	"\vgenerations\x18\x01 \x03(\v2\x1a.generation.GenerationItemR\vgenerations\"\xfd\x01\n" +
+	"\x15GenerateSpeechRequest\x12\x12\n" +
+	"\x04text\x18\x01 \x01(\tR\x04text\x12\x19\n" +
+	"\bvoice_id\x18\x02 \x01(\tR\avoiceId\x12\x1d\n" +
+	"\n" +
+	"voice_name\x18\x03 \x01(\tR\tvoiceName\x12\x1b\n" +
+	"\tvoice_key\x18\x04 \x01(\tR\bvoiceKey\x12 \n" +
+	"\vtemperature\x18\x05 \x01(\x01R\vtemperature\x12\x13\n" +
+	"\x05top_p\x18\x06 \x01(\x01R\x04topP\x12\x13\n" +
+	"\x05top_k\x18\a \x01(\x05R\x04topK\x12-\n" +
+	"\x12repetition_penalty\x18\b \x01(\x01R\x11repetitionPenalty\"\x8d\x01\n" +
+	"\x16GenerateSpeechResponse\x12#\n" +
+	"\rgeneration_id\x18\x01 \x01(\tR\fgenerationId\x12\x15\n" +
+	"\x06job_id\x18\x02 \x01(\tR\x05jobId\x127\n" +
+	"\x06status\x18\x03 \x01(\x0e2\x1f.generation.GenerationJobStatusR\x06status\",\n" +
+	"\x13GetJobStatusRequest\x12\x15\n" +
+	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"\xf5\x01\n" +
+	"\x14GetJobStatusResponse\x12#\n" +
+	"\rgeneration_id\x18\x01 \x01(\tR\fgenerationId\x12\x15\n" +
+	"\x06job_id\x18\x02 \x01(\tR\x05jobId\x127\n" +
+	"\x06status\x18\x03 \x01(\x0e2\x1f.generation.GenerationJobStatusR\x06status\x12\x1b\n" +
+	"\taudio_url\x18\x04 \x01(\tR\baudioUrl\x12#\n" +
+	"\rerror_message\x18\x05 \x01(\tR\ferrorMessage\x12&\n" +
+	"\x0fupdated_at_unix\x18\x06 \x01(\x03R\rupdatedAtUnix*\xcb\x01\n" +
+	"\x13GenerationJobStatus\x12%\n" +
+	"!GENERATION_JOB_STATUS_UNSPECIFIED\x10\x00\x12 \n" +
+	"\x1cGENERATION_JOB_STATUS_QUEUED\x10\x01\x12$\n" +
+	" GENERATION_JOB_STATUS_PROCESSING\x10\x02\x12#\n" +
+	"\x1fGENERATION_JOB_STATUS_COMPLETED\x10\x03\x12 \n" +
+	"\x1cGENERATION_JOB_STATUS_FAILED\x10\x042\xf1\x02\n" +
+	"\x11GenerationService\x12T\n" +
+	"\rGetGeneration\x12 .generation.GetGenerationRequest\x1a!.generation.GetGenerationResponse\x12Z\n" +
+	"\x0fListGenerations\x12\".generation.ListGenerationsRequest\x1a#.generation.ListGenerationsResponse\x12W\n" +
+	"\x0eGenerateSpeech\x12!.generation.GenerateSpeechRequest\x1a\".generation.GenerateSpeechResponse\x12Q\n" +
+	"\fGetJobStatus\x12\x1f.generation.GetJobStatusRequest\x1a .generation.GetJobStatusResponseB.Z,github.com/go-grpc-sqlc/generation/gen/pb;pbb\x06proto3"
 
 var (
 	file_generation_proto_rawDescOnce sync.Once
@@ -134,19 +867,39 @@ func file_generation_proto_rawDescGZIP() []byte {
 	return file_generation_proto_rawDescData
 }
 
-var file_generation_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_generation_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_generation_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_generation_proto_goTypes = []any{
-	(*HelloGenerationRequest)(nil),  // 0: generation.HelloGenerationRequest
-	(*HelloGenerationResponse)(nil), // 1: generation.HelloGenerationResponse
+	(GenerationJobStatus)(0),        // 0: generation.GenerationJobStatus
+	(*GetGenerationRequest)(nil),    // 1: generation.GetGenerationRequest
+	(*GetGenerationResponse)(nil),   // 2: generation.GetGenerationResponse
+	(*GenerationItem)(nil),          // 3: generation.GenerationItem
+	(*ListGenerationsRequest)(nil),  // 4: generation.ListGenerationsRequest
+	(*ListGenerationsResponse)(nil), // 5: generation.ListGenerationsResponse
+	(*GenerateSpeechRequest)(nil),   // 6: generation.GenerateSpeechRequest
+	(*GenerateSpeechResponse)(nil),  // 7: generation.GenerateSpeechResponse
+	(*GetJobStatusRequest)(nil),     // 8: generation.GetJobStatusRequest
+	(*GetJobStatusResponse)(nil),    // 9: generation.GetJobStatusResponse
 }
 var file_generation_proto_depIdxs = []int32{
-	0, // 0: generation.GenerationService.HelloGeneration:input_type -> generation.HelloGenerationRequest
-	1, // 1: generation.GenerationService.HelloGeneration:output_type -> generation.HelloGenerationResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: generation.GetGenerationResponse.status:type_name -> generation.GenerationJobStatus
+	0, // 1: generation.GenerationItem.status:type_name -> generation.GenerationJobStatus
+	3, // 2: generation.ListGenerationsResponse.generations:type_name -> generation.GenerationItem
+	0, // 3: generation.GenerateSpeechResponse.status:type_name -> generation.GenerationJobStatus
+	0, // 4: generation.GetJobStatusResponse.status:type_name -> generation.GenerationJobStatus
+	1, // 5: generation.GenerationService.GetGeneration:input_type -> generation.GetGenerationRequest
+	4, // 6: generation.GenerationService.ListGenerations:input_type -> generation.ListGenerationsRequest
+	6, // 7: generation.GenerationService.GenerateSpeech:input_type -> generation.GenerateSpeechRequest
+	8, // 8: generation.GenerationService.GetJobStatus:input_type -> generation.GetJobStatusRequest
+	2, // 9: generation.GenerationService.GetGeneration:output_type -> generation.GetGenerationResponse
+	5, // 10: generation.GenerationService.ListGenerations:output_type -> generation.ListGenerationsResponse
+	7, // 11: generation.GenerationService.GenerateSpeech:output_type -> generation.GenerateSpeechResponse
+	9, // 12: generation.GenerationService.GetJobStatus:output_type -> generation.GetJobStatusResponse
+	9, // [9:13] is the sub-list for method output_type
+	5, // [5:9] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_generation_proto_init() }
@@ -159,13 +912,14 @@ func file_generation_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_generation_proto_rawDesc), len(file_generation_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   2,
+			NumEnums:      1,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_generation_proto_goTypes,
 		DependencyIndexes: file_generation_proto_depIdxs,
+		EnumInfos:         file_generation_proto_enumTypes,
 		MessageInfos:      file_generation_proto_msgTypes,
 	}.Build()
 	File_generation_proto = out.File

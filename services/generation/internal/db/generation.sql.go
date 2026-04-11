@@ -7,14 +7,57 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getGeneration = `-- name: GetGeneration :one
-SELECT id, user_id, voice_id, voice_name, text, r2_object_key, temperature, top_p, top_k, repetition_penalty, created_at, updated_at FROM generations WHERE id = $1 LIMIT 1
+const createGenerationJob = `-- name: CreateGenerationJob :one
+INSERT INTO generations (
+	id,
+	job_id,
+	user_id,
+	voice_id,
+	voice_name,
+	text,
+	temperature,
+	top_p,
+	top_k,
+	repetition_penalty,
+	status,
+	queued_at
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
+RETURNING id, user_id, voice_id, voice_name, text, s3_object_key, temperature, top_p, top_k, repetition_penalty, created_at, updated_at, job_id, status, audio_url, error_message, queued_at, started_at, completed_at
 `
 
-func (q *Queries) GetGeneration(ctx context.Context, id string) (Generation, error) {
-	row := q.db.QueryRowContext(ctx, getGeneration, id)
+type CreateGenerationJobParams struct {
+	ID                string      `json:"id"`
+	JobID             string      `json:"job_id"`
+	UserID            string      `json:"user_id"`
+	VoiceID           pgtype.Text `json:"voice_id"`
+	VoiceName         string      `json:"voice_name"`
+	Text              string      `json:"text"`
+	Temperature       float64     `json:"temperature"`
+	TopP              float64     `json:"top_p"`
+	TopK              int32       `json:"top_k"`
+	RepetitionPenalty float64     `json:"repetition_penalty"`
+	Status            string      `json:"status"`
+}
+
+func (q *Queries) CreateGenerationJob(ctx context.Context, arg CreateGenerationJobParams) (Generation, error) {
+	row := q.db.QueryRow(ctx, createGenerationJob,
+		arg.ID,
+		arg.JobID,
+		arg.UserID,
+		arg.VoiceID,
+		arg.VoiceName,
+		arg.Text,
+		arg.Temperature,
+		arg.TopP,
+		arg.TopK,
+		arg.RepetitionPenalty,
+		arg.Status,
+	)
 	var i Generation
 	err := row.Scan(
 		&i.ID,
@@ -22,13 +65,201 @@ func (q *Queries) GetGeneration(ctx context.Context, id string) (Generation, err
 		&i.VoiceID,
 		&i.VoiceName,
 		&i.Text,
-		&i.R2ObjectKey,
+		&i.S3ObjectKey,
 		&i.Temperature,
 		&i.TopP,
 		&i.TopK,
 		&i.RepetitionPenalty,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.JobID,
+		&i.Status,
+		&i.AudioUrl,
+		&i.ErrorMessage,
+		&i.QueuedAt,
+		&i.StartedAt,
+		&i.CompletedAt,
 	)
 	return i, err
+}
+
+const getGenerationByIDAndUser = `-- name: GetGenerationByIDAndUser :one
+SELECT id, user_id, voice_id, voice_name, text, s3_object_key, temperature, top_p, top_k, repetition_penalty, created_at, updated_at, job_id, status, audio_url, error_message, queued_at, started_at, completed_at
+FROM generations
+WHERE id = $1 AND user_id = $2
+LIMIT 1
+`
+
+type GetGenerationByIDAndUserParams struct {
+	ID     string `json:"id"`
+	UserID string `json:"user_id"`
+}
+
+func (q *Queries) GetGenerationByIDAndUser(ctx context.Context, arg GetGenerationByIDAndUserParams) (Generation, error) {
+	row := q.db.QueryRow(ctx, getGenerationByIDAndUser, arg.ID, arg.UserID)
+	var i Generation
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.VoiceID,
+		&i.VoiceName,
+		&i.Text,
+		&i.S3ObjectKey,
+		&i.Temperature,
+		&i.TopP,
+		&i.TopK,
+		&i.RepetitionPenalty,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.JobID,
+		&i.Status,
+		&i.AudioUrl,
+		&i.ErrorMessage,
+		&i.QueuedAt,
+		&i.StartedAt,
+		&i.CompletedAt,
+	)
+	return i, err
+}
+
+const getGenerationByJobIDAndUser = `-- name: GetGenerationByJobIDAndUser :one
+SELECT id, user_id, voice_id, voice_name, text, s3_object_key, temperature, top_p, top_k, repetition_penalty, created_at, updated_at, job_id, status, audio_url, error_message, queued_at, started_at, completed_at
+FROM generations
+WHERE job_id = $1 AND user_id = $2
+LIMIT 1
+`
+
+type GetGenerationByJobIDAndUserParams struct {
+	JobID  string `json:"job_id"`
+	UserID string `json:"user_id"`
+}
+
+func (q *Queries) GetGenerationByJobIDAndUser(ctx context.Context, arg GetGenerationByJobIDAndUserParams) (Generation, error) {
+	row := q.db.QueryRow(ctx, getGenerationByJobIDAndUser, arg.JobID, arg.UserID)
+	var i Generation
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.VoiceID,
+		&i.VoiceName,
+		&i.Text,
+		&i.S3ObjectKey,
+		&i.Temperature,
+		&i.TopP,
+		&i.TopK,
+		&i.RepetitionPenalty,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.JobID,
+		&i.Status,
+		&i.AudioUrl,
+		&i.ErrorMessage,
+		&i.QueuedAt,
+		&i.StartedAt,
+		&i.CompletedAt,
+	)
+	return i, err
+}
+
+const listGenerationsByUser = `-- name: ListGenerationsByUser :many
+SELECT id, user_id, voice_id, voice_name, text, s3_object_key, temperature, top_p, top_k, repetition_penalty, created_at, updated_at, job_id, status, audio_url, error_message, queued_at, started_at, completed_at
+FROM generations
+WHERE user_id = $1
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListGenerationsByUser(ctx context.Context, userID string) ([]Generation, error) {
+	rows, err := q.db.Query(ctx, listGenerationsByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Generation
+	for rows.Next() {
+		var i Generation
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.VoiceID,
+			&i.VoiceName,
+			&i.Text,
+			&i.S3ObjectKey,
+			&i.Temperature,
+			&i.TopP,
+			&i.TopK,
+			&i.RepetitionPenalty,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.JobID,
+			&i.Status,
+			&i.AudioUrl,
+			&i.ErrorMessage,
+			&i.QueuedAt,
+			&i.StartedAt,
+			&i.CompletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const markGenerationCompleted = `-- name: MarkGenerationCompleted :exec
+UPDATE generations
+SET
+	status = 'completed',
+	audio_url = $2,
+	completed_at = NOW(),
+	updated_at = NOW(),
+	error_message = NULL
+WHERE id = $1
+`
+
+type MarkGenerationCompletedParams struct {
+	ID       string      `json:"id"`
+	AudioUrl pgtype.Text `json:"audio_url"`
+}
+
+func (q *Queries) MarkGenerationCompleted(ctx context.Context, arg MarkGenerationCompletedParams) error {
+	_, err := q.db.Exec(ctx, markGenerationCompleted, arg.ID, arg.AudioUrl)
+	return err
+}
+
+const markGenerationFailed = `-- name: MarkGenerationFailed :exec
+UPDATE generations
+SET
+	status = 'failed',
+	error_message = $2,
+	completed_at = NOW(),
+	updated_at = NOW()
+WHERE id = $1
+`
+
+type MarkGenerationFailedParams struct {
+	ID           string      `json:"id"`
+	ErrorMessage pgtype.Text `json:"error_message"`
+}
+
+func (q *Queries) MarkGenerationFailed(ctx context.Context, arg MarkGenerationFailedParams) error {
+	_, err := q.db.Exec(ctx, markGenerationFailed, arg.ID, arg.ErrorMessage)
+	return err
+}
+
+const markGenerationProcessing = `-- name: MarkGenerationProcessing :exec
+UPDATE generations
+SET
+	status = 'processing',
+	started_at = NOW(),
+	updated_at = NOW(),
+	error_message = NULL
+WHERE id = $1 AND status = 'queued'
+`
+
+func (q *Queries) MarkGenerationProcessing(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, markGenerationProcessing, id)
+	return err
 }

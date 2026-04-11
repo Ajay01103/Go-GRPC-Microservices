@@ -6,7 +6,7 @@ CREATE TABLE generations (
   voice_id           TEXT,           -- soft ref, no FK
   voice_name         TEXT NOT NULL,  -- snapshotted at creation time
   text               TEXT NOT NULL,
-  r2_object_key      TEXT,
+  s3_object_key      TEXT,
   temperature        FLOAT NOT NULL,
   top_p              FLOAT NOT NULL,
   top_k              INT NOT NULL,
