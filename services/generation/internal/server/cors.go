@@ -7,25 +7,24 @@ import (
 
 const connectExposeHeaders = "Grpc-Status,Grpc-Message,Grpc-Status-Details-Bin"
 
-const connectAllowedHeaders = "Content-Type,Connect-Protocol-Version,Connect-Timeout-Ms,Grpc-Timeout,X-Grpc-Web,X-User-Agent,Authorization"
+const connectAllowedHeaders = "Content-Type,Connect-Protocol-Version,Connect-Timeout-Ms,Connect-Accept-Encoding,Connect-Content-Encoding,Grpc-Timeout,Grpc-Encoding,Grpc-Accept-Encoding,Grpc-Message,X-Grpc-Web,X-User-Agent,Authorization"
 
 const connectAllowedMethods = "GET,POST,OPTIONS"
 
 func WithCORS(next http.Handler, allowedOrigin string) http.Handler {
 	allowedOrigin = strings.TrimSpace(allowedOrigin)
-	if allowedOrigin == "" {
-		allowedOrigin = "*"
-	}
+	allowedOrigins := splitAllowedOrigins(allowedOrigin)
+	allowAnyOrigin := len(allowedOrigins) == 0
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		origin := r.Header.Get("Origin")
+		origin := normalizeOrigin(r.Header.Get("Origin"))
 		if origin != "" {
-			if allowedOrigin != "*" && origin != allowedOrigin {
+			if !allowAnyOrigin && !originAllowed(origin, allowedOrigins) {
 				http.Error(w, "origin not allowed", http.StatusForbidden)
 				return
 			}
 
-			if allowedOrigin == "*" {
+			if allowAnyOrigin {
 				w.Header().Set("Access-Control-Allow-Origin", "*")
 			} else {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
@@ -49,4 +48,38 @@ func WithCORS(next http.Handler, allowedOrigin string) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func splitAllowedOrigins(raw string) []string {
+	if raw == "" || raw == "*" {
+		return nil
+	}
+
+	parts := strings.FieldsFunc(raw, func(r rune) bool {
+		return r == ',' || r == ' '
+	})
+	origins := make([]string, 0, len(parts))
+	for _, part := range parts {
+		part = normalizeOrigin(part)
+		if part != "" {
+			origins = append(origins, part)
+		}
+	}
+	return origins
+}
+
+func originAllowed(origin string, allowedOrigins []string) bool {
+	for _, allowedOrigin := range allowedOrigins {
+		if allowedOrigin == origin {
+			return true
+		}
+	}
+	return false
+}
+
+func normalizeOrigin(origin string) string {
+	origin = strings.TrimSpace(origin)
+	origin = strings.Trim(origin, "\"")
+	origin = strings.TrimSuffix(origin, "/")
+	return strings.ToLower(origin)
 }

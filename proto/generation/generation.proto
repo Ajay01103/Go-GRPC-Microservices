@@ -4,14 +4,90 @@ package generation;
 
 option go_package = "github.com/go-grpc-sqlc/generation/gen/pb;pb";
 
-message HelloGenerationRequest {
-  string name = 1;
+enum GenerationJobStatus {
+  GENERATION_JOB_STATUS_UNSPECIFIED = 0;
+  GENERATION_JOB_STATUS_QUEUED = 1;
+  GENERATION_JOB_STATUS_PROCESSING = 2;
+  GENERATION_JOB_STATUS_COMPLETED = 3;
+  GENERATION_JOB_STATUS_FAILED = 4;
 }
 
-message HelloGenerationResponse {
-  string message = 1;
+message GetGenerationRequest {
+  string id = 1;
+}
+
+message GetGenerationResponse {
+  string id = 1;
+  string job_id = 2;
+  string voice_id = 3;
+  string voice_name = 4;
+  string text = 5;
+  double temperature = 6;
+  string language_id = 7;
+  double exaggeration = 8;
+  double cfg_weight = 9;
+  string audio_url = 10;
+  GenerationJobStatus status = 11;
+  string error_message = 12;
+  int64 created_at_unix = 13;
+  int64 updated_at_unix = 14;
+}
+
+message GenerationItem {
+  string id = 1;
+  string job_id = 2;
+  string voice_id = 3;
+  string voice_name = 4;
+  string text = 5;
+  double temperature = 6;
+  string language_id = 7;
+  double exaggeration = 8;
+  double cfg_weight = 9;
+  string audio_url = 10;
+  GenerationJobStatus status = 11;
+  int64 created_at_unix = 12;
+  int64 updated_at_unix = 13;
+}
+
+message ListGenerationsRequest {}
+
+message ListGenerationsResponse {
+  repeated GenerationItem generations = 1;
+}
+
+message GenerateSpeechRequest {
+  string text = 1;
+  string voice_id = 2;
+  string voice_name = 3;
+  string voice_key = 4;
+  double temperature = 5;
+  string language_id = 6;
+  double exaggeration = 7;
+  double cfg_weight = 8;
+}
+
+message GenerateSpeechResponse {
+  string generation_id = 1;
+  string job_id = 2;
+  GenerationJobStatus status = 3;
+}
+
+message GetJobStatusRequest {
+  string job_id = 1;
+}
+
+message GetJobStatusResponse {
+  string generation_id = 1;
+  string job_id = 2;
+  GenerationJobStatus status = 3;
+  string audio_url = 4;
+  string error_message = 5;
+  int64 updated_at_unix = 6;
 }
 
 service GenerationService {
-  rpc HelloGeneration(HelloGenerationRequest) returns (HelloGenerationResponse);
+  rpc GetGeneration(GetGenerationRequest) returns (GetGenerationResponse);
+  rpc ListGenerations(ListGenerationsRequest) returns (ListGenerationsResponse);
+  rpc GenerateSpeech(GenerateSpeechRequest) returns (GenerateSpeechResponse);
+  rpc GetJobStatus(GetJobStatusRequest) returns (GetJobStatusResponse);
 }

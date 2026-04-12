@@ -64,10 +64,42 @@ message GetVoicePlaybackUrlResponse {
   int64  expires_at_unix = 2;
 }
 
+// ─── Create ───────────────────────────────────────────────────────────────────
+
+message CreateVoiceRequest {
+  string        name         = 1;
+  string        description  = 2;
+  VoiceCategory category     = 3;
+  string        language     = 4;
+  bytes         audio_data   = 5;
+  string        content_type = 6;
+}
+
+message CreateVoiceResponse {
+  VoiceItem voice = 1;
+}
+
+// ─── Update ───────────────────────────────────────────────────────────────────
+
+message UpdateVoiceRequest {
+  string        id          = 1;
+  string        user_id     = 2;
+  string        name        = 3;
+  string        description = 4;
+  VoiceCategory category    = 5;
+  string        language    = 6;
+}
+
+message UpdateVoiceResponse {
+  VoiceItem voice = 1;
+}
+
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 service VoiceService {
   rpc GetAllVoices(GetAllVoicesRequest) returns (GetAllVoicesResponse);
   rpc DeleteVoice(DeleteVoiceRequest)   returns (DeleteVoiceResponse);
   rpc GetVoicePlaybackUrl(GetVoicePlaybackUrlRequest) returns (GetVoicePlaybackUrlResponse);
+  rpc CreateVoice(CreateVoiceRequest)   returns (CreateVoiceResponse);
+  rpc UpdateVoice(UpdateVoiceRequest)   returns (UpdateVoiceResponse);
 }

@@ -112,7 +112,7 @@ func seedSystemVoice(ctx context.Context, q *db.Queries, b2Client *s3.Client, bu
 
 	// --- UPDATE PATH ---
 	if err == nil {
-		s3Key := fmt.Sprintf("voices/system/%s", existing.ID)
+		s3Key := fmt.Sprintf("system/%s/audio.wav", existing.ID)
 
 		if err := uploadToB2(ctx, b2Client, bucket, s3Key, audioData); err != nil {
 			return fmt.Errorf("uploading audio for existing voice %q: %w", name, err)
@@ -142,7 +142,7 @@ func seedSystemVoice(ctx context.Context, q *db.Queries, b2Client *s3.Client, bu
 		return fmt.Errorf("creating voice record for %q: %w", name, err)
 	}
 
-	s3Key := fmt.Sprintf("voices/system/%s", voice.ID)
+	s3Key := fmt.Sprintf("system/%s/audio.wav", voice.ID)
 
 	if err := uploadToB2(ctx, b2Client, bucket, s3Key, audioData); err != nil {
 		_ = q.DeleteSystemVoiceByID(ctx, voice.ID)

@@ -301,6 +301,28 @@ func (c *CachedVoiceRepo) CreateVoice(ctx context.Context, params CreateVoicePar
 	return voice, nil
 }
 
+// UpdateVoice writes metadata updates and keeps cache/search documents in sync.
+func (c *CachedVoiceRepo) UpdateVoice(ctx context.Context, params UpdateVoiceParams) (db.Voice, error) {
+	voice, err := c.repo.UpdateVoice(ctx, params)
+	if err != nil {
+		return db.Voice{}, err
+	}
+
+	c.cacheVoice(ctx, voice)
+	if c.redisSearchEnabled {
+		c.upsertVoiceDoc(ctx, voice)
+	}
+
+	if err := c.redis.Del(ctx,
+		listCacheKey(ListScopeCustom, voice.UserID),
+		listCacheKey(ListScopeAll, voice.UserID),
+	).Err(); err != nil {
+		c.logger.Warn("cache invalidation after update failed", zap.Error(err), zap.String("voice_id", voice.ID))
+	}
+
+	return voice, nil
+}
+
 // DeleteVoice invalidates related cache entries after deleting from DB.
 func (c *CachedVoiceRepo) DeleteVoice(ctx context.Context, id, userID string) error {
 	if err := c.repo.DeleteVoice(ctx, id, userID); err != nil {

@@ -20,28 +20,28 @@ INSERT INTO generations (
 	voice_name,
 	text,
 	temperature,
-	top_p,
-	top_k,
-	repetition_penalty,
+	language_id,
+	exaggeration,
+	cfg_weight,
 	status,
 	queued_at
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
-RETURNING id, user_id, voice_id, voice_name, text, s3_object_key, temperature, top_p, top_k, repetition_penalty, created_at, updated_at, job_id, status, audio_url, error_message, queued_at, started_at, completed_at
+RETURNING id, user_id, voice_id, voice_name, text, s3_object_key, temperature, created_at, updated_at, job_id, status, audio_url, error_message, queued_at, started_at, completed_at, language_id, exaggeration, cfg_weight
 `
 
 type CreateGenerationJobParams struct {
-	ID                string      `json:"id"`
-	JobID             string      `json:"job_id"`
-	UserID            string      `json:"user_id"`
-	VoiceID           pgtype.Text `json:"voice_id"`
-	VoiceName         string      `json:"voice_name"`
-	Text              string      `json:"text"`
-	Temperature       float64     `json:"temperature"`
-	TopP              float64     `json:"top_p"`
-	TopK              int32       `json:"top_k"`
-	RepetitionPenalty float64     `json:"repetition_penalty"`
-	Status            string      `json:"status"`
+	ID           string      `json:"id"`
+	JobID        string      `json:"job_id"`
+	UserID       string      `json:"user_id"`
+	VoiceID      pgtype.Text `json:"voice_id"`
+	VoiceName    string      `json:"voice_name"`
+	Text         string      `json:"text"`
+	Temperature  float64     `json:"temperature"`
+	LanguageID   string      `json:"language_id"`
+	Exaggeration float64     `json:"exaggeration"`
+	CfgWeight    float64     `json:"cfg_weight"`
+	Status       string      `json:"status"`
 }
 
 func (q *Queries) CreateGenerationJob(ctx context.Context, arg CreateGenerationJobParams) (Generation, error) {
@@ -53,9 +53,9 @@ func (q *Queries) CreateGenerationJob(ctx context.Context, arg CreateGenerationJ
 		arg.VoiceName,
 		arg.Text,
 		arg.Temperature,
-		arg.TopP,
-		arg.TopK,
-		arg.RepetitionPenalty,
+		arg.LanguageID,
+		arg.Exaggeration,
+		arg.CfgWeight,
 		arg.Status,
 	)
 	var i Generation
@@ -67,9 +67,6 @@ func (q *Queries) CreateGenerationJob(ctx context.Context, arg CreateGenerationJ
 		&i.Text,
 		&i.S3ObjectKey,
 		&i.Temperature,
-		&i.TopP,
-		&i.TopK,
-		&i.RepetitionPenalty,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.JobID,
@@ -79,12 +76,15 @@ func (q *Queries) CreateGenerationJob(ctx context.Context, arg CreateGenerationJ
 		&i.QueuedAt,
 		&i.StartedAt,
 		&i.CompletedAt,
+		&i.LanguageID,
+		&i.Exaggeration,
+		&i.CfgWeight,
 	)
 	return i, err
 }
 
 const getGenerationByIDAndUser = `-- name: GetGenerationByIDAndUser :one
-SELECT id, user_id, voice_id, voice_name, text, s3_object_key, temperature, top_p, top_k, repetition_penalty, created_at, updated_at, job_id, status, audio_url, error_message, queued_at, started_at, completed_at
+SELECT id, user_id, voice_id, voice_name, text, s3_object_key, temperature, created_at, updated_at, job_id, status, audio_url, error_message, queued_at, started_at, completed_at, language_id, exaggeration, cfg_weight
 FROM generations
 WHERE id = $1 AND user_id = $2
 LIMIT 1
@@ -106,9 +106,6 @@ func (q *Queries) GetGenerationByIDAndUser(ctx context.Context, arg GetGeneratio
 		&i.Text,
 		&i.S3ObjectKey,
 		&i.Temperature,
-		&i.TopP,
-		&i.TopK,
-		&i.RepetitionPenalty,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.JobID,
@@ -118,12 +115,15 @@ func (q *Queries) GetGenerationByIDAndUser(ctx context.Context, arg GetGeneratio
 		&i.QueuedAt,
 		&i.StartedAt,
 		&i.CompletedAt,
+		&i.LanguageID,
+		&i.Exaggeration,
+		&i.CfgWeight,
 	)
 	return i, err
 }
 
 const getGenerationByJobIDAndUser = `-- name: GetGenerationByJobIDAndUser :one
-SELECT id, user_id, voice_id, voice_name, text, s3_object_key, temperature, top_p, top_k, repetition_penalty, created_at, updated_at, job_id, status, audio_url, error_message, queued_at, started_at, completed_at
+SELECT id, user_id, voice_id, voice_name, text, s3_object_key, temperature, created_at, updated_at, job_id, status, audio_url, error_message, queued_at, started_at, completed_at, language_id, exaggeration, cfg_weight
 FROM generations
 WHERE job_id = $1 AND user_id = $2
 LIMIT 1
@@ -145,9 +145,6 @@ func (q *Queries) GetGenerationByJobIDAndUser(ctx context.Context, arg GetGenera
 		&i.Text,
 		&i.S3ObjectKey,
 		&i.Temperature,
-		&i.TopP,
-		&i.TopK,
-		&i.RepetitionPenalty,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.JobID,
@@ -157,12 +154,15 @@ func (q *Queries) GetGenerationByJobIDAndUser(ctx context.Context, arg GetGenera
 		&i.QueuedAt,
 		&i.StartedAt,
 		&i.CompletedAt,
+		&i.LanguageID,
+		&i.Exaggeration,
+		&i.CfgWeight,
 	)
 	return i, err
 }
 
 const listGenerationsByUser = `-- name: ListGenerationsByUser :many
-SELECT id, user_id, voice_id, voice_name, text, s3_object_key, temperature, top_p, top_k, repetition_penalty, created_at, updated_at, job_id, status, audio_url, error_message, queued_at, started_at, completed_at
+SELECT id, user_id, voice_id, voice_name, text, s3_object_key, temperature, created_at, updated_at, job_id, status, audio_url, error_message, queued_at, started_at, completed_at, language_id, exaggeration, cfg_weight
 FROM generations
 WHERE user_id = $1
 ORDER BY created_at DESC
@@ -185,9 +185,6 @@ func (q *Queries) ListGenerationsByUser(ctx context.Context, userID string) ([]G
 			&i.Text,
 			&i.S3ObjectKey,
 			&i.Temperature,
-			&i.TopP,
-			&i.TopK,
-			&i.RepetitionPenalty,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.JobID,
@@ -197,6 +194,9 @@ func (q *Queries) ListGenerationsByUser(ctx context.Context, userID string) ([]G
 			&i.QueuedAt,
 			&i.StartedAt,
 			&i.CompletedAt,
+			&i.LanguageID,
+			&i.Exaggeration,
+			&i.CfgWeight,
 		); err != nil {
 			return nil, err
 		}
@@ -213,6 +213,7 @@ UPDATE generations
 SET
 	status = 'completed',
 	audio_url = $2,
+	s3_object_key = $3,
 	completed_at = NOW(),
 	updated_at = NOW(),
 	error_message = NULL
@@ -220,12 +221,13 @@ WHERE id = $1
 `
 
 type MarkGenerationCompletedParams struct {
-	ID       string      `json:"id"`
-	AudioUrl pgtype.Text `json:"audio_url"`
+	ID          string      `json:"id"`
+	AudioUrl    pgtype.Text `json:"audio_url"`
+	S3ObjectKey pgtype.Text `json:"s3_object_key"`
 }
 
 func (q *Queries) MarkGenerationCompleted(ctx context.Context, arg MarkGenerationCompletedParams) error {
-	_, err := q.db.Exec(ctx, markGenerationCompleted, arg.ID, arg.AudioUrl)
+	_, err := q.db.Exec(ctx, markGenerationCompleted, arg.ID, arg.AudioUrl, arg.S3ObjectKey)
 	return err
 }
 

@@ -192,6 +192,60 @@ func (s *VoiceServer) CreateVoice(
 	}), nil
 }
 
+// UpdateVoice updates metadata on a custom voice owned by the requester.
+func (s *VoiceServer) UpdateVoice(
+	ctx context.Context,
+	req *connect.Request[pb.UpdateVoiceRequest],
+) (*connect.Response[pb.UpdateVoiceResponse], error) {
+	payload, ok := interceptor.UserPayloadFromContext(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("missing auth payload"))
+	}
+
+	if strings.TrimSpace(req.Msg.Id) == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("id is required"))
+	}
+	if req.Msg.UserId != "" && req.Msg.UserId != payload.UserID.String() {
+		return nil, connect.NewError(connect.CodePermissionDenied, errors.New("cannot update another user's voice"))
+	}
+
+	category, ok := categoryFromProto(req.Msg.Category)
+	if !ok {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("invalid category"))
+	}
+
+	updated, err := s.svc.UpdateVoice(ctx, service.UpdateVoiceParams{
+		ID:          req.Msg.Id,
+		UserID:      payload.UserID.String(),
+		Name:        req.Msg.Name,
+		Description: req.Msg.Description,
+		Category:    category,
+		Language:    req.Msg.Language,
+	})
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidUpdateVoiceInput) {
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
+		if errors.Is(err, repository.ErrVoiceNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, errors.New("voice not found"))
+		}
+
+		s.logger.Error("UpdateVoice failed", zap.Error(err))
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&pb.UpdateVoiceResponse{
+		Voice: &pb.VoiceItem{
+			Id:          updated.ID,
+			Name:        updated.Name,
+			Description: updated.Description,
+			Category:    categoryToProto(updated.Category),
+			Language:    updated.Language,
+			Variant:     variantToProto(updated.Variant),
+		},
+	}), nil
+}
+
 // ─── enum converters ──────────────────────────────────────────────────────────
 
 func categoryToProto(s string) pb.VoiceCategory {

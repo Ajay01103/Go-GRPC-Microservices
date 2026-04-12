@@ -43,12 +43,23 @@ type CreateVoiceParams struct {
 	S3ObjectKey string
 }
 
+// UpdateVoiceParams bundles parameters for updating custom voice metadata.
+type UpdateVoiceParams struct {
+	ID          string
+	UserID      string
+	Name        string
+	Description string
+	Category    db.VoiceCategory
+	Language    string
+}
+
 // Repository defines the data access contract for voices.
 type Repository interface {
 	ListVoices(ctx context.Context, params ListVoicesParams) ([]db.ListCustomVoicesRow, error)
 	GetVoiceByID(ctx context.Context, id string) (db.Voice, error)
 	GetVoiceByIDAndUser(ctx context.Context, id, userID string) (db.Voice, error)
 	CreateVoice(ctx context.Context, params CreateVoiceParams) (db.Voice, error)
+	UpdateVoice(ctx context.Context, params UpdateVoiceParams) (db.Voice, error)
 	DeleteVoice(ctx context.Context, id, userID string) error
 }
 
@@ -180,6 +191,29 @@ func (r *VoiceRepo) CreateVoice(ctx context.Context, params CreateVoiceParams) (
 	})
 	if err != nil {
 		return db.Voice{}, fmt.Errorf("repository: create voice: %w", err)
+	}
+
+	return voice, nil
+}
+
+// UpdateVoice updates an existing custom voice metadata record.
+func (r *VoiceRepo) UpdateVoice(ctx context.Context, params UpdateVoiceParams) (db.Voice, error) {
+	voice, err := r.q.UpdateVoice(ctx, db.UpdateVoiceParams{
+		ID:     params.ID,
+		UserID: params.UserID,
+		Name:   params.Name,
+		Description: pgtype.Text{
+			String: params.Description,
+			Valid:  params.Description != "",
+		},
+		Category: params.Category,
+		Language: params.Language,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return db.Voice{}, ErrVoiceNotFound
+		}
+		return db.Voice{}, fmt.Errorf("repository: update voice: %w", err)
 	}
 
 	return voice, nil

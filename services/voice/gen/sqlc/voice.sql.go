@@ -284,3 +284,49 @@ func (q *Queries) UpdateSystemVoiceS3Key(ctx context.Context, arg UpdateSystemVo
 	)
 	return err
 }
+
+const updateVoice = `-- name: UpdateVoice :one
+UPDATE voices
+SET name = $3,
+    description = $4,
+    category = $5,
+    language = $6,
+    updated_at = NOW()
+WHERE id = $1
+  AND user_id = $2
+RETURNING id, user_id, name, description, category, language, variant, s3_object_key, created_at, updated_at
+`
+
+type UpdateVoiceParams struct {
+	ID          string        `json:"id"`
+	UserID      string        `json:"user_id"`
+	Name        string        `json:"name"`
+	Description pgtype.Text   `json:"description"`
+	Category    VoiceCategory `json:"category"`
+	Language    string        `json:"language"`
+}
+
+func (q *Queries) UpdateVoice(ctx context.Context, arg UpdateVoiceParams) (Voice, error) {
+	row := q.db.QueryRow(ctx, updateVoice,
+		arg.ID,
+		arg.UserID,
+		arg.Name,
+		arg.Description,
+		arg.Category,
+		arg.Language,
+	)
+	var i Voice
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Description,
+		&i.Category,
+		&i.Language,
+		&i.Variant,
+		&i.S3ObjectKey,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}

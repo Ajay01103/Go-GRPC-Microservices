@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path"
 	"strings"
 	"time"
 
@@ -44,6 +43,16 @@ type CreateVoiceParams struct {
 	ContentType string
 }
 
+// UpdateVoiceParams bundles metadata inputs for custom voice updates.
+type UpdateVoiceParams struct {
+	ID          string
+	UserID      string
+	Name        string
+	Description string
+	Category    db.VoiceCategory
+	Language    string
+}
+
 // VoiceService handles all business logic for voices.
 type VoiceService struct {
 	repo   repository.Repository
@@ -53,6 +62,7 @@ type VoiceService struct {
 
 var ErrVoiceAccessDenied = errors.New("voice access denied")
 var ErrInvalidCreateVoiceInput = errors.New("invalid create voice input")
+var ErrInvalidUpdateVoiceInput = errors.New("invalid update voice input")
 
 const maxCreateVoiceAudioBytes = 20 * 1024 * 1024
 
@@ -119,22 +129,60 @@ func (s *VoiceService) Delete(ctx context.Context, id, userID string) error {
 		return fmt.Errorf("service: fetch voice for delete: %w", err)
 	}
 
-	if err := s.repo.DeleteVoice(ctx, voice.ID, userID); err != nil {
-		return fmt.Errorf("service: delete voice record: %w", err)
-	}
-
-	// Best-effort S3 cleanup — log failures but don't surface them.
+	// Strict S3 cleanup: do not remove DB row unless object removal succeeds.
 	if voice.S3ObjectKey.Valid && voice.S3ObjectKey.String != "" {
 		if err := s.s3.Delete(ctx, voice.S3ObjectKey.String); err != nil {
-			s.logger.Warn("s3 cleanup failed after voice delete",
+			s.logger.Error("s3 cleanup failed before voice delete",
 				zap.String("voice_id", id),
 				zap.String("s3_key", voice.S3ObjectKey.String),
 				zap.Error(err),
 			)
+			return fmt.Errorf("service: delete voice audio: %w", err)
 		}
 	}
 
+	if err := s.repo.DeleteVoice(ctx, voice.ID, userID); err != nil {
+		s.logger.Error("db delete failed after s3 cleanup",
+			zap.String("voice_id", id),
+			zap.String("user_id", userID),
+			zap.Error(err),
+		)
+		return fmt.Errorf("service: delete voice record: %w", err)
+	}
+
 	return nil
+}
+
+// UpdateVoice updates custom voice metadata for a user-owned voice.
+func (s *VoiceService) UpdateVoice(ctx context.Context, params UpdateVoiceParams) (VoiceItem, error) {
+	id := strings.TrimSpace(params.ID)
+	userID := strings.TrimSpace(params.UserID)
+	name := strings.TrimSpace(params.Name)
+	language := strings.TrimSpace(params.Language)
+
+	if id == "" || userID == "" || name == "" || language == "" {
+		return VoiceItem{}, ErrInvalidUpdateVoiceInput
+	}
+	if params.Category == "" {
+		params.Category = db.VoiceCategoryGENERAL
+	}
+
+	updated, err := s.repo.UpdateVoice(ctx, repository.UpdateVoiceParams{
+		ID:          id,
+		UserID:      userID,
+		Name:        name,
+		Description: strings.TrimSpace(params.Description),
+		Category:    params.Category,
+		Language:    language,
+	})
+	if err != nil {
+		if errors.Is(err, repository.ErrVoiceNotFound) {
+			return VoiceItem{}, repository.ErrVoiceNotFound
+		}
+		return VoiceItem{}, fmt.Errorf("service: update voice record: %w", err)
+	}
+
+	return voiceToItem(updated), nil
 }
 
 // CreateVoice uploads a user audio sample and stores its metadata.
@@ -175,11 +223,12 @@ func (s *VoiceService) CreateVoice(ctx context.Context, params CreateVoiceParams
 	})
 	if err != nil {
 		if cleanupErr := s.s3.Delete(ctx, s3Key); cleanupErr != nil {
-			s.logger.Warn("failed to cleanup uploaded audio after create error",
+			s.logger.Error("failed to cleanup uploaded audio after create error",
 				zap.String("voice_id", voiceID),
 				zap.String("s3_key", s3Key),
 				zap.Error(cleanupErr),
 			)
+			return VoiceItem{}, fmt.Errorf("service: cleanup uploaded voice audio: %w", cleanupErr)
 		}
 		return VoiceItem{}, fmt.Errorf("service: create voice record: %w", err)
 	}
@@ -208,6 +257,17 @@ func rowToItem(r db.ListCustomVoicesRow) VoiceItem {
 	}
 }
 
+func voiceToItem(v db.Voice) VoiceItem {
+	return VoiceItem{
+		ID:          v.ID,
+		Name:        v.Name,
+		Description: textOrEmpty(v.Description),
+		Category:    string(v.Category),
+		Language:    v.Language,
+		Variant:     string(v.Variant),
+	}
+}
+
 func textOrEmpty(v pgtype.Text) string {
 	if v.Valid {
 		return v.String
@@ -217,7 +277,10 @@ func textOrEmpty(v pgtype.Text) string {
 
 func buildS3ObjectKey(userID, voiceID, contentType string) string {
 	ext := extensionFromContentType(contentType)
-	return path.Join("voices", userID, fmt.Sprintf("%s%s", voiceID, ext))
+	if strings.EqualFold(strings.TrimSpace(userID), "SYSTEM") {
+		return fmt.Sprintf("system/%s/audio%s", voiceID, ext)
+	}
+	return fmt.Sprintf("custom/%s/audio%s", voiceID, ext)
 }
 
 func extensionFromContentType(contentType string) string {

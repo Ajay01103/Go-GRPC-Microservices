@@ -8,60 +8,63 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"os"
+	"path"
 	"strings"
 	"time"
 
 	db "github.com/go-grpc-sqlc/generation/internal/db"
+	generations3 "github.com/go-grpc-sqlc/generation/internal/s3"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
 type JobMessage struct {
-	GenerationID      string  `json:"generation_id"`
-	JobID             string  `json:"job_id"`
-	UserID            string  `json:"user_id"`
-	Text              string  `json:"text"`
-	VoiceKey          string  `json:"voice_key"`
-	Temperature       float64 `json:"temperature"`
-	TopP              float64 `json:"top_p"`
-	TopK              int32   `json:"top_k"`
-	RepetitionPenalty float64 `json:"repetition_penalty"`
-	NormalizeLoudness bool    `json:"norm_loudness"`
+	GenerationID string  `json:"generation_id"`
+	JobID        string  `json:"job_id"`
+	UserID       string  `json:"user_id"`
+	Text         string  `json:"text"`
+	VoiceKey     string  `json:"voice_key"`
+	LanguageID   string  `json:"language_id"`
+	Temperature  float64 `json:"temperature"`
+	Exaggeration float64 `json:"exaggeration"`
+	CfgWeight    float64 `json:"cfg_weight"`
 }
 
 type TTSWorker struct {
 	redis                *redis.Client
 	queries              db.Querier
 	logger               *zap.Logger
+	s3Client             *generations3.Client
 	httpClient           *http.Client
 	ttsEndpoint          string
 	ttsAPIKey            string
 	queueChannel         string
 	resultsChannelPrefix string
-	audioBaseURL         string
 }
 
 func New(
 	redisClient *redis.Client,
 	queries db.Querier,
 	logger *zap.Logger,
+	s3Client *generations3.Client,
 	ttsEndpoint string,
 	ttsAPIKey string,
 	queueChannel string,
 	resultsChannelPrefix string,
-	audioBaseURL string,
 ) *TTSWorker {
 	return &TTSWorker{
 		redis:                redisClient,
 		queries:              queries,
 		logger:               logger,
+		s3Client:             s3Client,
 		httpClient:           &http.Client{Timeout: 90 * time.Second},
 		ttsEndpoint:          strings.TrimSpace(ttsEndpoint),
 		ttsAPIKey:            strings.TrimSpace(ttsAPIKey),
 		queueChannel:         strings.TrimSpace(queueChannel),
 		resultsChannelPrefix: strings.TrimSpace(resultsChannelPrefix),
-		audioBaseURL:         strings.TrimRight(strings.TrimSpace(audioBaseURL), "/"),
 	}
 }
 
@@ -74,6 +77,9 @@ func (w *TTSWorker) Start(ctx context.Context) error {
 	}
 	if w.ttsAPIKey == "" {
 		return errors.New("tts api key is required")
+	}
+	if w.s3Client == nil {
+		return errors.New("generation s3 client is required")
 	}
 
 	sub := w.redis.Subscribe(ctx, w.queueChannel)
@@ -110,7 +116,8 @@ func (w *TTSWorker) handleMessage(ctx context.Context, payload string) {
 		return
 	}
 
-	if err := w.callModalTTS(ctx, job); err != nil {
+	audioBytes, err := w.callModalTTS(ctx, job)
+	if err != nil {
 		_ = w.queries.MarkGenerationFailed(ctx, db.MarkGenerationFailedParams{
 			ID:           job.GenerationID,
 			ErrorMessage: pgtype.Text{String: err.Error(), Valid: true},
@@ -120,10 +127,38 @@ func (w *TTSWorker) handleMessage(ctx context.Context, payload string) {
 		return
 	}
 
-	audioURL := w.audioBaseURL + "/" + job.GenerationID
+	s3ObjectKey := buildGeneratedAudioS3Key(job.GenerationID)
+	if err := w.s3Client.Upload(ctx, generations3.UploadOptions{
+		Key:         s3ObjectKey,
+		Body:        audioBytes,
+		ContentType: "audio/wav",
+	}); err != nil {
+		msg := fmt.Sprintf("failed to upload generated audio to s3: %v", err)
+		_ = w.queries.MarkGenerationFailed(ctx, db.MarkGenerationFailedParams{
+			ID:           job.GenerationID,
+			ErrorMessage: pgtype.Text{String: msg, Valid: true},
+		})
+		w.publishResult(ctx, job, "failed", "", msg)
+		w.logger.Error("failed to upload generated audio", zap.Error(err), zap.String("generation_id", job.GenerationID), zap.String("job_id", job.JobID), zap.String("s3_key", s3ObjectKey))
+		return
+	}
+
+	audioURL, err := w.s3Client.GetSignedURL(ctx, s3ObjectKey)
+	if err != nil {
+		msg := fmt.Sprintf("failed to sign generated audio url: %v", err)
+		_ = w.queries.MarkGenerationFailed(ctx, db.MarkGenerationFailedParams{
+			ID:           job.GenerationID,
+			ErrorMessage: pgtype.Text{String: msg, Valid: true},
+		})
+		w.publishResult(ctx, job, "failed", "", msg)
+		w.logger.Error("failed to sign generated audio", zap.Error(err), zap.String("generation_id", job.GenerationID), zap.String("job_id", job.JobID), zap.String("s3_key", s3ObjectKey))
+		return
+	}
+
 	if err := w.queries.MarkGenerationCompleted(ctx, db.MarkGenerationCompletedParams{
-		ID:       job.GenerationID,
-		AudioUrl: pgtype.Text{String: audioURL, Valid: true},
+		ID:          job.GenerationID,
+		AudioUrl:    pgtype.Text{String: audioURL, Valid: true},
+		S3ObjectKey: pgtype.Text{String: s3ObjectKey, Valid: true},
 	}); err != nil {
 		w.logger.Error("failed to mark completed", zap.Error(err), zap.String("generation_id", job.GenerationID), zap.String("job_id", job.JobID))
 		return
@@ -133,43 +168,89 @@ func (w *TTSWorker) handleMessage(ctx context.Context, payload string) {
 	w.logger.Info("tts generation completed", zap.String("generation_id", job.GenerationID), zap.String("job_id", job.JobID))
 }
 
-func (w *TTSWorker) callModalTTS(ctx context.Context, job JobMessage) error {
+func (w *TTSWorker) callModalTTS(ctx context.Context, job JobMessage) ([]byte, error) {
+	voiceKey := normalizeVoiceKey(job.VoiceKey)
+	if voiceKey == "" {
+		return nil, errors.New("voice_key is required")
+	}
+	languageID := strings.TrimSpace(job.LanguageID)
+	if languageID == "" {
+		languageID = "en"
+	}
+
 	body, err := json.Marshal(map[string]any{
-		"prompt":             job.Text,
-		"voice_key":          job.VoiceKey,
-		"temperature":        job.Temperature,
-		"top_p":              job.TopP,
-		"top_k":              job.TopK,
-		"repetition_penalty": job.RepetitionPenalty,
-		"norm_loudness":      job.NormalizeLoudness,
+		"prompt":       job.Text,
+		"voice_key":    voiceKey,
+		"language_id":  languageID,
+		"temperature":  job.Temperature,
+		"exaggeration": job.Exaggeration,
+		"cfg_weight":   job.CfgWeight,
 	})
 	if err != nil {
-		return fmt.Errorf("marshal tts request: %w", err)
+		return nil, fmt.Errorf("marshal tts request: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, w.ttsEndpoint, bytes.NewReader(body))
 	if err != nil {
-		return fmt.Errorf("build tts request: %w", err)
+		return nil, fmt.Errorf("build tts request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-api-key", w.ttsAPIKey)
 
 	resp, err := w.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("call modal tts endpoint: %w", err)
+		return nil, fmt.Errorf("call modal tts endpoint: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		bodyBytes, _ := io.ReadAll(io.LimitReader(resp.Body, 4*1024))
-		return fmt.Errorf("modal tts returned %d: %s", resp.StatusCode, strings.TrimSpace(string(bodyBytes)))
+		return nil, fmt.Errorf("modal tts returned %d: %s", resp.StatusCode, strings.TrimSpace(string(bodyBytes)))
 	}
 
-	if _, err := io.Copy(io.Discard, resp.Body); err != nil {
-		return fmt.Errorf("read modal tts response: %w", err)
+	audioBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read modal tts response: %w", err)
+	}
+	if len(audioBytes) == 0 {
+		return nil, errors.New("modal tts returned empty audio")
 	}
 
-	return nil
+	return audioBytes, nil
+}
+
+func buildGeneratedAudioS3Key(generationID string) string {
+	return path.Join("generated", generationID, "audio.wav")
+}
+
+func normalizeVoiceKey(raw string) string {
+	key := strings.TrimSpace(raw)
+	if key == "" {
+		return ""
+	}
+
+	if parsed, err := url.Parse(key); err == nil && parsed.Scheme != "" && parsed.Host != "" {
+		key = parsed.Path
+	}
+
+	key = strings.TrimPrefix(strings.TrimSpace(key), "/")
+
+	if bucket := strings.TrimSpace(getEnv("S3_BUCKET_NAME", "")); bucket != "" && strings.HasPrefix(key, bucket+"/") {
+		key = strings.TrimPrefix(key, bucket+"/")
+	}
+
+	if idx := strings.Index(key, "voices/"); idx > 0 {
+		key = key[idx:]
+	}
+
+	return key
+}
+
+func getEnv(key, fallback string) string {
+	if value := strings.TrimSpace(os.Getenv(key)); value != "" {
+		return value
+	}
+	return fallback
 }
 
 func (w *TTSWorker) publishResult(ctx context.Context, job JobMessage, status string, audioURL string, errMsg string) {

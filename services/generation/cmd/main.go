@@ -20,6 +20,7 @@ import (
 	"github.com/go-grpc-sqlc/generation/gen/pb/pbconnect"
 	db "github.com/go-grpc-sqlc/generation/internal/db"
 	"github.com/go-grpc-sqlc/generation/internal/redisstore"
+	generations3 "github.com/go-grpc-sqlc/generation/internal/s3"
 	"github.com/go-grpc-sqlc/generation/internal/server"
 	"github.com/go-grpc-sqlc/generation/internal/worker"
 	"github.com/go-grpc-sqlc/pkg/interceptor"
@@ -59,6 +60,11 @@ func main() {
 
 	queries := db.New(dbPool)
 
+	s3Client, err := generations3.New(cfg)
+	if err != nil {
+		logger.Fatal("failed to initialize generation s3 client", zap.Error(err))
+	}
+
 	if cfg.RedisURL == "" {
 		logger.Fatal("generation redis url is required for async job queue")
 	}
@@ -81,11 +87,11 @@ func main() {
 		redisClient,
 		queries,
 		logger,
+		s3Client,
 		cfg.TTSEndpoint,
 		cfg.TTSAPIKey,
 		cfg.TTSQueueChannel,
 		cfg.TTSResultsChannelPrefix,
-		cfg.AudioBaseURL,
 	)
 
 	go func() {
@@ -96,7 +102,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	generationServer := server.NewGenerationServer(queries, redisClient, cfg.TTSQueueChannel, logger)
+	generationServer := server.NewGenerationServer(queries, redisClient, s3Client, cfg.TTSQueueChannel, logger)
 	loggingInterceptor := interceptor.NewLoggingInterceptor(logger)
 	tokenMaker, err := token.NewJWTMaker(cfg.JWTSecret)
 	if err != nil {

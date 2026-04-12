@@ -30,6 +30,7 @@ with image.imports():
     import io
     import os
     import tempfile
+    import urllib.parse
     from pathlib import Path
 
     import boto3
@@ -66,11 +67,15 @@ with image.imports():
 
         prompt: str = Field(..., min_length=1, max_length=5000)
         voice_key: str = Field(..., min_length=1, max_length=300)
+        language_id: str = Field(default="en", min_length=2, max_length=10)
         temperature: float = Field(default=0.8, ge=0.0, le=2.0)
-        top_p: float = Field(default=0.95, ge=0.0, le=1.0)
-        top_k: int = Field(default=1000, ge=1, le=10000)
-        repetition_penalty: float = Field(default=1.2, ge=1.0, le=2.0)
-        norm_loudness: bool = Field(default=True)
+        exaggeration: float = Field(default=0.5, ge=0.25, le=2.0)
+        cfg_weight: float = Field(default=0.5, ge=0.2, le=1.0)
+        # Backward-compatible fields kept temporarily and ignored by model.generate.
+        top_p: float | None = Field(default=None)
+        top_k: int | None = Field(default=None)
+        repetition_penalty: float | None = Field(default=None)
+        norm_loudness: bool | None = Field(default=None)
 
 
 @app.cls(
@@ -106,6 +111,27 @@ class Chatterbox:
             config=Config(s3={"addressing_style": "path"}),
         )
 
+    def _normalize_voice_key(self, voice_key: str) -> str:
+        key = (voice_key or "").strip()
+        if not key:
+            return ""
+
+        parsed = urllib.parse.urlparse(key)
+        if parsed.scheme and parsed.netloc:
+            key = parsed.path
+
+        key = key.lstrip("/")
+
+        bucket_prefix = f"{self.bucket_name}/"
+        if key.startswith(bucket_prefix):
+            key = key[len(bucket_prefix) :]
+
+        voices_idx = key.find("voices/")
+        if voices_idx > 0:
+            key = key[voices_idx:]
+
+        return key
+
     @modal.asgi_app()
     def serve(self):
         web_app = FastAPI(
@@ -128,11 +154,10 @@ class Chatterbox:
                 audio_bytes = self.generate_from_voice_key.local(
                     request.prompt,
                     request.voice_key,
+                    request.language_id,
                     request.temperature,
-                    request.top_p,
-                    request.top_k,
-                    request.repetition_penalty,
-                    request.norm_loudness,
+                    request.exaggeration,
+                    request.cfg_weight,
                 )
                 return StreamingResponse(io.BytesIO(audio_bytes), media_type="audio/wav")
             except ValueError as e:
@@ -150,33 +175,35 @@ class Chatterbox:
         self,
         prompt: str,
         voice_key: str,
+        language_id: str = "en",
         temperature: float = 0.8,
-        top_p: float = 0.95,
-        top_k: int = 1000,
-        repetition_penalty: float = 1.2,
-        norm_loudness: bool = True,
+        exaggeration: float = 0.5,
+        cfg_weight: float = 0.5,
     ):
         tmp_path: str | None = None
+        normalized_key = self._normalize_voice_key(voice_key)
+
+        if not normalized_key:
+            raise ValueError("voice_key is required")
 
         try:
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-                self.s3.download_fileobj(self.bucket_name, voice_key, tmp)
+                self.s3.download_fileobj(self.bucket_name, normalized_key, tmp)
                 tmp_path = tmp.name
         except ClientError as e:
             code = e.response.get("Error", {}).get("Code", "")
             if code in ("404", "NoSuchKey", "NotFound"):
-                raise ValueError(f"Voice not found at '{voice_key}'") from e
+                raise ValueError(f"Voice not found at '{normalized_key}'") from e
             raise RuntimeError(f"S3 download failed: {e}") from e
 
         try:
             wav = self.model.generate(
                 prompt,
+                language_id=language_id,
                 audio_prompt_path=tmp_path,
                 temperature=temperature,
-                top_p=top_p,
-                top_k=top_k,
-                repetition_penalty=repetition_penalty,
-                norm_loudness=norm_loudness,
+                exaggeration=exaggeration,
+                cfg_weight=cfg_weight,
             )
 
             buffer = io.BytesIO()
@@ -192,12 +219,11 @@ class Chatterbox:
 def test(
     prompt: str = "Chatterbox running on Modal [chuckle].",
     voice_key: str = "voices/system/default.wav",
+    language_id: str = "en",
     output_path: str = "/tmp/chatterbox-tts/output.wav",
     temperature: float = 0.8,
-    top_p: float = 0.95,
-    top_k: int = 1000,
-    repetition_penalty: float = 1.2,
-    norm_loudness: bool = True,
+    exaggeration: float = 0.5,
+    cfg_weight: float = 0.5,
 ):
     import pathlib
 
@@ -205,11 +231,10 @@ def test(
     audio_bytes = chatterbox.generate_from_voice_key.remote(
         prompt=prompt,
         voice_key=voice_key,
+        language_id=language_id,
         temperature=temperature,
-        top_p=top_p,
-        top_k=top_k,
-        repetition_penalty=repetition_penalty,
-        norm_loudness=norm_loudness,
+        exaggeration=exaggeration,
+        cfg_weight=cfg_weight,
     )
 
     output_file = pathlib.Path(output_path)

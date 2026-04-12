@@ -121,23 +121,23 @@ func (x *GetGenerationRequest) GetId() string {
 }
 
 type GetGenerationResponse struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	Id                string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	JobId             string                 `protobuf:"bytes,2,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
-	VoiceId           string                 `protobuf:"bytes,3,opt,name=voice_id,json=voiceId,proto3" json:"voice_id,omitempty"`
-	VoiceName         string                 `protobuf:"bytes,4,opt,name=voice_name,json=voiceName,proto3" json:"voice_name,omitempty"`
-	Text              string                 `protobuf:"bytes,5,opt,name=text,proto3" json:"text,omitempty"`
-	Temperature       float64                `protobuf:"fixed64,6,opt,name=temperature,proto3" json:"temperature,omitempty"`
-	TopP              float64                `protobuf:"fixed64,7,opt,name=top_p,json=topP,proto3" json:"top_p,omitempty"`
-	TopK              int32                  `protobuf:"varint,8,opt,name=top_k,json=topK,proto3" json:"top_k,omitempty"`
-	RepetitionPenalty float64                `protobuf:"fixed64,9,opt,name=repetition_penalty,json=repetitionPenalty,proto3" json:"repetition_penalty,omitempty"`
-	AudioUrl          string                 `protobuf:"bytes,10,opt,name=audio_url,json=audioUrl,proto3" json:"audio_url,omitempty"`
-	Status            GenerationJobStatus    `protobuf:"varint,11,opt,name=status,proto3,enum=generation.GenerationJobStatus" json:"status,omitempty"`
-	ErrorMessage      string                 `protobuf:"bytes,12,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	CreatedAtUnix     int64                  `protobuf:"varint,13,opt,name=created_at_unix,json=createdAtUnix,proto3" json:"created_at_unix,omitempty"`
-	UpdatedAtUnix     int64                  `protobuf:"varint,14,opt,name=updated_at_unix,json=updatedAtUnix,proto3" json:"updated_at_unix,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	JobId         string                 `protobuf:"bytes,2,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	VoiceId       string                 `protobuf:"bytes,3,opt,name=voice_id,json=voiceId,proto3" json:"voice_id,omitempty"`
+	VoiceName     string                 `protobuf:"bytes,4,opt,name=voice_name,json=voiceName,proto3" json:"voice_name,omitempty"`
+	Text          string                 `protobuf:"bytes,5,opt,name=text,proto3" json:"text,omitempty"`
+	Temperature   float64                `protobuf:"fixed64,6,opt,name=temperature,proto3" json:"temperature,omitempty"`
+	LanguageId    string                 `protobuf:"bytes,7,opt,name=language_id,json=languageId,proto3" json:"language_id,omitempty"`
+	Exaggeration  float64                `protobuf:"fixed64,8,opt,name=exaggeration,proto3" json:"exaggeration,omitempty"`
+	CfgWeight     float64                `protobuf:"fixed64,9,opt,name=cfg_weight,json=cfgWeight,proto3" json:"cfg_weight,omitempty"`
+	AudioUrl      string                 `protobuf:"bytes,10,opt,name=audio_url,json=audioUrl,proto3" json:"audio_url,omitempty"`
+	Status        GenerationJobStatus    `protobuf:"varint,11,opt,name=status,proto3,enum=generation.GenerationJobStatus" json:"status,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,12,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	CreatedAtUnix int64                  `protobuf:"varint,13,opt,name=created_at_unix,json=createdAtUnix,proto3" json:"created_at_unix,omitempty"`
+	UpdatedAtUnix int64                  `protobuf:"varint,14,opt,name=updated_at_unix,json=updatedAtUnix,proto3" json:"updated_at_unix,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetGenerationResponse) Reset() {
@@ -212,23 +212,23 @@ func (x *GetGenerationResponse) GetTemperature() float64 {
 	return 0
 }
 
-func (x *GetGenerationResponse) GetTopP() float64 {
+func (x *GetGenerationResponse) GetLanguageId() string {
 	if x != nil {
-		return x.TopP
+		return x.LanguageId
+	}
+	return ""
+}
+
+func (x *GetGenerationResponse) GetExaggeration() float64 {
+	if x != nil {
+		return x.Exaggeration
 	}
 	return 0
 }
 
-func (x *GetGenerationResponse) GetTopK() int32 {
+func (x *GetGenerationResponse) GetCfgWeight() float64 {
 	if x != nil {
-		return x.TopK
-	}
-	return 0
-}
-
-func (x *GetGenerationResponse) GetRepetitionPenalty() float64 {
-	if x != nil {
-		return x.RepetitionPenalty
+		return x.CfgWeight
 	}
 	return 0
 }
@@ -269,22 +269,22 @@ func (x *GetGenerationResponse) GetUpdatedAtUnix() int64 {
 }
 
 type GenerationItem struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	Id                string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	JobId             string                 `protobuf:"bytes,2,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
-	VoiceId           string                 `protobuf:"bytes,3,opt,name=voice_id,json=voiceId,proto3" json:"voice_id,omitempty"`
-	VoiceName         string                 `protobuf:"bytes,4,opt,name=voice_name,json=voiceName,proto3" json:"voice_name,omitempty"`
-	Text              string                 `protobuf:"bytes,5,opt,name=text,proto3" json:"text,omitempty"`
-	Temperature       float64                `protobuf:"fixed64,6,opt,name=temperature,proto3" json:"temperature,omitempty"`
-	TopP              float64                `protobuf:"fixed64,7,opt,name=top_p,json=topP,proto3" json:"top_p,omitempty"`
-	TopK              int32                  `protobuf:"varint,8,opt,name=top_k,json=topK,proto3" json:"top_k,omitempty"`
-	RepetitionPenalty float64                `protobuf:"fixed64,9,opt,name=repetition_penalty,json=repetitionPenalty,proto3" json:"repetition_penalty,omitempty"`
-	AudioUrl          string                 `protobuf:"bytes,10,opt,name=audio_url,json=audioUrl,proto3" json:"audio_url,omitempty"`
-	Status            GenerationJobStatus    `protobuf:"varint,11,opt,name=status,proto3,enum=generation.GenerationJobStatus" json:"status,omitempty"`
-	CreatedAtUnix     int64                  `protobuf:"varint,12,opt,name=created_at_unix,json=createdAtUnix,proto3" json:"created_at_unix,omitempty"`
-	UpdatedAtUnix     int64                  `protobuf:"varint,13,opt,name=updated_at_unix,json=updatedAtUnix,proto3" json:"updated_at_unix,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	JobId         string                 `protobuf:"bytes,2,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	VoiceId       string                 `protobuf:"bytes,3,opt,name=voice_id,json=voiceId,proto3" json:"voice_id,omitempty"`
+	VoiceName     string                 `protobuf:"bytes,4,opt,name=voice_name,json=voiceName,proto3" json:"voice_name,omitempty"`
+	Text          string                 `protobuf:"bytes,5,opt,name=text,proto3" json:"text,omitempty"`
+	Temperature   float64                `protobuf:"fixed64,6,opt,name=temperature,proto3" json:"temperature,omitempty"`
+	LanguageId    string                 `protobuf:"bytes,7,opt,name=language_id,json=languageId,proto3" json:"language_id,omitempty"`
+	Exaggeration  float64                `protobuf:"fixed64,8,opt,name=exaggeration,proto3" json:"exaggeration,omitempty"`
+	CfgWeight     float64                `protobuf:"fixed64,9,opt,name=cfg_weight,json=cfgWeight,proto3" json:"cfg_weight,omitempty"`
+	AudioUrl      string                 `protobuf:"bytes,10,opt,name=audio_url,json=audioUrl,proto3" json:"audio_url,omitempty"`
+	Status        GenerationJobStatus    `protobuf:"varint,11,opt,name=status,proto3,enum=generation.GenerationJobStatus" json:"status,omitempty"`
+	CreatedAtUnix int64                  `protobuf:"varint,12,opt,name=created_at_unix,json=createdAtUnix,proto3" json:"created_at_unix,omitempty"`
+	UpdatedAtUnix int64                  `protobuf:"varint,13,opt,name=updated_at_unix,json=updatedAtUnix,proto3" json:"updated_at_unix,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GenerationItem) Reset() {
@@ -359,23 +359,23 @@ func (x *GenerationItem) GetTemperature() float64 {
 	return 0
 }
 
-func (x *GenerationItem) GetTopP() float64 {
+func (x *GenerationItem) GetLanguageId() string {
 	if x != nil {
-		return x.TopP
+		return x.LanguageId
+	}
+	return ""
+}
+
+func (x *GenerationItem) GetExaggeration() float64 {
+	if x != nil {
+		return x.Exaggeration
 	}
 	return 0
 }
 
-func (x *GenerationItem) GetTopK() int32 {
+func (x *GenerationItem) GetCfgWeight() float64 {
 	if x != nil {
-		return x.TopK
-	}
-	return 0
-}
-
-func (x *GenerationItem) GetRepetitionPenalty() float64 {
-	if x != nil {
-		return x.RepetitionPenalty
+		return x.CfgWeight
 	}
 	return 0
 }
@@ -489,17 +489,17 @@ func (x *ListGenerationsResponse) GetGenerations() []*GenerationItem {
 }
 
 type GenerateSpeechRequest struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	Text              string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
-	VoiceId           string                 `protobuf:"bytes,2,opt,name=voice_id,json=voiceId,proto3" json:"voice_id,omitempty"`
-	VoiceName         string                 `protobuf:"bytes,3,opt,name=voice_name,json=voiceName,proto3" json:"voice_name,omitempty"`
-	VoiceKey          string                 `protobuf:"bytes,4,opt,name=voice_key,json=voiceKey,proto3" json:"voice_key,omitempty"`
-	Temperature       float64                `protobuf:"fixed64,5,opt,name=temperature,proto3" json:"temperature,omitempty"`
-	TopP              float64                `protobuf:"fixed64,6,opt,name=top_p,json=topP,proto3" json:"top_p,omitempty"`
-	TopK              int32                  `protobuf:"varint,7,opt,name=top_k,json=topK,proto3" json:"top_k,omitempty"`
-	RepetitionPenalty float64                `protobuf:"fixed64,8,opt,name=repetition_penalty,json=repetitionPenalty,proto3" json:"repetition_penalty,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
+	VoiceId       string                 `protobuf:"bytes,2,opt,name=voice_id,json=voiceId,proto3" json:"voice_id,omitempty"`
+	VoiceName     string                 `protobuf:"bytes,3,opt,name=voice_name,json=voiceName,proto3" json:"voice_name,omitempty"`
+	VoiceKey      string                 `protobuf:"bytes,4,opt,name=voice_key,json=voiceKey,proto3" json:"voice_key,omitempty"`
+	Temperature   float64                `protobuf:"fixed64,5,opt,name=temperature,proto3" json:"temperature,omitempty"`
+	LanguageId    string                 `protobuf:"bytes,6,opt,name=language_id,json=languageId,proto3" json:"language_id,omitempty"`
+	Exaggeration  float64                `protobuf:"fixed64,7,opt,name=exaggeration,proto3" json:"exaggeration,omitempty"`
+	CfgWeight     float64                `protobuf:"fixed64,8,opt,name=cfg_weight,json=cfgWeight,proto3" json:"cfg_weight,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GenerateSpeechRequest) Reset() {
@@ -567,23 +567,23 @@ func (x *GenerateSpeechRequest) GetTemperature() float64 {
 	return 0
 }
 
-func (x *GenerateSpeechRequest) GetTopP() float64 {
+func (x *GenerateSpeechRequest) GetLanguageId() string {
 	if x != nil {
-		return x.TopP
+		return x.LanguageId
+	}
+	return ""
+}
+
+func (x *GenerateSpeechRequest) GetExaggeration() float64 {
+	if x != nil {
+		return x.Exaggeration
 	}
 	return 0
 }
 
-func (x *GenerateSpeechRequest) GetTopK() int32 {
+func (x *GenerateSpeechRequest) GetCfgWeight() float64 {
 	if x != nil {
-		return x.TopK
-	}
-	return 0
-}
-
-func (x *GenerateSpeechRequest) GetRepetitionPenalty() float64 {
-	if x != nil {
-		return x.RepetitionPenalty
+		return x.CfgWeight
 	}
 	return 0
 }
@@ -783,7 +783,7 @@ const file_generation_proto_rawDesc = "" +
 	"\x10generation.proto\x12\n" +
 	"generation\"&\n" +
 	"\x14GetGenerationRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\xd2\x03\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xdd\x03\n" +
 	"\x15GetGenerationResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x15\n" +
 	"\x06job_id\x18\x02 \x01(\tR\x05jobId\x12\x19\n" +
@@ -791,16 +791,18 @@ const file_generation_proto_rawDesc = "" +
 	"\n" +
 	"voice_name\x18\x04 \x01(\tR\tvoiceName\x12\x12\n" +
 	"\x04text\x18\x05 \x01(\tR\x04text\x12 \n" +
-	"\vtemperature\x18\x06 \x01(\x01R\vtemperature\x12\x13\n" +
-	"\x05top_p\x18\a \x01(\x01R\x04topP\x12\x13\n" +
-	"\x05top_k\x18\b \x01(\x05R\x04topK\x12-\n" +
-	"\x12repetition_penalty\x18\t \x01(\x01R\x11repetitionPenalty\x12\x1b\n" +
+	"\vtemperature\x18\x06 \x01(\x01R\vtemperature\x12\x1f\n" +
+	"\vlanguage_id\x18\a \x01(\tR\n" +
+	"languageId\x12\"\n" +
+	"\fexaggeration\x18\b \x01(\x01R\fexaggeration\x12\x1d\n" +
+	"\n" +
+	"cfg_weight\x18\t \x01(\x01R\tcfgWeight\x12\x1b\n" +
 	"\taudio_url\x18\n" +
 	" \x01(\tR\baudioUrl\x127\n" +
 	"\x06status\x18\v \x01(\x0e2\x1f.generation.GenerationJobStatusR\x06status\x12#\n" +
 	"\rerror_message\x18\f \x01(\tR\ferrorMessage\x12&\n" +
 	"\x0fcreated_at_unix\x18\r \x01(\x03R\rcreatedAtUnix\x12&\n" +
-	"\x0fupdated_at_unix\x18\x0e \x01(\x03R\rupdatedAtUnix\"\xa6\x03\n" +
+	"\x0fupdated_at_unix\x18\x0e \x01(\x03R\rupdatedAtUnix\"\xb1\x03\n" +
 	"\x0eGenerationItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x15\n" +
 	"\x06job_id\x18\x02 \x01(\tR\x05jobId\x12\x19\n" +
@@ -808,10 +810,12 @@ const file_generation_proto_rawDesc = "" +
 	"\n" +
 	"voice_name\x18\x04 \x01(\tR\tvoiceName\x12\x12\n" +
 	"\x04text\x18\x05 \x01(\tR\x04text\x12 \n" +
-	"\vtemperature\x18\x06 \x01(\x01R\vtemperature\x12\x13\n" +
-	"\x05top_p\x18\a \x01(\x01R\x04topP\x12\x13\n" +
-	"\x05top_k\x18\b \x01(\x05R\x04topK\x12-\n" +
-	"\x12repetition_penalty\x18\t \x01(\x01R\x11repetitionPenalty\x12\x1b\n" +
+	"\vtemperature\x18\x06 \x01(\x01R\vtemperature\x12\x1f\n" +
+	"\vlanguage_id\x18\a \x01(\tR\n" +
+	"languageId\x12\"\n" +
+	"\fexaggeration\x18\b \x01(\x01R\fexaggeration\x12\x1d\n" +
+	"\n" +
+	"cfg_weight\x18\t \x01(\x01R\tcfgWeight\x12\x1b\n" +
 	"\taudio_url\x18\n" +
 	" \x01(\tR\baudioUrl\x127\n" +
 	"\x06status\x18\v \x01(\x0e2\x1f.generation.GenerationJobStatusR\x06status\x12&\n" +
@@ -819,17 +823,19 @@ const file_generation_proto_rawDesc = "" +
 	"\x0fupdated_at_unix\x18\r \x01(\x03R\rupdatedAtUnix\"\x18\n" +
 	"\x16ListGenerationsRequest\"W\n" +
 	"\x17ListGenerationsResponse\x12<\n" +
-	"\vgenerations\x18\x01 \x03(\v2\x1a.generation.GenerationItemR\vgenerations\"\xfd\x01\n" +
+	"\vgenerations\x18\x01 \x03(\v2\x1a.generation.GenerationItemR\vgenerations\"\x88\x02\n" +
 	"\x15GenerateSpeechRequest\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x19\n" +
 	"\bvoice_id\x18\x02 \x01(\tR\avoiceId\x12\x1d\n" +
 	"\n" +
 	"voice_name\x18\x03 \x01(\tR\tvoiceName\x12\x1b\n" +
 	"\tvoice_key\x18\x04 \x01(\tR\bvoiceKey\x12 \n" +
-	"\vtemperature\x18\x05 \x01(\x01R\vtemperature\x12\x13\n" +
-	"\x05top_p\x18\x06 \x01(\x01R\x04topP\x12\x13\n" +
-	"\x05top_k\x18\a \x01(\x05R\x04topK\x12-\n" +
-	"\x12repetition_penalty\x18\b \x01(\x01R\x11repetitionPenalty\"\x8d\x01\n" +
+	"\vtemperature\x18\x05 \x01(\x01R\vtemperature\x12\x1f\n" +
+	"\vlanguage_id\x18\x06 \x01(\tR\n" +
+	"languageId\x12\"\n" +
+	"\fexaggeration\x18\a \x01(\x01R\fexaggeration\x12\x1d\n" +
+	"\n" +
+	"cfg_weight\x18\b \x01(\x01R\tcfgWeight\"\x8d\x01\n" +
 	"\x16GenerateSpeechResponse\x12#\n" +
 	"\rgeneration_id\x18\x01 \x01(\tR\fgenerationId\x12\x15\n" +
 	"\x06job_id\x18\x02 \x01(\tR\x05jobId\x127\n" +

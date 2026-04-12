@@ -13,6 +13,11 @@ type Config struct {
 	TTSEndpoint             string `mapstructure:"GENERATION_TTS_ENDPOINT"`
 	TTSAPIKey               string `mapstructure:"GENERATION_TTS_API_KEY"`
 	AudioBaseURL            string `mapstructure:"GENERATION_AUDIO_BASE_URL"`
+	S3Endpoint              string `mapstructure:"S3_ENDPOINT"`
+	S3Region                string `mapstructure:"S3_REGION"`
+	S3Bucket                string `mapstructure:"S3_BUCKET"`
+	S3AccessKey             string `mapstructure:"S3_ACCESS_KEY_ID"`
+	S3SecretKey             string `mapstructure:"S3_SECRET_ACCESS_KEY"`
 }
 
 func Load() (Config, error) {
@@ -30,6 +35,8 @@ func Load() (Config, error) {
 	viper.SetDefault("GENERATION_TTS_RESULTS_CHANNEL_PREFIX", "tts:results:")
 	viper.SetDefault("GENERATION_TTS_ENDPOINT", "")
 	viper.SetDefault("GENERATION_AUDIO_BASE_URL", "/api/audio")
+	viper.SetDefault("S3_REGION", "us-west-004")
+	viper.SetDefault("S3_ENDPOINT", "https://s3.us-west-004.backblazeb2.com")
 
 	var cfg Config
 	if err := viper.Unmarshal(&cfg); err != nil {

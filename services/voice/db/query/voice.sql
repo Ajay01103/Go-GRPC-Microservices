@@ -37,6 +37,17 @@ DELETE FROM voices
 WHERE id = $1
   AND user_id = $2;
 
+-- name: UpdateVoice :one
+UPDATE voices
+SET name = $3,
+    description = $4,
+    category = $5,
+    language = $6,
+    updated_at = NOW()
+WHERE id = $1
+  AND user_id = $2
+RETURNING id, user_id, name, description, category, language, variant, s3_object_key, created_at, updated_at;
+
 -- name: GetSystemVoiceByName :one
 SELECT * FROM voices
 WHERE name = $1 AND user_id = 'SYSTEM'

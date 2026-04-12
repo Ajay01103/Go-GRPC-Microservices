@@ -25,9 +25,9 @@ INSERT INTO generations (
 	voice_name,
 	text,
 	temperature,
-	top_p,
-	top_k,
-	repetition_penalty,
+	language_id,
+	exaggeration,
+	cfg_weight,
 	status,
 	queued_at
 )
@@ -48,6 +48,7 @@ UPDATE generations
 SET
 	status = 'completed',
 	audio_url = $2,
+	s3_object_key = $3,
 	completed_at = NOW(),
 	updated_at = NOW(),
 	error_message = NULL

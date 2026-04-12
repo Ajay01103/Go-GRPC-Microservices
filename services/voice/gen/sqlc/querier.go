@@ -18,6 +18,7 @@ type Querier interface {
 	ListCustomVoices(ctx context.Context, userID string) ([]ListCustomVoicesRow, error)
 	ListCustomVoicesSearch(ctx context.Context, arg ListCustomVoicesSearchParams) ([]ListCustomVoicesSearchRow, error)
 	UpdateSystemVoiceS3Key(ctx context.Context, arg UpdateSystemVoiceS3KeyParams) error
+	UpdateVoice(ctx context.Context, arg UpdateVoiceParams) (Voice, error)
 }
 
 var _ Querier = (*Queries)(nil)

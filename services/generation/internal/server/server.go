@@ -10,6 +10,7 @@ import (
 	"github.com/go-grpc-sqlc/generation/gen/pb"
 	"github.com/go-grpc-sqlc/generation/gen/pb/pbconnect"
 	db "github.com/go-grpc-sqlc/generation/internal/db"
+	generations3 "github.com/go-grpc-sqlc/generation/internal/s3"
 	"github.com/go-grpc-sqlc/generation/internal/worker"
 	"github.com/go-grpc-sqlc/pkg/interceptor"
 	"github.com/google/uuid"
@@ -25,14 +26,16 @@ type GenerationServer struct {
 	pbconnect.UnimplementedGenerationServiceHandler
 	queries      db.Querier
 	redis        *redis.Client
+	s3Client     *generations3.Client
 	queueChannel string
 	logger       *zap.Logger
 }
 
-func NewGenerationServer(queries db.Querier, redisClient *redis.Client, queueChannel string, logger *zap.Logger) *GenerationServer {
+func NewGenerationServer(queries db.Querier, redisClient *redis.Client, s3Client *generations3.Client, queueChannel string, logger *zap.Logger) *GenerationServer {
 	return &GenerationServer{
 		queries:      queries,
 		redis:        redisClient,
+		s3Client:     s3Client,
 		queueChannel: strings.TrimSpace(queueChannel),
 		logger:       logger,
 	}
@@ -61,6 +64,20 @@ func (s *GenerationServer) GetGeneration(ctx context.Context, req *connect.Reque
 		return nil, connect.NewError(connect.CodeInternal, errors.New("failed to get generation"))
 	}
 
+	audioURL := generation.AudioUrl.String
+	if generation.S3ObjectKey.Valid && generation.S3ObjectKey.String != "" && s.s3Client != nil {
+		signedURL, signErr := s.s3Client.GetSignedURL(ctx, generation.S3ObjectKey.String)
+		if signErr != nil {
+			s.logger.Warn("failed to sign generation audio url",
+				zap.Error(signErr),
+				zap.String("generation_id", generation.ID),
+				zap.String("s3_key", generation.S3ObjectKey.String),
+			)
+		} else {
+			audioURL = signedURL
+		}
+	}
+
 	return connect.NewResponse(&pb.GetGenerationResponse{
 		Id:                generation.ID,
 		JobId:             generation.JobID,
@@ -68,10 +85,10 @@ func (s *GenerationServer) GetGeneration(ctx context.Context, req *connect.Reque
 		VoiceName:         generation.VoiceName,
 		Text:              generation.Text,
 		Temperature:       generation.Temperature,
-		TopP:              generation.TopP,
-		TopK:              generation.TopK,
-		RepetitionPenalty: generation.RepetitionPenalty,
-		AudioUrl:          generation.AudioUrl.String,
+		LanguageId:        generation.LanguageID,
+		Exaggeration:      generation.Exaggeration,
+		CfgWeight:         generation.CfgWeight,
+		AudioUrl:          audioURL,
 		Status:            statusToProto(generation.Status),
 		ErrorMessage:      generation.ErrorMessage.String,
 		CreatedAtUnix:     generation.CreatedAt.Time.Unix(),
@@ -93,6 +110,20 @@ func (s *GenerationServer) ListGenerations(ctx context.Context, _ *connect.Reque
 
 	items := make([]*pb.GenerationItem, 0, len(rows))
 	for _, row := range rows {
+		audioURL := row.AudioUrl.String
+		if row.S3ObjectKey.Valid && row.S3ObjectKey.String != "" && s.s3Client != nil {
+			signedURL, signErr := s.s3Client.GetSignedURL(ctx, row.S3ObjectKey.String)
+			if signErr != nil {
+				s.logger.Warn("failed to sign generation audio url",
+					zap.Error(signErr),
+					zap.String("generation_id", row.ID),
+					zap.String("s3_key", row.S3ObjectKey.String),
+				)
+			} else {
+				audioURL = signedURL
+			}
+		}
+
 		items = append(items, &pb.GenerationItem{
 			Id:                row.ID,
 			JobId:             row.JobID,
@@ -100,10 +131,10 @@ func (s *GenerationServer) ListGenerations(ctx context.Context, _ *connect.Reque
 			VoiceName:         row.VoiceName,
 			Text:              row.Text,
 			Temperature:       row.Temperature,
-			TopP:              row.TopP,
-			TopK:              row.TopK,
-			RepetitionPenalty: row.RepetitionPenalty,
-			AudioUrl:          row.AudioUrl.String,
+			LanguageId:        row.LanguageID,
+			Exaggeration:      row.Exaggeration,
+			CfgWeight:         row.CfgWeight,
+			AudioUrl:          audioURL,
 			Status:            statusToProto(row.Status),
 			CreatedAtUnix:     row.CreatedAt.Time.Unix(),
 			UpdatedAtUnix:     row.UpdatedAt.Time.Unix(),
@@ -148,8 +179,17 @@ func (s *GenerationServer) GenerateSpeech(ctx context.Context, req *connect.Requ
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("voice_key is required"))
 	}
 
-	if req.Msg.TopK < 1 {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("top_k must be at least 1"))
+	languageID := strings.TrimSpace(req.Msg.LanguageId)
+	if languageID == "" {
+		languageID = "en"
+	}
+
+	if req.Msg.Exaggeration < 0.25 || req.Msg.Exaggeration > 2.0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("exaggeration must be between 0.25 and 2.0"))
+	}
+
+	if req.Msg.CfgWeight < 0.2 || req.Msg.CfgWeight > 1.0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("cfg_weight must be between 0.2 and 1.0"))
 	}
 
 	id := uuid.NewString()
@@ -162,9 +202,9 @@ func (s *GenerationServer) GenerateSpeech(ctx context.Context, req *connect.Requ
 		VoiceName:         voiceName,
 		Text:              text,
 		Temperature:       req.Msg.Temperature,
-		TopP:              req.Msg.TopP,
-		TopK:              req.Msg.TopK,
-		RepetitionPenalty: req.Msg.RepetitionPenalty,
+		LanguageID:        languageID,
+		Exaggeration:      req.Msg.Exaggeration,
+		CfgWeight:         req.Msg.CfgWeight,
 		Status:            "queued",
 	})
 	if err != nil {
@@ -178,11 +218,10 @@ func (s *GenerationServer) GenerateSpeech(ctx context.Context, req *connect.Requ
 		UserID:            payload.UserID.String(),
 		Text:              text,
 		VoiceKey:          voiceKey,
+		LanguageID:        languageID,
 		Temperature:       req.Msg.Temperature,
-		TopP:              req.Msg.TopP,
-		TopK:              req.Msg.TopK,
-		RepetitionPenalty: req.Msg.RepetitionPenalty,
-		NormalizeLoudness: true,
+		Exaggeration:      req.Msg.Exaggeration,
+		CfgWeight:         req.Msg.CfgWeight,
 	}
 	payloadBytes, err := json.Marshal(jobPayload)
 	if err != nil {
