@@ -26,6 +26,7 @@ const VOICE_VARIANT_LABELS = {
 export type VoiceVariantName = keyof typeof VOICE_VARIANT_LABELS
 
 const VOICE_CATEGORIES = Object.keys(VOICE_CATEGORY_LABELS) as VoiceCategoryName[]
+const VOICE_VARIANTS = Object.keys(VOICE_VARIANT_LABELS) as VoiceVariantName[]
 
 const PROTO_VOICE_CATEGORY_LABELS: Record<VoiceCategory, string> = {
   [VoiceCategory.UNSPECIFIED]: "Unspecified",
@@ -57,4 +58,4 @@ export function getProtoVoiceVariantLabel(variant: VoiceVariant | undefined) {
   return PROTO_VOICE_VARIANT_LABELS[variant ?? VoiceVariant.UNSPECIFIED]
 }
 
-export { VOICE_CATEGORY_LABELS, VOICE_VARIANT_LABELS, VOICE_CATEGORIES }
+export { VOICE_CATEGORY_LABELS, VOICE_VARIANT_LABELS, VOICE_CATEGORIES, VOICE_VARIANTS }

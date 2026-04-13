@@ -2,6 +2,7 @@
 
 import { PauseIcon, PlayIcon } from "lucide-react"
 import { useState } from "react"
+import { cn } from "@/lib/utils"
 
 import { getVoicePlaybackUrlAction } from "@/actions/voices"
 import {
@@ -16,6 +17,9 @@ import { useAuth } from "@/lib/auth-context"
 
 type VoiceAudioPreviewProps = {
   voiceId: string
+  src?: string
+  itemId?: string
+  className?: string
 }
 
 type CachedPlayback = {
@@ -57,12 +61,18 @@ async function getCachedPlaybackUrl(
   return request
 }
 
-function VoiceAudioPreviewContent({ voiceId }: VoiceAudioPreviewProps) {
+function VoiceAudioPreviewContent({
+  voiceId,
+  src,
+  itemId,
+  className,
+}: VoiceAudioPreviewProps) {
   const { accessToken } = useAuth()
   const player = useAudioPlayer()
   const [isLoadingUrl, setIsLoadingUrl] = useState(false)
+  const playerItemID = itemId?.trim() || voiceId
 
-  const isActive = player.isItemActive(voiceId)
+  const isActive = player.isItemActive(playerItemID)
 
   async function handlePlayPause() {
     if (isActive) {
@@ -75,11 +85,19 @@ function VoiceAudioPreviewContent({ voiceId }: VoiceAudioPreviewProps) {
     }
 
     try {
+      if (src) {
+        await player.play({
+          id: playerItemID,
+          src,
+        })
+        return
+      }
+
       setIsLoadingUrl(true)
       const playback = await getCachedPlaybackUrl(voiceId, accessToken)
 
       await player.play({
-        id: voiceId,
+        id: playerItemID,
         src: playback.url,
       })
     } catch (error) {
@@ -90,13 +108,13 @@ function VoiceAudioPreviewContent({ voiceId }: VoiceAudioPreviewProps) {
   }
 
   return (
-    <div className="rounded-lg border bg-background p-2.5">
+    <div className={cn("rounded-lg border bg-background p-2.5", className)}>
       <div className="flex items-center gap-2">
         <Button
           type="button"
           size="icon"
           variant="secondary"
-          disabled={isLoadingUrl}
+          disabled={isLoadingUrl && !src}
           onClick={handlePlayPause}
           aria-label={isActive && player.isPlaying ? "Pause preview" : "Play preview"}>
           {isActive && player.isPlaying ? (
@@ -118,10 +136,20 @@ function VoiceAudioPreviewContent({ voiceId }: VoiceAudioPreviewProps) {
   )
 }
 
-export function VoiceAudioPreview({ voiceId }: VoiceAudioPreviewProps) {
+export function VoiceAudioPreview({
+  voiceId,
+  src,
+  itemId,
+  className,
+}: VoiceAudioPreviewProps) {
   return (
     <AudioPlayerProvider>
-      <VoiceAudioPreviewContent voiceId={voiceId} />
+      <VoiceAudioPreviewContent
+        voiceId={voiceId}
+        src={src}
+        itemId={itemId}
+        className={className}
+      />
     </AudioPlayerProvider>
   )
 }

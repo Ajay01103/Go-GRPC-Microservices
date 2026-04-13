@@ -379,3 +379,217 @@ export class GetVoicePlaybackUrlResponse extends Message<GetVoicePlaybackUrlResp
   }
 }
 
+/**
+ * @generated from message voice.CreateVoiceRequest
+ */
+export class CreateVoiceRequest extends Message<CreateVoiceRequest> {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name = "";
+
+  /**
+   * @generated from field: string description = 2;
+   */
+  description = "";
+
+  /**
+   * @generated from field: voice.VoiceCategory category = 3;
+   */
+  category = VoiceCategory.UNSPECIFIED;
+
+  /**
+   * @generated from field: string language = 4;
+   */
+  language = "";
+
+  /**
+   * @generated from field: voice.VoiceVariant variant = 5;
+   */
+  variant = VoiceVariant.UNSPECIFIED;
+
+  /**
+   * @generated from field: bytes audio_data = 6;
+   */
+  audioData = new Uint8Array(0);
+
+  /**
+   * @generated from field: string content_type = 7;
+   */
+  contentType = "";
+
+  constructor(data?: PartialMessage<CreateVoiceRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "voice.CreateVoiceRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "description", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "category", kind: "enum", T: proto3.getEnumType(VoiceCategory) },
+    { no: 4, name: "language", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "variant", kind: "enum", T: proto3.getEnumType(VoiceVariant) },
+    { no: 6, name: "audio_data", kind: "scalar", T: 12 /* ScalarType.BYTES */ },
+    { no: 7, name: "content_type", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CreateVoiceRequest {
+    return new CreateVoiceRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CreateVoiceRequest {
+    return new CreateVoiceRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CreateVoiceRequest {
+    return new CreateVoiceRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: CreateVoiceRequest | PlainMessage<CreateVoiceRequest> | undefined, b: CreateVoiceRequest | PlainMessage<CreateVoiceRequest> | undefined): boolean {
+    return proto3.util.equals(CreateVoiceRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message voice.CreateVoiceResponse
+ */
+export class CreateVoiceResponse extends Message<CreateVoiceResponse> {
+  /**
+   * @generated from field: voice.VoiceItem voice = 1;
+   */
+  voice?: VoiceItem;
+
+  constructor(data?: PartialMessage<CreateVoiceResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "voice.CreateVoiceResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "voice", kind: "message", T: VoiceItem },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CreateVoiceResponse {
+    return new CreateVoiceResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CreateVoiceResponse {
+    return new CreateVoiceResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CreateVoiceResponse {
+    return new CreateVoiceResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: CreateVoiceResponse | PlainMessage<CreateVoiceResponse> | undefined, b: CreateVoiceResponse | PlainMessage<CreateVoiceResponse> | undefined): boolean {
+    return proto3.util.equals(CreateVoiceResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message voice.UpdateVoiceRequest
+ */
+export class UpdateVoiceRequest extends Message<UpdateVoiceRequest> {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id = "";
+
+  /**
+   * @generated from field: string user_id = 2;
+   */
+  userId = "";
+
+  /**
+   * @generated from field: string name = 3;
+   */
+  name = "";
+
+  /**
+   * @generated from field: string description = 4;
+   */
+  description = "";
+
+  /**
+   * @generated from field: voice.VoiceCategory category = 5;
+   */
+  category = VoiceCategory.UNSPECIFIED;
+
+  /**
+   * @generated from field: string language = 6;
+   */
+  language = "";
+
+  constructor(data?: PartialMessage<UpdateVoiceRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "voice.UpdateVoiceRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "user_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "description", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "category", kind: "enum", T: proto3.getEnumType(VoiceCategory) },
+    { no: 6, name: "language", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateVoiceRequest {
+    return new UpdateVoiceRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateVoiceRequest {
+    return new UpdateVoiceRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateVoiceRequest {
+    return new UpdateVoiceRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: UpdateVoiceRequest | PlainMessage<UpdateVoiceRequest> | undefined, b: UpdateVoiceRequest | PlainMessage<UpdateVoiceRequest> | undefined): boolean {
+    return proto3.util.equals(UpdateVoiceRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message voice.UpdateVoiceResponse
+ */
+export class UpdateVoiceResponse extends Message<UpdateVoiceResponse> {
+  /**
+   * @generated from field: voice.VoiceItem voice = 1;
+   */
+  voice?: VoiceItem;
+
+  constructor(data?: PartialMessage<UpdateVoiceResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "voice.UpdateVoiceResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "voice", kind: "message", T: VoiceItem },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpdateVoiceResponse {
+    return new UpdateVoiceResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpdateVoiceResponse {
+    return new UpdateVoiceResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpdateVoiceResponse {
+    return new UpdateVoiceResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: UpdateVoiceResponse | PlainMessage<UpdateVoiceResponse> | undefined, b: UpdateVoiceResponse | PlainMessage<UpdateVoiceResponse> | undefined): boolean {
+    return proto3.util.equals(UpdateVoiceResponse, a, b);
+  }
+}
+

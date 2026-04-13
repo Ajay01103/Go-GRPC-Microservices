@@ -503,8 +503,9 @@ type CreateVoiceRequest struct {
 	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	Category      VoiceCategory          `protobuf:"varint,3,opt,name=category,proto3,enum=voice.VoiceCategory" json:"category,omitempty"`
 	Language      string                 `protobuf:"bytes,4,opt,name=language,proto3" json:"language,omitempty"`
-	AudioData     []byte                 `protobuf:"bytes,5,opt,name=audio_data,json=audioData,proto3" json:"audio_data,omitempty"`
-	ContentType   string                 `protobuf:"bytes,6,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
+	Variant       VoiceVariant           `protobuf:"varint,5,opt,name=variant,proto3,enum=voice.VoiceVariant" json:"variant,omitempty"`
+	AudioData     []byte                 `protobuf:"bytes,6,opt,name=audio_data,json=audioData,proto3" json:"audio_data,omitempty"`
+	ContentType   string                 `protobuf:"bytes,7,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -565,6 +566,13 @@ func (x *CreateVoiceRequest) GetLanguage() string {
 		return x.Language
 	}
 	return ""
+}
+
+func (x *CreateVoiceRequest) GetVariant() VoiceVariant {
+	if x != nil {
+		return x.Variant
+	}
+	return VoiceVariant_VOICE_VARIANT_UNSPECIFIED
 }
 
 func (x *CreateVoiceRequest) GetAudioData() []byte {
@@ -779,15 +787,16 @@ const file_voice_proto_rawDesc = "" +
 	"\bvoice_id\x18\x01 \x01(\tR\avoiceId\"W\n" +
 	"\x1bGetVoicePlaybackUrlResponse\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12&\n" +
-	"\x0fexpires_at_unix\x18\x02 \x01(\x03R\rexpiresAtUnix\"\xda\x01\n" +
+	"\x0fexpires_at_unix\x18\x02 \x01(\x03R\rexpiresAtUnix\"\x89\x02\n" +
 	"\x12CreateVoiceRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x120\n" +
 	"\bcategory\x18\x03 \x01(\x0e2\x14.voice.VoiceCategoryR\bcategory\x12\x1a\n" +
-	"\blanguage\x18\x04 \x01(\tR\blanguage\x12\x1d\n" +
+	"\blanguage\x18\x04 \x01(\tR\blanguage\x12-\n" +
+	"\avariant\x18\x05 \x01(\x0e2\x13.voice.VoiceVariantR\avariant\x12\x1d\n" +
 	"\n" +
-	"audio_data\x18\x05 \x01(\fR\taudioData\x12!\n" +
-	"\fcontent_type\x18\x06 \x01(\tR\vcontentType\"=\n" +
+	"audio_data\x18\x06 \x01(\fR\taudioData\x12!\n" +
+	"\fcontent_type\x18\a \x01(\tR\vcontentType\"=\n" +
 	"\x13CreateVoiceResponse\x12&\n" +
 	"\x05voice\x18\x01 \x01(\v2\x10.voice.VoiceItemR\x05voice\"\xc1\x01\n" +
 	"\x12UpdateVoiceRequest\x12\x0e\n" +
@@ -850,24 +859,25 @@ var file_voice_proto_depIdxs = []int32{
 	1,  // 1: voice.VoiceItem.variant:type_name -> voice.VoiceVariant
 	2,  // 2: voice.GetAllVoicesResponse.voices:type_name -> voice.VoiceItem
 	0,  // 3: voice.CreateVoiceRequest.category:type_name -> voice.VoiceCategory
-	2,  // 4: voice.CreateVoiceResponse.voice:type_name -> voice.VoiceItem
-	0,  // 5: voice.UpdateVoiceRequest.category:type_name -> voice.VoiceCategory
-	2,  // 6: voice.UpdateVoiceResponse.voice:type_name -> voice.VoiceItem
-	3,  // 7: voice.VoiceService.GetAllVoices:input_type -> voice.GetAllVoicesRequest
-	5,  // 8: voice.VoiceService.DeleteVoice:input_type -> voice.DeleteVoiceRequest
-	7,  // 9: voice.VoiceService.GetVoicePlaybackUrl:input_type -> voice.GetVoicePlaybackUrlRequest
-	9,  // 10: voice.VoiceService.CreateVoice:input_type -> voice.CreateVoiceRequest
-	11, // 11: voice.VoiceService.UpdateVoice:input_type -> voice.UpdateVoiceRequest
-	4,  // 12: voice.VoiceService.GetAllVoices:output_type -> voice.GetAllVoicesResponse
-	6,  // 13: voice.VoiceService.DeleteVoice:output_type -> voice.DeleteVoiceResponse
-	8,  // 14: voice.VoiceService.GetVoicePlaybackUrl:output_type -> voice.GetVoicePlaybackUrlResponse
-	10, // 15: voice.VoiceService.CreateVoice:output_type -> voice.CreateVoiceResponse
-	12, // 16: voice.VoiceService.UpdateVoice:output_type -> voice.UpdateVoiceResponse
-	12, // [12:17] is the sub-list for method output_type
-	7,  // [7:12] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	1,  // 4: voice.CreateVoiceRequest.variant:type_name -> voice.VoiceVariant
+	2,  // 5: voice.CreateVoiceResponse.voice:type_name -> voice.VoiceItem
+	0,  // 6: voice.UpdateVoiceRequest.category:type_name -> voice.VoiceCategory
+	2,  // 7: voice.UpdateVoiceResponse.voice:type_name -> voice.VoiceItem
+	3,  // 8: voice.VoiceService.GetAllVoices:input_type -> voice.GetAllVoicesRequest
+	5,  // 9: voice.VoiceService.DeleteVoice:input_type -> voice.DeleteVoiceRequest
+	7,  // 10: voice.VoiceService.GetVoicePlaybackUrl:input_type -> voice.GetVoicePlaybackUrlRequest
+	9,  // 11: voice.VoiceService.CreateVoice:input_type -> voice.CreateVoiceRequest
+	11, // 12: voice.VoiceService.UpdateVoice:input_type -> voice.UpdateVoiceRequest
+	4,  // 13: voice.VoiceService.GetAllVoices:output_type -> voice.GetAllVoicesResponse
+	6,  // 14: voice.VoiceService.DeleteVoice:output_type -> voice.DeleteVoiceResponse
+	8,  // 15: voice.VoiceService.GetVoicePlaybackUrl:output_type -> voice.GetVoicePlaybackUrlResponse
+	10, // 16: voice.VoiceService.CreateVoice:output_type -> voice.CreateVoiceResponse
+	12, // 17: voice.VoiceService.UpdateVoice:output_type -> voice.UpdateVoiceResponse
+	13, // [13:18] is the sub-list for method output_type
+	8,  // [8:13] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_voice_proto_init() }

@@ -108,4 +108,6 @@ type Voice struct {
 	S3ObjectKey pgtype.Text        `json:"s3_object_key"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+	OwnerType   string             `json:"owner_type"`
+	OwnerID     pgtype.Text        `json:"owner_id"`
 }

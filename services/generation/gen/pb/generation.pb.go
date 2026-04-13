@@ -131,7 +131,7 @@ type GetGenerationResponse struct {
 	LanguageId    string                 `protobuf:"bytes,7,opt,name=language_id,json=languageId,proto3" json:"language_id,omitempty"`
 	Exaggeration  float64                `protobuf:"fixed64,8,opt,name=exaggeration,proto3" json:"exaggeration,omitempty"`
 	CfgWeight     float64                `protobuf:"fixed64,9,opt,name=cfg_weight,json=cfgWeight,proto3" json:"cfg_weight,omitempty"`
-	AudioUrl      string                 `protobuf:"bytes,10,opt,name=audio_url,json=audioUrl,proto3" json:"audio_url,omitempty"`
+	S3ObjectKey   string                 `protobuf:"bytes,10,opt,name=s3_object_key,json=s3ObjectKey,proto3" json:"s3_object_key,omitempty"`
 	Status        GenerationJobStatus    `protobuf:"varint,11,opt,name=status,proto3,enum=generation.GenerationJobStatus" json:"status,omitempty"`
 	ErrorMessage  string                 `protobuf:"bytes,12,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	CreatedAtUnix int64                  `protobuf:"varint,13,opt,name=created_at_unix,json=createdAtUnix,proto3" json:"created_at_unix,omitempty"`
@@ -233,9 +233,9 @@ func (x *GetGenerationResponse) GetCfgWeight() float64 {
 	return 0
 }
 
-func (x *GetGenerationResponse) GetAudioUrl() string {
+func (x *GetGenerationResponse) GetS3ObjectKey() string {
 	if x != nil {
-		return x.AudioUrl
+		return x.S3ObjectKey
 	}
 	return ""
 }
@@ -279,7 +279,7 @@ type GenerationItem struct {
 	LanguageId    string                 `protobuf:"bytes,7,opt,name=language_id,json=languageId,proto3" json:"language_id,omitempty"`
 	Exaggeration  float64                `protobuf:"fixed64,8,opt,name=exaggeration,proto3" json:"exaggeration,omitempty"`
 	CfgWeight     float64                `protobuf:"fixed64,9,opt,name=cfg_weight,json=cfgWeight,proto3" json:"cfg_weight,omitempty"`
-	AudioUrl      string                 `protobuf:"bytes,10,opt,name=audio_url,json=audioUrl,proto3" json:"audio_url,omitempty"`
+	S3ObjectKey   string                 `protobuf:"bytes,10,opt,name=s3_object_key,json=s3ObjectKey,proto3" json:"s3_object_key,omitempty"`
 	Status        GenerationJobStatus    `protobuf:"varint,11,opt,name=status,proto3,enum=generation.GenerationJobStatus" json:"status,omitempty"`
 	CreatedAtUnix int64                  `protobuf:"varint,12,opt,name=created_at_unix,json=createdAtUnix,proto3" json:"created_at_unix,omitempty"`
 	UpdatedAtUnix int64                  `protobuf:"varint,13,opt,name=updated_at_unix,json=updatedAtUnix,proto3" json:"updated_at_unix,omitempty"`
@@ -380,9 +380,9 @@ func (x *GenerationItem) GetCfgWeight() float64 {
 	return 0
 }
 
-func (x *GenerationItem) GetAudioUrl() string {
+func (x *GenerationItem) GetS3ObjectKey() string {
 	if x != nil {
-		return x.AudioUrl
+		return x.S3ObjectKey
 	}
 	return ""
 }
@@ -697,7 +697,7 @@ type GetJobStatusResponse struct {
 	GenerationId  string                 `protobuf:"bytes,1,opt,name=generation_id,json=generationId,proto3" json:"generation_id,omitempty"`
 	JobId         string                 `protobuf:"bytes,2,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
 	Status        GenerationJobStatus    `protobuf:"varint,3,opt,name=status,proto3,enum=generation.GenerationJobStatus" json:"status,omitempty"`
-	AudioUrl      string                 `protobuf:"bytes,4,opt,name=audio_url,json=audioUrl,proto3" json:"audio_url,omitempty"`
+	S3ObjectKey   string                 `protobuf:"bytes,4,opt,name=s3_object_key,json=s3ObjectKey,proto3" json:"s3_object_key,omitempty"`
 	ErrorMessage  string                 `protobuf:"bytes,5,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	UpdatedAtUnix int64                  `protobuf:"varint,6,opt,name=updated_at_unix,json=updatedAtUnix,proto3" json:"updated_at_unix,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -755,9 +755,9 @@ func (x *GetJobStatusResponse) GetStatus() GenerationJobStatus {
 	return GenerationJobStatus_GENERATION_JOB_STATUS_UNSPECIFIED
 }
 
-func (x *GetJobStatusResponse) GetAudioUrl() string {
+func (x *GetJobStatusResponse) GetS3ObjectKey() string {
 	if x != nil {
-		return x.AudioUrl
+		return x.S3ObjectKey
 	}
 	return ""
 }
@@ -783,7 +783,7 @@ const file_generation_proto_rawDesc = "" +
 	"\x10generation.proto\x12\n" +
 	"generation\"&\n" +
 	"\x14GetGenerationRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\xdd\x03\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xe4\x03\n" +
 	"\x15GetGenerationResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x15\n" +
 	"\x06job_id\x18\x02 \x01(\tR\x05jobId\x12\x19\n" +
@@ -796,13 +796,13 @@ const file_generation_proto_rawDesc = "" +
 	"languageId\x12\"\n" +
 	"\fexaggeration\x18\b \x01(\x01R\fexaggeration\x12\x1d\n" +
 	"\n" +
-	"cfg_weight\x18\t \x01(\x01R\tcfgWeight\x12\x1b\n" +
-	"\taudio_url\x18\n" +
-	" \x01(\tR\baudioUrl\x127\n" +
+	"cfg_weight\x18\t \x01(\x01R\tcfgWeight\x12\"\n" +
+	"\rs3_object_key\x18\n" +
+	" \x01(\tR\vs3ObjectKey\x127\n" +
 	"\x06status\x18\v \x01(\x0e2\x1f.generation.GenerationJobStatusR\x06status\x12#\n" +
 	"\rerror_message\x18\f \x01(\tR\ferrorMessage\x12&\n" +
 	"\x0fcreated_at_unix\x18\r \x01(\x03R\rcreatedAtUnix\x12&\n" +
-	"\x0fupdated_at_unix\x18\x0e \x01(\x03R\rupdatedAtUnix\"\xb1\x03\n" +
+	"\x0fupdated_at_unix\x18\x0e \x01(\x03R\rupdatedAtUnix\"\xb8\x03\n" +
 	"\x0eGenerationItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x15\n" +
 	"\x06job_id\x18\x02 \x01(\tR\x05jobId\x12\x19\n" +
@@ -815,9 +815,9 @@ const file_generation_proto_rawDesc = "" +
 	"languageId\x12\"\n" +
 	"\fexaggeration\x18\b \x01(\x01R\fexaggeration\x12\x1d\n" +
 	"\n" +
-	"cfg_weight\x18\t \x01(\x01R\tcfgWeight\x12\x1b\n" +
-	"\taudio_url\x18\n" +
-	" \x01(\tR\baudioUrl\x127\n" +
+	"cfg_weight\x18\t \x01(\x01R\tcfgWeight\x12\"\n" +
+	"\rs3_object_key\x18\n" +
+	" \x01(\tR\vs3ObjectKey\x127\n" +
 	"\x06status\x18\v \x01(\x0e2\x1f.generation.GenerationJobStatusR\x06status\x12&\n" +
 	"\x0fcreated_at_unix\x18\f \x01(\x03R\rcreatedAtUnix\x12&\n" +
 	"\x0fupdated_at_unix\x18\r \x01(\x03R\rupdatedAtUnix\"\x18\n" +
@@ -841,12 +841,12 @@ const file_generation_proto_rawDesc = "" +
 	"\x06job_id\x18\x02 \x01(\tR\x05jobId\x127\n" +
 	"\x06status\x18\x03 \x01(\x0e2\x1f.generation.GenerationJobStatusR\x06status\",\n" +
 	"\x13GetJobStatusRequest\x12\x15\n" +
-	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"\xf5\x01\n" +
+	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"\xfc\x01\n" +
 	"\x14GetJobStatusResponse\x12#\n" +
 	"\rgeneration_id\x18\x01 \x01(\tR\fgenerationId\x12\x15\n" +
 	"\x06job_id\x18\x02 \x01(\tR\x05jobId\x127\n" +
-	"\x06status\x18\x03 \x01(\x0e2\x1f.generation.GenerationJobStatusR\x06status\x12\x1b\n" +
-	"\taudio_url\x18\x04 \x01(\tR\baudioUrl\x12#\n" +
+	"\x06status\x18\x03 \x01(\x0e2\x1f.generation.GenerationJobStatusR\x06status\x12\"\n" +
+	"\rs3_object_key\x18\x04 \x01(\tR\vs3ObjectKey\x12#\n" +
 	"\rerror_message\x18\x05 \x01(\tR\ferrorMessage\x12&\n" +
 	"\x0fupdated_at_unix\x18\x06 \x01(\x03R\rupdatedAtUnix*\xcb\x01\n" +
 	"\x13GenerationJobStatus\x12%\n" +

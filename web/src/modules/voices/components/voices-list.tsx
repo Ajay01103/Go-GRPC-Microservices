@@ -7,9 +7,15 @@ interface VoicesListProps {
   title: string
   voices: VoiceItemType[]
   isLoading?: boolean
+  isCustom?: boolean
 }
 
-export function VoicesList({ title, voices, isLoading = false }: VoicesListProps) {
+export function VoicesList({
+  title,
+  voices,
+  isLoading = false,
+  isCustom = false,
+}: VoicesListProps) {
   // Show skeletons while loading
   if (isLoading) {
     return (
@@ -45,9 +51,7 @@ export function VoicesList({ title, voices, isLoading = false }: VoicesListProps
             </div>
           </div>
 
-          <p className="text-lg font-semibold tracking-tight text-foreground">
-            No voices found
-          </p>
+          <p className="text-lg font-semibold tracking-tight text-foreground">No voices found</p>
 
           <p className="max-w-md text-center text-sm text-muted-foreground">
             {title} will appear here
@@ -65,6 +69,7 @@ export function VoicesList({ title, voices, isLoading = false }: VoicesListProps
           <VoiceCard
             key={voice.id}
             voice={voice}
+            isCustom={isCustom}
           />
         ))}
       </div>

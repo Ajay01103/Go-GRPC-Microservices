@@ -13,19 +13,19 @@ type Generation struct {
 	UserID       string             `json:"user_id"`
 	VoiceID      pgtype.Text        `json:"voice_id"`
 	VoiceName    string             `json:"voice_name"`
+	VoiceKey     string             `json:"voice_key"`
 	Text         string             `json:"text"`
 	S3ObjectKey  pgtype.Text        `json:"s3_object_key"`
 	Temperature  float64            `json:"temperature"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	LanguageID   string             `json:"language_id"`
+	Exaggeration float64            `json:"exaggeration"`
+	CfgWeight    float64            `json:"cfg_weight"`
 	JobID        string             `json:"job_id"`
 	Status       string             `json:"status"`
-	AudioUrl     pgtype.Text        `json:"audio_url"`
 	ErrorMessage pgtype.Text        `json:"error_message"`
 	QueuedAt     pgtype.Timestamptz `json:"queued_at"`
 	StartedAt    pgtype.Timestamptz `json:"started_at"`
 	CompletedAt  pgtype.Timestamptz `json:"completed_at"`
-	LanguageID   string             `json:"language_id"`
-	Exaggeration float64            `json:"exaggeration"`
-	CfgWeight    float64            `json:"cfg_weight"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }

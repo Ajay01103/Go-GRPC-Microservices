@@ -89,6 +89,7 @@ func main() {
 		logger,
 		s3Client,
 		cfg.TTSEndpoint,
+		time.Duration(cfg.TTSHTTPTimeoutSeconds)*time.Second,
 		cfg.TTSAPIKey,
 		cfg.TTSQueueChannel,
 		cfg.TTSResultsChannelPrefix,

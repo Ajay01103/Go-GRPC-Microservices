@@ -26,7 +26,7 @@ message GetGenerationResponse {
   string language_id = 7;
   double exaggeration = 8;
   double cfg_weight = 9;
-  string audio_url = 10;
+  string s3_object_key = 10;
   GenerationJobStatus status = 11;
   string error_message = 12;
   int64 created_at_unix = 13;
@@ -43,7 +43,7 @@ message GenerationItem {
   string language_id = 7;
   double exaggeration = 8;
   double cfg_weight = 9;
-  string audio_url = 10;
+  string s3_object_key = 10;
   GenerationJobStatus status = 11;
   int64 created_at_unix = 12;
   int64 updated_at_unix = 13;
@@ -80,7 +80,7 @@ message GetJobStatusResponse {
   string generation_id = 1;
   string job_id = 2;
   GenerationJobStatus status = 3;
-  string audio_url = 4;
+  string s3_object_key = 4;
   string error_message = 5;
   int64 updated_at_unix = 6;
 }

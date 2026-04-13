@@ -64,18 +64,9 @@ func (s *GenerationServer) GetGeneration(ctx context.Context, req *connect.Reque
 		return nil, connect.NewError(connect.CodeInternal, errors.New("failed to get generation"))
 	}
 
-	audioURL := generation.AudioUrl.String
-	if generation.S3ObjectKey.Valid && generation.S3ObjectKey.String != "" && s.s3Client != nil {
-		signedURL, signErr := s.s3Client.GetSignedURL(ctx, generation.S3ObjectKey.String)
-		if signErr != nil {
-			s.logger.Warn("failed to sign generation audio url",
-				zap.Error(signErr),
-				zap.String("generation_id", generation.ID),
-				zap.String("s3_key", generation.S3ObjectKey.String),
-			)
-		} else {
-			audioURL = signedURL
-		}
+	var s3ObjectKey string
+	if generation.S3ObjectKey.Valid && generation.S3ObjectKey.String != "" {
+		s3ObjectKey = generation.S3ObjectKey.String
 	}
 
 	return connect.NewResponse(&pb.GetGenerationResponse{
@@ -88,7 +79,7 @@ func (s *GenerationServer) GetGeneration(ctx context.Context, req *connect.Reque
 		LanguageId:        generation.LanguageID,
 		Exaggeration:      generation.Exaggeration,
 		CfgWeight:         generation.CfgWeight,
-		AudioUrl:          audioURL,
+		S3ObjectKey:       s3ObjectKey,
 		Status:            statusToProto(generation.Status),
 		ErrorMessage:      generation.ErrorMessage.String,
 		CreatedAtUnix:     generation.CreatedAt.Time.Unix(),
@@ -110,18 +101,9 @@ func (s *GenerationServer) ListGenerations(ctx context.Context, _ *connect.Reque
 
 	items := make([]*pb.GenerationItem, 0, len(rows))
 	for _, row := range rows {
-		audioURL := row.AudioUrl.String
-		if row.S3ObjectKey.Valid && row.S3ObjectKey.String != "" && s.s3Client != nil {
-			signedURL, signErr := s.s3Client.GetSignedURL(ctx, row.S3ObjectKey.String)
-			if signErr != nil {
-				s.logger.Warn("failed to sign generation audio url",
-					zap.Error(signErr),
-					zap.String("generation_id", row.ID),
-					zap.String("s3_key", row.S3ObjectKey.String),
-				)
-			} else {
-				audioURL = signedURL
-			}
+		var s3ObjectKey string
+		if row.S3ObjectKey.Valid && row.S3ObjectKey.String != "" {
+			s3ObjectKey = row.S3ObjectKey.String
 		}
 
 		items = append(items, &pb.GenerationItem{
@@ -134,7 +116,7 @@ func (s *GenerationServer) ListGenerations(ctx context.Context, _ *connect.Reque
 			LanguageId:        row.LanguageID,
 			Exaggeration:      row.Exaggeration,
 			CfgWeight:         row.CfgWeight,
-			AudioUrl:          audioURL,
+			S3ObjectKey:       s3ObjectKey,
 			Status:            statusToProto(row.Status),
 			CreatedAtUnix:     row.CreatedAt.Time.Unix(),
 			UpdatedAtUnix:     row.UpdatedAt.Time.Unix(),
@@ -200,6 +182,7 @@ func (s *GenerationServer) GenerateSpeech(ctx context.Context, req *connect.Requ
 		UserID:            payload.UserID.String(),
 		VoiceID:           pgtype.Text{String: voiceID, Valid: true},
 		VoiceName:         voiceName,
+		VoiceKey:          voiceKey,
 		Text:              text,
 		Temperature:       req.Msg.Temperature,
 		LanguageID:        languageID,
@@ -265,12 +248,17 @@ func (s *GenerationServer) GetJobStatus(ctx context.Context, req *connect.Reques
 		return nil, connect.NewError(connect.CodeInternal, errors.New("failed to get job status"))
 	}
 
+	var s3ObjectKey string
+	if generation.S3ObjectKey.Valid && generation.S3ObjectKey.String != "" {
+		s3ObjectKey = generation.S3ObjectKey.String
+	}
+
 	return connect.NewResponse(&pb.GetJobStatusResponse{
-		GenerationId:  generation.ID,
-		JobId:         generation.JobID,
-		Status:        statusToProto(generation.Status),
-		AudioUrl:      generation.AudioUrl.String,
-		ErrorMessage:  generation.ErrorMessage.String,
+		GenerationId: generation.ID,
+		JobId:        generation.JobID,
+		Status:       statusToProto(generation.Status),
+		S3ObjectKey:  s3ObjectKey,
+		ErrorMessage: generation.ErrorMessage.String,
 		UpdatedAtUnix: generation.UpdatedAt.Time.Unix(),
 	}), nil
 }

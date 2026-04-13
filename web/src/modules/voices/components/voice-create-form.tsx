@@ -5,7 +5,6 @@ import { z } from "zod"
 import { toast } from "sonner"
 import { useForm } from "@tanstack/react-form"
 import { useDropzone } from "react-dropzone"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   AudioLines,
   FolderOpen,
@@ -21,6 +20,7 @@ import {
   Globe,
   Layers,
   AlignLeft,
+  Zap,
 } from "lucide-react"
 import locales from "locale-codes"
 
@@ -48,7 +48,13 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-import { VOICE_CATEGORIES, VOICE_CATEGORY_LABELS } from "@/modules/voices/data/voice-categories"
+import {
+  VOICE_CATEGORIES,
+  VOICE_CATEGORY_LABELS,
+  VOICE_VARIANTS,
+  VOICE_VARIANT_LABELS,
+} from "@/modules/voices/data/voice-categories"
+import { useCreateVoice } from "@/modules/voices/hooks/use-create-voice"
 import { VoiceRecorder } from "./voice-recorder"
 
 const LANGUAGE_OPTIONS = locales.all
@@ -66,6 +72,7 @@ const voiceCreateFormSchema = z.object({
     .refine((f) => f !== null, "An audio file is required"),
   category: z.string().min(1, "A category is required"),
   language: z.string().min(1, "A language is required"),
+  variant: z.string().min(1, "A voice type is required"),
   description: z.string(),
 })
 
@@ -127,7 +134,11 @@ function FileDropzone({
       {...getRootProps()}
       className={cn(
         "flex cursor-pointer flex-col items-center justify-center gap-4 overflow-hidden rounded-2xl border px-6 py-10 transition-colors",
-        isDragReject || isInvalid ? "border-destructive" : isDragActive ? "border-primary" : "",
+        isDragReject || isInvalid
+          ? "border-destructive"
+          : isDragActive
+            ? "border-primary"
+            : "",
       )}>
       <input {...getInputProps()} />
       <div className="flex size-12 items-center justify-center rounded-xl bg-muted">
@@ -182,7 +193,9 @@ function LanguageCombobox({
           )}>
           <div className="flex min-w-0 items-center gap-2">
             <Globe className="size-4 shrink-0 text-muted-foreground" />
-            <span className="truncate">{value ? selectedLabel : "Select language..."}</span>
+            <span className="truncate">
+              {value ? selectedLabel : "Select language..."}
+            </span>
           </div>
           <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
         </Button>
@@ -225,52 +238,20 @@ interface VoiceCreateFormProps {
   onError?: (message: string) => void
 }
 
-export function VoiceCreateForm({ scrollable, className, footer, onError }: VoiceCreateFormProps) {
-  const queryClient = useQueryClient()
-
-  const createMutation = useMutation({
-    mutationFn: async ({
-      name,
-      file,
-      category,
-      language,
-      description,
-    }: {
-      name: string
-      file: File
-      category: string
-      language: string
-      description?: string
-    }) => {
-      const params = new URLSearchParams({
-        name,
-        category,
-        language,
-      })
-      if (description) {
-        params.set("description", description)
-      }
-
-      const response = await fetch(`/api/voices/create?${params.toString()}`, {
-        method: "POST",
-        headers: { "Content-Type": file.type },
-        body: file,
-      })
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}))
-        throw new Error(typeof body?.error === "string" ? body.error : "Failed to create voice")
-      }
-
-      return response.json()
-    },
-  })
+export function VoiceCreateForm({
+  scrollable,
+  className,
+  footer,
+  onError,
+}: VoiceCreateFormProps) {
+  const createMutation = useCreateVoice()
 
   const form = useForm({
     defaultValues: {
       name: "",
       file: null as File | null,
       category: "GENERAL" as string,
+      variant: "NEUTRAL" as string,
       language: "en-US",
       description: "",
     },
@@ -279,16 +260,19 @@ export function VoiceCreateForm({ scrollable, className, footer, onError }: Voic
     },
     onSubmit: async ({ value }) => {
       try {
+        const audioData = new Uint8Array(await value.file!.arrayBuffer())
+
         await createMutation.mutateAsync({
           name: value.name,
-          file: value.file!,
+          audioData,
+          contentType: value.file?.type || "audio/wav",
           category: value.category,
+          variant: value.variant,
           language: value.language,
           description: value.description || undefined,
         })
 
         toast.success("Voice created successfully!")
-        queryClient.invalidateQueries({})
         form.reset()
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to create voice"
@@ -308,7 +292,11 @@ export function VoiceCreateForm({ scrollable, className, footer, onError }: Voic
         e.preventDefault()
         form.handleSubmit()
       }}
-      className={cn("flex flex-col gap-6", scrollable && "min-h-0 flex-1 gap-0", className)}>
+      className={cn(
+        "flex flex-col gap-6",
+        scrollable && "min-h-0 flex-1 gap-0",
+        className,
+      )}>
       <div
         className={cn(
           "flex flex-col gap-6",
@@ -403,6 +391,41 @@ export function VoiceCreateForm({ scrollable, className, footer, onError }: Voic
                           key={cat}
                           value={cat}>
                           {VOICE_CATEGORY_LABELS[cat]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {isInvalid && <FieldError errors={field.state.meta.errors} />}
+              </Field>
+            )
+          }}
+        </form.Field>
+
+        <form.Field name="variant">
+          {(field) => {
+            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid
+
+            return (
+              <Field data-invalid={isInvalid}>
+                <div className="relative flex items-center">
+                  <div className="pointer-events-none absolute left-0 flex h-full w-11 items-center justify-center">
+                    <Zap className="size-4 text-muted-foreground" />
+                  </div>
+
+                  <Select
+                    value={field.state.value}
+                    onValueChange={field.handleChange}>
+                    <SelectTrigger className="w-full pl-10">
+                      <SelectValue placeholder="Select voice type..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {VOICE_VARIANTS.map((variant) => (
+                        <SelectItem
+                          key={variant}
+                          value={variant}>
+                          {VOICE_VARIANT_LABELS[variant]}
                         </SelectItem>
                       ))}
                     </SelectContent>

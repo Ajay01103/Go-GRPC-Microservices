@@ -12,14 +12,25 @@ import (
 )
 
 const createVoice = `-- name: CreateVoice :one
-INSERT INTO voices (id, user_id, name, description, category, language, variant, s3_object_key)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+INSERT INTO voices (id, user_id, owner_type, owner_id, name, description, category, language, variant, s3_object_key)
+VALUES (
+  $1,
+  CASE WHEN $2 = 'SYSTEM' THEN 'SYSTEM' ELSE $2 END,
+  CASE WHEN $2 = 'SYSTEM' THEN 'SYSTEM' ELSE 'USER' END,
+  CASE WHEN $2 = 'SYSTEM' THEN NULL ELSE $2 END,
+  $3,
+  $4,
+  $5,
+  $6,
+  $7,
+  $8
+)
 RETURNING id, user_id, name, description, category, language, variant, s3_object_key, created_at, updated_at
 `
 
 type CreateVoiceParams struct {
 	ID          string        `json:"id"`
-	UserID      string        `json:"user_id"`
+	Column2     interface{}   `json:"column_2"`
 	Name        string        `json:"name"`
 	Description pgtype.Text   `json:"description"`
 	Category    VoiceCategory `json:"category"`
@@ -28,10 +39,23 @@ type CreateVoiceParams struct {
 	S3ObjectKey pgtype.Text   `json:"s3_object_key"`
 }
 
-func (q *Queries) CreateVoice(ctx context.Context, arg CreateVoiceParams) (Voice, error) {
+type CreateVoiceRow struct {
+	ID          string             `json:"id"`
+	UserID      string             `json:"user_id"`
+	Name        string             `json:"name"`
+	Description pgtype.Text        `json:"description"`
+	Category    VoiceCategory      `json:"category"`
+	Language    string             `json:"language"`
+	Variant     VoiceVariant       `json:"variant"`
+	S3ObjectKey pgtype.Text        `json:"s3_object_key"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) CreateVoice(ctx context.Context, arg CreateVoiceParams) (CreateVoiceRow, error) {
 	row := q.db.QueryRow(ctx, createVoice,
 		arg.ID,
-		arg.UserID,
+		arg.Column2,
 		arg.Name,
 		arg.Description,
 		arg.Category,
@@ -39,7 +63,7 @@ func (q *Queries) CreateVoice(ctx context.Context, arg CreateVoiceParams) (Voice
 		arg.Variant,
 		arg.S3ObjectKey,
 	)
-	var i Voice
+	var i CreateVoiceRow
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
@@ -57,7 +81,7 @@ func (q *Queries) CreateVoice(ctx context.Context, arg CreateVoiceParams) (Voice
 
 const deleteSystemVoiceByID = `-- name: DeleteSystemVoiceByID :exec
 DELETE FROM voices
-WHERE id = $1 AND user_id = 'SYSTEM'
+WHERE id = $1 AND owner_type = 'SYSTEM'
 `
 
 func (q *Queries) DeleteSystemVoiceByID(ctx context.Context, id string) error {
@@ -68,22 +92,26 @@ func (q *Queries) DeleteSystemVoiceByID(ctx context.Context, id string) error {
 const deleteVoice = `-- name: DeleteVoice :exec
 DELETE FROM voices
 WHERE id = $1
-  AND user_id = $2
+  AND (
+    (owner_type = 'SYSTEM' AND $2 = 'SYSTEM')
+    OR
+    (owner_type = 'USER' AND owner_id = $2)
+  )
 `
 
 type DeleteVoiceParams struct {
-	ID     string `json:"id"`
-	UserID string `json:"user_id"`
+	ID      string      `json:"id"`
+	Column2 interface{} `json:"column_2"`
 }
 
 func (q *Queries) DeleteVoice(ctx context.Context, arg DeleteVoiceParams) error {
-	_, err := q.db.Exec(ctx, deleteVoice, arg.ID, arg.UserID)
+	_, err := q.db.Exec(ctx, deleteVoice, arg.ID, arg.Column2)
 	return err
 }
 
 const getSystemVoiceByName = `-- name: GetSystemVoiceByName :one
-SELECT id, user_id, name, description, category, language, variant, s3_object_key, created_at, updated_at FROM voices
-WHERE name = $1 AND user_id = 'SYSTEM'
+SELECT id, user_id, name, description, category, language, variant, s3_object_key, created_at, updated_at, owner_type, owner_id FROM voices
+WHERE name = $1 AND owner_type = 'SYSTEM'
 LIMIT 1
 `
 
@@ -101,6 +129,8 @@ func (q *Queries) GetSystemVoiceByName(ctx context.Context, name string) (Voice,
 		&i.S3ObjectKey,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.OwnerType,
+		&i.OwnerID,
 	)
 	return i, err
 }
@@ -112,9 +142,22 @@ WHERE id = $1
 LIMIT 1
 `
 
-func (q *Queries) GetVoice(ctx context.Context, id string) (Voice, error) {
+type GetVoiceRow struct {
+	ID          string             `json:"id"`
+	UserID      string             `json:"user_id"`
+	Name        string             `json:"name"`
+	Description pgtype.Text        `json:"description"`
+	Category    VoiceCategory      `json:"category"`
+	Language    string             `json:"language"`
+	Variant     VoiceVariant       `json:"variant"`
+	S3ObjectKey pgtype.Text        `json:"s3_object_key"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) GetVoice(ctx context.Context, id string) (GetVoiceRow, error) {
 	row := q.db.QueryRow(ctx, getVoice, id)
-	var i Voice
+	var i GetVoiceRow
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
@@ -134,18 +177,35 @@ const getVoiceByIDAndUser = `-- name: GetVoiceByIDAndUser :one
 SELECT id, user_id, name, description, category, language, variant, s3_object_key, created_at, updated_at
 FROM voices
 WHERE id = $1
-  AND user_id = $2
+  AND (
+    (owner_type = 'SYSTEM' AND $2 = 'SYSTEM')
+    OR
+    (owner_type = 'USER' AND owner_id = $2)
+  )
 LIMIT 1
 `
 
 type GetVoiceByIDAndUserParams struct {
-	ID     string `json:"id"`
-	UserID string `json:"user_id"`
+	ID      string      `json:"id"`
+	Column2 interface{} `json:"column_2"`
 }
 
-func (q *Queries) GetVoiceByIDAndUser(ctx context.Context, arg GetVoiceByIDAndUserParams) (Voice, error) {
-	row := q.db.QueryRow(ctx, getVoiceByIDAndUser, arg.ID, arg.UserID)
-	var i Voice
+type GetVoiceByIDAndUserRow struct {
+	ID          string             `json:"id"`
+	UserID      string             `json:"user_id"`
+	Name        string             `json:"name"`
+	Description pgtype.Text        `json:"description"`
+	Category    VoiceCategory      `json:"category"`
+	Language    string             `json:"language"`
+	Variant     VoiceVariant       `json:"variant"`
+	S3ObjectKey pgtype.Text        `json:"s3_object_key"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) GetVoiceByIDAndUser(ctx context.Context, arg GetVoiceByIDAndUserParams) (GetVoiceByIDAndUserRow, error) {
+	row := q.db.QueryRow(ctx, getVoiceByIDAndUser, arg.ID, arg.Column2)
+	var i GetVoiceByIDAndUserRow
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
@@ -164,7 +224,11 @@ func (q *Queries) GetVoiceByIDAndUser(ctx context.Context, arg GetVoiceByIDAndUs
 const listCustomVoices = `-- name: ListCustomVoices :many
 SELECT id, name, description, category, language, variant
 FROM voices
-WHERE user_id = $1
+WHERE (
+  (owner_type = 'SYSTEM' AND $1 = 'SYSTEM')
+  OR
+  (owner_type = 'USER' AND owner_id = $1)
+)
 ORDER BY created_at DESC
 `
 
@@ -177,8 +241,8 @@ type ListCustomVoicesRow struct {
 	Variant     VoiceVariant  `json:"variant"`
 }
 
-func (q *Queries) ListCustomVoices(ctx context.Context, userID string) ([]ListCustomVoicesRow, error) {
-	rows, err := q.db.Query(ctx, listCustomVoices, userID)
+func (q *Queries) ListCustomVoices(ctx context.Context, dollar_1 interface{}) ([]ListCustomVoicesRow, error) {
+	rows, err := q.db.Query(ctx, listCustomVoices, dollar_1)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +271,11 @@ func (q *Queries) ListCustomVoices(ctx context.Context, userID string) ([]ListCu
 const listCustomVoicesSearch = `-- name: ListCustomVoicesSearch :many
 SELECT id, name, description, category, language, variant
 FROM voices
-WHERE user_id = $1
+WHERE (
+    (owner_type = 'SYSTEM' AND $1 = 'SYSTEM')
+    OR
+    (owner_type = 'USER' AND owner_id = $1)
+)
   AND (
     name        ILIKE '%' || $2 || '%'
     OR description ILIKE '%' || $2 || '%'
@@ -216,7 +284,7 @@ ORDER BY created_at DESC
 `
 
 type ListCustomVoicesSearchParams struct {
-	UserID  string      `json:"user_id"`
+	Column1 interface{} `json:"column_1"`
 	Column2 pgtype.Text `json:"column_2"`
 }
 
@@ -230,7 +298,7 @@ type ListCustomVoicesSearchRow struct {
 }
 
 func (q *Queries) ListCustomVoicesSearch(ctx context.Context, arg ListCustomVoicesSearchParams) ([]ListCustomVoicesSearchRow, error) {
-	rows, err := q.db.Query(ctx, listCustomVoicesSearch, arg.UserID, arg.Column2)
+	rows, err := q.db.Query(ctx, listCustomVoicesSearch, arg.Column1, arg.Column2)
 	if err != nil {
 		return nil, err
 	}
@@ -264,6 +332,7 @@ SET s3_object_key = $2,
     language = $5,
     updated_at = NOW()
 WHERE id = $1
+  AND owner_type = 'SYSTEM'
 `
 
 type UpdateSystemVoiceS3KeyParams struct {
@@ -293,29 +362,43 @@ SET name = $3,
     language = $6,
     updated_at = NOW()
 WHERE id = $1
-  AND user_id = $2
+  AND owner_type = 'USER'
+  AND owner_id = $2
 RETURNING id, user_id, name, description, category, language, variant, s3_object_key, created_at, updated_at
 `
 
 type UpdateVoiceParams struct {
 	ID          string        `json:"id"`
-	UserID      string        `json:"user_id"`
+	OwnerID     pgtype.Text   `json:"owner_id"`
 	Name        string        `json:"name"`
 	Description pgtype.Text   `json:"description"`
 	Category    VoiceCategory `json:"category"`
 	Language    string        `json:"language"`
 }
 
-func (q *Queries) UpdateVoice(ctx context.Context, arg UpdateVoiceParams) (Voice, error) {
+type UpdateVoiceRow struct {
+	ID          string             `json:"id"`
+	UserID      string             `json:"user_id"`
+	Name        string             `json:"name"`
+	Description pgtype.Text        `json:"description"`
+	Category    VoiceCategory      `json:"category"`
+	Language    string             `json:"language"`
+	Variant     VoiceVariant       `json:"variant"`
+	S3ObjectKey pgtype.Text        `json:"s3_object_key"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) UpdateVoice(ctx context.Context, arg UpdateVoiceParams) (UpdateVoiceRow, error) {
 	row := q.db.QueryRow(ctx, updateVoice,
 		arg.ID,
-		arg.UserID,
+		arg.OwnerID,
 		arg.Name,
 		arg.Description,
 		arg.Category,
 		arg.Language,
 	)
-	var i Voice
+	var i UpdateVoiceRow
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,

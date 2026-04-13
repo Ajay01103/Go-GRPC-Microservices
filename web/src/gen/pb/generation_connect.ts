@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { HelloGenerationRequest, HelloGenerationResponse } from "./generation_pb";
+import { GenerateSpeechRequest, GenerateSpeechResponse, GetGenerationRequest, GetGenerationResponse, GetJobStatusRequest, GetJobStatusResponse, ListGenerationsRequest, ListGenerationsResponse } from "./generation_pb";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -13,12 +13,39 @@ export const GenerationService = {
   typeName: "generation.GenerationService",
   methods: {
     /**
-     * @generated from rpc generation.GenerationService.HelloGeneration
+     * @generated from rpc generation.GenerationService.GetGeneration
      */
-    helloGeneration: {
-      name: "HelloGeneration",
-      I: HelloGenerationRequest,
-      O: HelloGenerationResponse,
+    getGeneration: {
+      name: "GetGeneration",
+      I: GetGenerationRequest,
+      O: GetGenerationResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc generation.GenerationService.ListGenerations
+     */
+    listGenerations: {
+      name: "ListGenerations",
+      I: ListGenerationsRequest,
+      O: ListGenerationsResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc generation.GenerationService.GenerateSpeech
+     */
+    generateSpeech: {
+      name: "GenerateSpeech",
+      I: GenerateSpeechRequest,
+      O: GenerateSpeechResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc generation.GenerationService.GetJobStatus
+     */
+    getJobStatus: {
+      name: "GetJobStatus",
+      I: GetJobStatusRequest,
+      O: GetJobStatusResponse,
       kind: MethodKind.Unary,
     },
   }

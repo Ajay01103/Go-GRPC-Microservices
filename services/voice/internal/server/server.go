@@ -162,12 +162,18 @@ func (s *VoiceServer) CreateVoice(
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("invalid category"))
 	}
 
+	variant, ok := variantFromProto(req.Msg.Variant)
+	if !ok {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("invalid variant"))
+	}
+
 	created, err := s.svc.CreateVoice(ctx, service.CreateVoiceParams{
 		UserID:      payload.UserID.String(),
 		Name:        req.Msg.Name,
 		Description: req.Msg.Description,
 		Category:    category,
 		Language:    req.Msg.Language,
+		Variant:     variant,
 		AudioData:   req.Msg.AudioData,
 		ContentType: req.Msg.ContentType,
 	})
@@ -282,5 +288,20 @@ func variantToProto(s string) pb.VoiceVariant {
 		return pb.VoiceVariant_VOICE_VARIANT_NEUTRAL
 	default:
 		return pb.VoiceVariant_VOICE_VARIANT_MALE
+	}
+}
+
+func variantFromProto(v pb.VoiceVariant) (db.VoiceVariant, bool) {
+	switch v {
+	case pb.VoiceVariant_VOICE_VARIANT_UNSPECIFIED:
+		return db.VoiceVariantNEUTRAL, true
+	case pb.VoiceVariant_VOICE_VARIANT_MALE:
+		return db.VoiceVariantMALE, true
+	case pb.VoiceVariant_VOICE_VARIANT_FEMALE:
+		return db.VoiceVariantFEMALE, true
+	case pb.VoiceVariant_VOICE_VARIANT_NEUTRAL:
+		return db.VoiceVariantNEUTRAL, true
+	default:
+		return "", false
 	}
 }

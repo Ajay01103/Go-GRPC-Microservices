@@ -112,7 +112,7 @@ func (r *VoiceRepo) ListVoices(ctx context.Context, params ListVoicesParams) ([]
 func (r *VoiceRepo) listVoicesForUser(ctx context.Context, userID, query string) ([]db.ListCustomVoicesRow, error) {
 	if query != "" {
 		searchRows, err := r.q.ListCustomVoicesSearch(ctx, db.ListCustomVoicesSearchParams{
-			UserID: userID,
+			Column1: userID,
 			Column2: pgtype.Text{
 				String: query,
 				Valid:  true,
@@ -153,14 +153,25 @@ func (r *VoiceRepo) GetVoiceByID(ctx context.Context, id string) (db.Voice, erro
 		}
 		return db.Voice{}, fmt.Errorf("repository: get voice by id: %w", err)
 	}
-	return voice, nil
+	return db.Voice{
+		ID:          voice.ID,
+		UserID:      voice.UserID,
+		Name:        voice.Name,
+		Description: voice.Description,
+		Category:    voice.Category,
+		Language:    voice.Language,
+		Variant:     voice.Variant,
+		S3ObjectKey: voice.S3ObjectKey,
+		CreatedAt:   voice.CreatedAt,
+		UpdatedAt:   voice.UpdatedAt,
+	}, nil
 }
 
 // GetVoiceByIDAndUser fetches a voice owned by the specified user, or ErrVoiceNotFound.
 func (r *VoiceRepo) GetVoiceByIDAndUser(ctx context.Context, id, userID string) (db.Voice, error) {
 	voice, err := r.q.GetVoiceByIDAndUser(ctx, db.GetVoiceByIDAndUserParams{
-		ID:     id,
-		UserID: userID,
+		ID:      id,
+		Column2: userID,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -168,15 +179,26 @@ func (r *VoiceRepo) GetVoiceByIDAndUser(ctx context.Context, id, userID string) 
 		}
 		return db.Voice{}, fmt.Errorf("repository: get voice: %w", err)
 	}
-	return voice, nil
+	return db.Voice{
+		ID:          voice.ID,
+		UserID:      voice.UserID,
+		Name:        voice.Name,
+		Description: voice.Description,
+		Category:    voice.Category,
+		Language:    voice.Language,
+		Variant:     voice.Variant,
+		S3ObjectKey: voice.S3ObjectKey,
+		CreatedAt:   voice.CreatedAt,
+		UpdatedAt:   voice.UpdatedAt,
+	}, nil
 }
 
 // CreateVoice creates a new custom voice record.
 func (r *VoiceRepo) CreateVoice(ctx context.Context, params CreateVoiceParams) (db.Voice, error) {
 	voice, err := r.q.CreateVoice(ctx, db.CreateVoiceParams{
-		ID:     params.ID,
-		UserID: params.UserID,
-		Name:   params.Name,
+		ID:      params.ID,
+		Column2: params.UserID,
+		Name:    params.Name,
 		Description: pgtype.Text{
 			String: params.Description,
 			Valid:  params.Description != "",
@@ -193,15 +215,29 @@ func (r *VoiceRepo) CreateVoice(ctx context.Context, params CreateVoiceParams) (
 		return db.Voice{}, fmt.Errorf("repository: create voice: %w", err)
 	}
 
-	return voice, nil
+	return db.Voice{
+		ID:          voice.ID,
+		UserID:      voice.UserID,
+		Name:        voice.Name,
+		Description: voice.Description,
+		Category:    voice.Category,
+		Language:    voice.Language,
+		Variant:     voice.Variant,
+		S3ObjectKey: voice.S3ObjectKey,
+		CreatedAt:   voice.CreatedAt,
+		UpdatedAt:   voice.UpdatedAt,
+	}, nil
 }
 
 // UpdateVoice updates an existing custom voice metadata record.
 func (r *VoiceRepo) UpdateVoice(ctx context.Context, params UpdateVoiceParams) (db.Voice, error) {
 	voice, err := r.q.UpdateVoice(ctx, db.UpdateVoiceParams{
-		ID:     params.ID,
-		UserID: params.UserID,
-		Name:   params.Name,
+		ID: params.ID,
+		OwnerID: pgtype.Text{
+			String: params.UserID,
+			Valid:  true,
+		},
+		Name: params.Name,
 		Description: pgtype.Text{
 			String: params.Description,
 			Valid:  params.Description != "",
@@ -216,14 +252,25 @@ func (r *VoiceRepo) UpdateVoice(ctx context.Context, params UpdateVoiceParams) (
 		return db.Voice{}, fmt.Errorf("repository: update voice: %w", err)
 	}
 
-	return voice, nil
+	return db.Voice{
+		ID:          voice.ID,
+		UserID:      voice.UserID,
+		Name:        voice.Name,
+		Description: voice.Description,
+		Category:    voice.Category,
+		Language:    voice.Language,
+		Variant:     voice.Variant,
+		S3ObjectKey: voice.S3ObjectKey,
+		CreatedAt:   voice.CreatedAt,
+		UpdatedAt:   voice.UpdatedAt,
+	}, nil
 }
 
 // DeleteVoice removes a voice record owned by the given user.
 func (r *VoiceRepo) DeleteVoice(ctx context.Context, id, userID string) error {
 	if err := r.q.DeleteVoice(ctx, db.DeleteVoiceParams{
-		ID:     id,
-		UserID: userID,
+		ID:      id,
+		Column2: userID,
 	}); err != nil {
 		return fmt.Errorf("repository: delete voice: %w", err)
 	}

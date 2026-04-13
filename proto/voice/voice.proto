@@ -71,8 +71,9 @@ message CreateVoiceRequest {
   string        description  = 2;
   VoiceCategory category     = 3;
   string        language     = 4;
-  bytes         audio_data   = 5;
-  string        content_type = 6;
+  VoiceVariant  variant      = 5;
+  bytes         audio_data   = 6;
+  string        content_type = 7;
 }
 
 message CreateVoiceResponse {

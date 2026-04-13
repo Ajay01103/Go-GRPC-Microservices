@@ -9,16 +9,16 @@ import (
 )
 
 type Querier interface {
-	CreateVoice(ctx context.Context, arg CreateVoiceParams) (Voice, error)
+	CreateVoice(ctx context.Context, arg CreateVoiceParams) (CreateVoiceRow, error)
 	DeleteSystemVoiceByID(ctx context.Context, id string) error
 	DeleteVoice(ctx context.Context, arg DeleteVoiceParams) error
 	GetSystemVoiceByName(ctx context.Context, name string) (Voice, error)
-	GetVoice(ctx context.Context, id string) (Voice, error)
-	GetVoiceByIDAndUser(ctx context.Context, arg GetVoiceByIDAndUserParams) (Voice, error)
-	ListCustomVoices(ctx context.Context, userID string) ([]ListCustomVoicesRow, error)
+	GetVoice(ctx context.Context, id string) (GetVoiceRow, error)
+	GetVoiceByIDAndUser(ctx context.Context, arg GetVoiceByIDAndUserParams) (GetVoiceByIDAndUserRow, error)
+	ListCustomVoices(ctx context.Context, dollar_1 interface{}) ([]ListCustomVoicesRow, error)
 	ListCustomVoicesSearch(ctx context.Context, arg ListCustomVoicesSearchParams) ([]ListCustomVoicesSearchRow, error)
 	UpdateSystemVoiceS3Key(ctx context.Context, arg UpdateSystemVoiceS3KeyParams) error
-	UpdateVoice(ctx context.Context, arg UpdateVoiceParams) (Voice, error)
+	UpdateVoice(ctx context.Context, arg UpdateVoiceParams) (UpdateVoiceRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

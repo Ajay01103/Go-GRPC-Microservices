@@ -51,16 +51,21 @@ func New(
 	logger *zap.Logger,
 	s3Client *generations3.Client,
 	ttsEndpoint string,
+	ttsRequestTimeout time.Duration,
 	ttsAPIKey string,
 	queueChannel string,
 	resultsChannelPrefix string,
 ) *TTSWorker {
+	if ttsRequestTimeout <= 0 {
+		ttsRequestTimeout = 180 * time.Second
+	}
+
 	return &TTSWorker{
 		redis:                redisClient,
 		queries:              queries,
 		logger:               logger,
 		s3Client:             s3Client,
-		httpClient:           &http.Client{Timeout: 90 * time.Second},
+		httpClient:           &http.Client{Timeout: ttsRequestTimeout},
 		ttsEndpoint:          strings.TrimSpace(ttsEndpoint),
 		ttsAPIKey:            strings.TrimSpace(ttsAPIKey),
 		queueChannel:         strings.TrimSpace(queueChannel),
@@ -127,7 +132,7 @@ func (w *TTSWorker) handleMessage(ctx context.Context, payload string) {
 		return
 	}
 
-	s3ObjectKey := buildGeneratedAudioS3Key(job.GenerationID)
+	s3ObjectKey := buildGeneratedAudioS3Key(job.UserID, job.GenerationID)
 	if err := w.s3Client.Upload(ctx, generations3.UploadOptions{
 		Key:         s3ObjectKey,
 		Body:        audioBytes,
@@ -138,33 +143,20 @@ func (w *TTSWorker) handleMessage(ctx context.Context, payload string) {
 			ID:           job.GenerationID,
 			ErrorMessage: pgtype.Text{String: msg, Valid: true},
 		})
-		w.publishResult(ctx, job, "failed", "", msg)
+		w.publishResult(ctx, job, "failed", s3ObjectKey, msg)
 		w.logger.Error("failed to upload generated audio", zap.Error(err), zap.String("generation_id", job.GenerationID), zap.String("job_id", job.JobID), zap.String("s3_key", s3ObjectKey))
-		return
-	}
-
-	audioURL, err := w.s3Client.GetSignedURL(ctx, s3ObjectKey)
-	if err != nil {
-		msg := fmt.Sprintf("failed to sign generated audio url: %v", err)
-		_ = w.queries.MarkGenerationFailed(ctx, db.MarkGenerationFailedParams{
-			ID:           job.GenerationID,
-			ErrorMessage: pgtype.Text{String: msg, Valid: true},
-		})
-		w.publishResult(ctx, job, "failed", "", msg)
-		w.logger.Error("failed to sign generated audio", zap.Error(err), zap.String("generation_id", job.GenerationID), zap.String("job_id", job.JobID), zap.String("s3_key", s3ObjectKey))
 		return
 	}
 
 	if err := w.queries.MarkGenerationCompleted(ctx, db.MarkGenerationCompletedParams{
 		ID:          job.GenerationID,
-		AudioUrl:    pgtype.Text{String: audioURL, Valid: true},
 		S3ObjectKey: pgtype.Text{String: s3ObjectKey, Valid: true},
 	}); err != nil {
 		w.logger.Error("failed to mark completed", zap.Error(err), zap.String("generation_id", job.GenerationID), zap.String("job_id", job.JobID))
 		return
 	}
 
-	w.publishResult(ctx, job, "completed", audioURL, "")
+	w.publishResult(ctx, job, "completed", s3ObjectKey, "")
 	w.logger.Info("tts generation completed", zap.String("generation_id", job.GenerationID), zap.String("job_id", job.JobID))
 }
 
@@ -219,8 +211,8 @@ func (w *TTSWorker) callModalTTS(ctx context.Context, job JobMessage) ([]byte, e
 	return audioBytes, nil
 }
 
-func buildGeneratedAudioS3Key(generationID string) string {
-	return path.Join("generated", generationID, "audio.wav")
+func buildGeneratedAudioS3Key(userID, generationID string) string {
+	return path.Join("generated", strings.TrimSpace(userID), generationID+".wav")
 }
 
 func normalizeVoiceKey(raw string) string {
@@ -239,10 +231,6 @@ func normalizeVoiceKey(raw string) string {
 		key = strings.TrimPrefix(key, bucket+"/")
 	}
 
-	if idx := strings.Index(key, "voices/"); idx > 0 {
-		key = key[idx:]
-	}
-
 	return key
 }
 
@@ -253,7 +241,7 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-func (w *TTSWorker) publishResult(ctx context.Context, job JobMessage, status string, audioURL string, errMsg string) {
+func (w *TTSWorker) publishResult(ctx context.Context, job JobMessage, status string, s3ObjectKey string, errMsg string) {
 	if w.resultsChannelPrefix == "" {
 		return
 	}
@@ -262,7 +250,7 @@ func (w *TTSWorker) publishResult(ctx context.Context, job JobMessage, status st
 		"generation_id": job.GenerationID,
 		"job_id":        job.JobID,
 		"status":        status,
-		"audio_url":     audioURL,
+		"s3_object_key": s3ObjectKey,
 		"error_message": errMsg,
 	})
 	if err != nil {

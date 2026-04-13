@@ -18,6 +18,7 @@ INSERT INTO generations (
 	user_id,
 	voice_id,
 	voice_name,
+	voice_key,
 	text,
 	temperature,
 	language_id,
@@ -26,8 +27,8 @@ INSERT INTO generations (
 	status,
 	queued_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
-RETURNING id, user_id, voice_id, voice_name, text, s3_object_key, temperature, created_at, updated_at, job_id, status, audio_url, error_message, queued_at, started_at, completed_at, language_id, exaggeration, cfg_weight
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+RETURNING id, user_id, voice_id, voice_name, voice_key, text, s3_object_key, temperature, language_id, exaggeration, cfg_weight, job_id, status, error_message, queued_at, started_at, completed_at, created_at, updated_at
 `
 
 type CreateGenerationJobParams struct {
@@ -36,6 +37,7 @@ type CreateGenerationJobParams struct {
 	UserID       string      `json:"user_id"`
 	VoiceID      pgtype.Text `json:"voice_id"`
 	VoiceName    string      `json:"voice_name"`
+	VoiceKey     string      `json:"voice_key"`
 	Text         string      `json:"text"`
 	Temperature  float64     `json:"temperature"`
 	LanguageID   string      `json:"language_id"`
@@ -51,6 +53,7 @@ func (q *Queries) CreateGenerationJob(ctx context.Context, arg CreateGenerationJ
 		arg.UserID,
 		arg.VoiceID,
 		arg.VoiceName,
+		arg.VoiceKey,
 		arg.Text,
 		arg.Temperature,
 		arg.LanguageID,
@@ -64,27 +67,27 @@ func (q *Queries) CreateGenerationJob(ctx context.Context, arg CreateGenerationJ
 		&i.UserID,
 		&i.VoiceID,
 		&i.VoiceName,
+		&i.VoiceKey,
 		&i.Text,
 		&i.S3ObjectKey,
 		&i.Temperature,
-		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.LanguageID,
+		&i.Exaggeration,
+		&i.CfgWeight,
 		&i.JobID,
 		&i.Status,
-		&i.AudioUrl,
 		&i.ErrorMessage,
 		&i.QueuedAt,
 		&i.StartedAt,
 		&i.CompletedAt,
-		&i.LanguageID,
-		&i.Exaggeration,
-		&i.CfgWeight,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const getGenerationByIDAndUser = `-- name: GetGenerationByIDAndUser :one
-SELECT id, user_id, voice_id, voice_name, text, s3_object_key, temperature, created_at, updated_at, job_id, status, audio_url, error_message, queued_at, started_at, completed_at, language_id, exaggeration, cfg_weight
+SELECT id, user_id, voice_id, voice_name, voice_key, text, s3_object_key, temperature, language_id, exaggeration, cfg_weight, job_id, status, error_message, queued_at, started_at, completed_at, created_at, updated_at
 FROM generations
 WHERE id = $1 AND user_id = $2
 LIMIT 1
@@ -103,27 +106,27 @@ func (q *Queries) GetGenerationByIDAndUser(ctx context.Context, arg GetGeneratio
 		&i.UserID,
 		&i.VoiceID,
 		&i.VoiceName,
+		&i.VoiceKey,
 		&i.Text,
 		&i.S3ObjectKey,
 		&i.Temperature,
-		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.LanguageID,
+		&i.Exaggeration,
+		&i.CfgWeight,
 		&i.JobID,
 		&i.Status,
-		&i.AudioUrl,
 		&i.ErrorMessage,
 		&i.QueuedAt,
 		&i.StartedAt,
 		&i.CompletedAt,
-		&i.LanguageID,
-		&i.Exaggeration,
-		&i.CfgWeight,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const getGenerationByJobIDAndUser = `-- name: GetGenerationByJobIDAndUser :one
-SELECT id, user_id, voice_id, voice_name, text, s3_object_key, temperature, created_at, updated_at, job_id, status, audio_url, error_message, queued_at, started_at, completed_at, language_id, exaggeration, cfg_weight
+SELECT id, user_id, voice_id, voice_name, voice_key, text, s3_object_key, temperature, language_id, exaggeration, cfg_weight, job_id, status, error_message, queued_at, started_at, completed_at, created_at, updated_at
 FROM generations
 WHERE job_id = $1 AND user_id = $2
 LIMIT 1
@@ -142,27 +145,27 @@ func (q *Queries) GetGenerationByJobIDAndUser(ctx context.Context, arg GetGenera
 		&i.UserID,
 		&i.VoiceID,
 		&i.VoiceName,
+		&i.VoiceKey,
 		&i.Text,
 		&i.S3ObjectKey,
 		&i.Temperature,
-		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.LanguageID,
+		&i.Exaggeration,
+		&i.CfgWeight,
 		&i.JobID,
 		&i.Status,
-		&i.AudioUrl,
 		&i.ErrorMessage,
 		&i.QueuedAt,
 		&i.StartedAt,
 		&i.CompletedAt,
-		&i.LanguageID,
-		&i.Exaggeration,
-		&i.CfgWeight,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const listGenerationsByUser = `-- name: ListGenerationsByUser :many
-SELECT id, user_id, voice_id, voice_name, text, s3_object_key, temperature, created_at, updated_at, job_id, status, audio_url, error_message, queued_at, started_at, completed_at, language_id, exaggeration, cfg_weight
+SELECT id, user_id, voice_id, voice_name, voice_key, text, s3_object_key, temperature, language_id, exaggeration, cfg_weight, job_id, status, error_message, queued_at, started_at, completed_at, created_at, updated_at
 FROM generations
 WHERE user_id = $1
 ORDER BY created_at DESC
@@ -182,21 +185,21 @@ func (q *Queries) ListGenerationsByUser(ctx context.Context, userID string) ([]G
 			&i.UserID,
 			&i.VoiceID,
 			&i.VoiceName,
+			&i.VoiceKey,
 			&i.Text,
 			&i.S3ObjectKey,
 			&i.Temperature,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.LanguageID,
+			&i.Exaggeration,
+			&i.CfgWeight,
 			&i.JobID,
 			&i.Status,
-			&i.AudioUrl,
 			&i.ErrorMessage,
 			&i.QueuedAt,
 			&i.StartedAt,
 			&i.CompletedAt,
-			&i.LanguageID,
-			&i.Exaggeration,
-			&i.CfgWeight,
+			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -212,8 +215,7 @@ const markGenerationCompleted = `-- name: MarkGenerationCompleted :exec
 UPDATE generations
 SET
 	status = 'completed',
-	audio_url = $2,
-	s3_object_key = $3,
+	s3_object_key = $2,
 	completed_at = NOW(),
 	updated_at = NOW(),
 	error_message = NULL
@@ -222,12 +224,11 @@ WHERE id = $1
 
 type MarkGenerationCompletedParams struct {
 	ID          string      `json:"id"`
-	AudioUrl    pgtype.Text `json:"audio_url"`
 	S3ObjectKey pgtype.Text `json:"s3_object_key"`
 }
 
 func (q *Queries) MarkGenerationCompleted(ctx context.Context, arg MarkGenerationCompletedParams) error {
-	_, err := q.db.Exec(ctx, markGenerationCompleted, arg.ID, arg.AudioUrl, arg.S3ObjectKey)
+	_, err := q.db.Exec(ctx, markGenerationCompleted, arg.ID, arg.S3ObjectKey)
 	return err
 }
 

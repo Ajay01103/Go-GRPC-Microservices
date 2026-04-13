@@ -39,6 +39,7 @@ type CreateVoiceParams struct {
 	Description string
 	Category    db.VoiceCategory
 	Language    string
+	Variant     db.VoiceVariant
 	AudioData   []byte
 	ContentType string
 }
@@ -218,7 +219,7 @@ func (s *VoiceService) CreateVoice(ctx context.Context, params CreateVoiceParams
 		Description: strings.TrimSpace(params.Description),
 		Category:    params.Category,
 		Language:    language,
-		Variant:     db.VoiceVariantNEUTRAL,
+		Variant:     params.Variant,
 		S3ObjectKey: s3Key,
 	})
 	if err != nil {
@@ -275,12 +276,12 @@ func textOrEmpty(v pgtype.Text) string {
 	return ""
 }
 
-func buildS3ObjectKey(userID, voiceID, contentType string) string {
-	ext := extensionFromContentType(contentType)
-	if strings.EqualFold(strings.TrimSpace(userID), "SYSTEM") {
-		return fmt.Sprintf("system/%s/audio%s", voiceID, ext)
+func buildS3ObjectKey(userID, voiceID, _ string) string {
+	trimmedUserID := strings.TrimSpace(userID)
+	if strings.EqualFold(trimmedUserID, "SYSTEM") {
+		return fmt.Sprintf("system/%s.wav", voiceID)
 	}
-	return fmt.Sprintf("custom/%s/audio%s", voiceID, ext)
+	return fmt.Sprintf("custom/%s/%s.wav", trimmedUserID, voiceID)
 }
 
 func extensionFromContentType(contentType string) string {

@@ -28,6 +28,7 @@ function VoicesContent() {
         title="Team Voices"
         voices={customVoices}
         isLoading={isCustomLoading}
+        isCustom
       />
       <VoicesList
         title="Built-in Voices"

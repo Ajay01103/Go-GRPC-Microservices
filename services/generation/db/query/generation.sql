@@ -23,6 +23,7 @@ INSERT INTO generations (
 	user_id,
 	voice_id,
 	voice_name,
+	voice_key,
 	text,
 	temperature,
 	language_id,
@@ -31,7 +32,7 @@ INSERT INTO generations (
 	status,
 	queued_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
 RETURNING *;
 
 -- name: MarkGenerationProcessing :exec
@@ -47,8 +48,7 @@ WHERE id = $1 AND status = 'queued';
 UPDATE generations
 SET
 	status = 'completed',
-	audio_url = $2,
-	s3_object_key = $3,
+	s3_object_key = $2,
 	completed_at = NOW(),
 	updated_at = NOW(),
 	error_message = NULL
