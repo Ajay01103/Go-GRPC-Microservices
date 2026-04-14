@@ -3,6 +3,7 @@
 import type { PlainMessage } from "@bufbuild/protobuf"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { getGenerationPlaybackUrlAction } from "@/actions/generations"
+import { fetchAudioWithCache } from "@/lib/audio-fetch"
 
 import { useAuth } from "@/lib/auth-context"
 import { generationRpcClient } from "@/lib/rpc"
@@ -118,6 +119,32 @@ export function useGenerationPlaybackUrl(s3ObjectKey?: string) {
 
       const result = await getGenerationPlaybackUrlAction(normalizedKey)
       return result.url
+    },
+  })
+}
+
+/**
+ * Hook for fetching audio with caching support
+ * Returns a blob URL that can be used with audio elements
+ * Automatically caches audio blobs to reduce S3 roundtrips
+ */
+export function useGenerationPlaybackUrlWithCache(s3ObjectKey?: string) {
+  const normalizedKey = s3ObjectKey?.trim() ?? ""
+  const playbackUrlQuery = useGenerationPlaybackUrl(normalizedKey)
+
+  return useQuery({
+    queryKey: ["generation-playback-url-cached", normalizedKey],
+    enabled: Boolean(normalizedKey && playbackUrlQuery.data),
+    staleTime: 55 * 60 * 1000,
+    queryFn: async (): Promise<string> => {
+      if (!normalizedKey || !playbackUrlQuery.data) {
+        throw new Error("s3ObjectKey and playback URL are required")
+      }
+
+      return fetchAudioWithCache({
+        url: playbackUrlQuery.data,
+        key: normalizedKey,
+      })
     },
   })
 }

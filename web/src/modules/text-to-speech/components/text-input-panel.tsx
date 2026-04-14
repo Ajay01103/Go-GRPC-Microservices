@@ -10,18 +10,21 @@ import { VoiceSelectorButton } from "./voice-selector-button"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { useTypedAppFormContext } from "@/hooks/use-app-form"
+import { GenerationJobStatus } from "@/gen/pb/generation_pb"
 
 import { COST_PER_UNIT, TEXT_MAX_LENGTH } from "@/modules/text-to-speech/data/constants"
 import { ttsFormOptions } from "./text-to-speech-form"
 import { GenerateButton } from "./generate-button"
 import { PromptSuggestions } from "./prompt-suggestions"
 
-export function TextInputPanel() {
+export function TextInputPanel({ generation }: { generation?: any }) {
   const form = useTypedAppFormContext(ttsFormOptions)
 
   const text = useStore(form.store, (s) => s.values.text)
   const isSubmitting = useStore(form.store, (s) => s.isSubmitting)
   const isValid = useStore(form.store, (s) => s.isValid)
+
+  const isGenerationCompleted = generation?.status === GenerationJobStatus.COMPLETED
 
   return (
     <div className="flex h-full min-h-0 flex-col flex-1">
@@ -54,7 +57,7 @@ export function TextInputPanel() {
           </div>
           <GenerateButton
             className="w-full"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isGenerationCompleted}
             isSubmitting={isSubmitting}
             onSubmit={() => form.handleSubmit()}
           />
@@ -67,7 +70,9 @@ export function TextInputPanel() {
               className="gap-1.5 border-dashed">
               <Coins className="size-3 text-chart-5" />
               <span className="text-xs">
-                <span className="tabular-nums">${(text.length * COST_PER_UNIT).toFixed(4)}</span>
+                <span className="tabular-nums">
+                  ${(text.length * COST_PER_UNIT).toFixed(4)}
+                </span>
                 &nbsp; estimated
               </span>
             </Badge>
@@ -80,7 +85,7 @@ export function TextInputPanel() {
               </p>
               <GenerateButton
                 size="sm"
-                disabled={isSubmitting || !isValid}
+                disabled={isSubmitting || !isValid || isGenerationCompleted}
                 isSubmitting={isSubmitting}
                 onSubmit={() => form.handleSubmit()}
               />
@@ -88,7 +93,9 @@ export function TextInputPanel() {
           </div>
         ) : (
           <div className="hidden lg:block">
-            <PromptSuggestions onSelect={(prompt) => form.setFieldValue("text", prompt)} />
+            <PromptSuggestions
+              onSelect={(prompt) => form.setFieldValue("text", prompt)}
+            />
           </div>
         )}
       </div>

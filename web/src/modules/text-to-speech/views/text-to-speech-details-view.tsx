@@ -5,7 +5,7 @@ import { GenerationJobStatus } from "@/gen/pb/generation_pb"
 
 import {
   useGeneration,
-  useGenerationPlaybackUrl,
+  useGenerationPlaybackUrlWithCache,
 } from "@/modules/text-to-speech/hooks/use-generations"
 import { useTTSVoices } from "@/modules/text-to-speech/hooks/use-tts-voices"
 import { TextInputPanel } from "@/modules/text-to-speech/components/text-input-panel"
@@ -14,8 +14,9 @@ import {
   TextToSpeechForm,
   type TTSFormValues,
 } from "@/modules/text-to-speech/components/text-to-speech-form"
-import { VoiceAudioPreview } from "@/modules/voices/components/voice-audio-preview"
 import { TTSVoicesProvider } from "../contexts/tts-voices-context"
+import { VoicePreviewPanel } from "../components/voice-preview-panel"
+import { VoicePreviewPlaceholder } from "../components/voice-preview-placeholder"
 
 interface TextToSpeechDetailViewProps {
   params: Promise<{ generationId: string }>
@@ -43,7 +44,7 @@ export function TextToSpeechDetailView({ params }: TextToSpeechDetailViewProps) 
     data: generatedAudioSrc,
     isLoading: isAudioSrcLoading,
     isError: isAudioSrcError,
-  } = useGenerationPlaybackUrl(generation?.s3ObjectKey)
+  } = useGenerationPlaybackUrlWithCache(generation?.s3ObjectKey)
 
   if (isGenerationLoading || isVoicesLoading || !generation || !generationId) {
     return <div>Loading...</div>
@@ -86,6 +87,9 @@ export function TextToSpeechDetailView({ params }: TextToSpeechDetailViewProps) 
     name: generation.voiceName,
   }
 
+  const showGeneratedAudioPreview =
+    hasGeneratedAudio && Boolean(generatedAudioSrc) && !isAudioSrcError
+
   return (
     <TTSVoicesProvider value={{ customVoices, systemVoices, allVoices }}>
       <TextToSpeechForm
@@ -93,9 +97,9 @@ export function TextToSpeechDetailView({ params }: TextToSpeechDetailViewProps) 
         defaultValues={defaultValues}>
         <div className="flex min-h-0 flex-1 overflow-hidden">
           <div className="flex min-h-0 flex-1 flex-col">
-            <TextInputPanel />
+            <TextInputPanel generation={generation} />
             <div className="border-t px-4 py-3 text-sm lg:px-6">
-              <div className="flex items-center justify-between gap-3">
+              <div className="hidden lg:flex items-center justify-between gap-3">
                 <span className="font-medium">Generation status</span>
                 <span
                   className={
@@ -117,37 +121,14 @@ export function TextToSpeechDetailView({ params }: TextToSpeechDetailViewProps) 
                 </p>
               ) : null}
             </div>
-            {/* Audio Preview Section */}
-            {hasGeneratedAudio && (
-              <div className="flex-1 border-t p-4">
-                <div className="space-y-3 rounded-xl border bg-card p-4">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Generated Audio
-                  </p>
-                  {generatedAudioSrc && !isAudioSrcLoading ? (
-                    <VoiceAudioPreview
-                      voiceId={resolvedVoiceId || generationId}
-                      itemId={generationId}
-                      src={generatedAudioSrc}
-                      className="border-0 bg-transparent p-0"
-                    />
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      Preparing audio playback URL...
-                    </p>
-                  )}
-                  {isAudioSrcError ? (
-                    <p className="text-xs text-red-500">
-                      Failed to prepare generated audio. Please refresh and try again.
-                    </p>
-                  ) : null}
-                  {generationVoice.name && (
-                    <p className="text-xs text-muted-foreground">
-                      Voice: {generationVoice.name}
-                    </p>
-                  )}
-                </div>
-              </div>
+            {showGeneratedAudioPreview ? (
+              <VoicePreviewPanel
+                audioUrl={generatedAudioSrc ?? ""}
+                voice={generationVoice}
+                text={generation.text}
+              />
+            ) : (
+              <VoicePreviewPlaceholder />
             )}
           </div>
           <SettingsPanel />
