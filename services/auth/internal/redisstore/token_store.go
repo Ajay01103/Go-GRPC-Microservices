@@ -2,60 +2,99 @@ package redisstore
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
-const refreshTokenPrefix = "refresh_token:"
+const (
+	refreshActivePrefix    = "rt:active:"
+	refreshBlacklistPrefix = "rt:blacklist:"
+	refreshRotatedPrefix   = "rt:rotated:"
+	refreshUserSetPrefix   = "rt:user:"
+)
 
-// atomicRotateScript atomically validates that the old JTI key exists, deletes it,
-// and stores the new JTI — all in a single Redis round-trip.
+const rotatedGraceTTL = 15 * time.Second
+
+// atomicRotateFamilyScript verifies active family state and rotates it in one
+// round-trip, while blacklisting the old token hash.
 //
-// KEYS[1] = old JTI key  (refresh_token:{oldJTI})
-// KEYS[2] = new JTI key  (refresh_token:{newJTI})
-// ARGV[1] = TTL in seconds for the new key
-// ARGV[2] = userID value to store under the new key
+// KEYS[1] active family key (rt:active:{familyId})
+// KEYS[2] blacklist key for old hash (rt:blacklist:{oldHash})
+// ARGV[1] expected user id
+// ARGV[2] expected old token hash
+// ARGV[3] expected old jkt
+// ARGV[4] blacklist ttl seconds
+// ARGV[5] new active record json
+// ARGV[6] active ttl seconds
 //
-// Returns "OK" on success, or a Redis error reply "TOKEN_REVOKED" when the old
-// key is missing (already consumed / never existed — treat as revoked).
-var atomicRotateScript = redis.NewScript(`
-local val = redis.call('GET', KEYS[1])
-if not val then
-  return redis.error_reply('TOKEN_REVOKED')
+// Returns one of: OK, FAMILY_NOT_FOUND, USER_MISMATCH, HASH_MISMATCH, JKT_MISMATCH, KID_MISMATCH
+var atomicRotateFamilyScript = redis.NewScript(`
+local raw = redis.call('GET', KEYS[1])
+if not raw then
+  return 'FAMILY_NOT_FOUND'
 end
-redis.call('DEL', KEYS[1])
-redis.call('SETEX', KEYS[2], ARGV[1], ARGV[2])
+
+local rec = cjson.decode(raw)
+if rec['user_id'] ~= ARGV[1] then
+  return 'USER_MISMATCH'
+end
+if rec['token_hash'] ~= ARGV[2] then
+  return 'HASH_MISMATCH'
+end
+
+local expectedJKT = ARGV[3]
+local storedJKT = rec['jkt']
+if not storedJKT then
+  storedJKT = ''
+end
+if storedJKT ~= expectedJKT then
+  return 'JKT_MISMATCH'
+end
+
+local storedKID = rec['signing_kid'] or ''
+local expectedKID = ARGV[8]
+if storedKID ~= '' and expectedKID ~= '' and storedKID ~= expectedKID then
+  return 'KID_MISMATCH'
+end
+
+redis.call('SETEX', KEYS[2], ARGV[4], 'revoked')
+redis.call('SETEX', KEYS[1], ARGV[6], ARGV[5])
+redis.call('SADD',  KEYS[3], ARGV[7])
 return 'OK'
 `)
 
-// atomicClaimScript atomically checks that a JTI key exists and deletes it.
-// Used as the fast-fail atomic gate at the start of the refresh flow — before
-// any database or token-minting work — to close the concurrent-request race.
-//
-// KEYS[1] = JTI key to claim (refresh_token:{jti})
-//
-// Returns "OK" on success, or "TOKEN_REVOKED" if the key was absent.
-var atomicClaimScript = redis.NewScript(`
-local val = redis.call('GET', KEYS[1])
-if not val then
-  return redis.error_reply('TOKEN_REVOKED')
-end
-redis.call('DEL', KEYS[1])
-return 'OK'
-`)
-
-// TokenStore manages refresh token lifecycle in Redis.
-// Each refresh token is stored as:
-//
-//	KEY:  refresh_token:{jti}
-//	VAL:  {user_id}
-//	TTL:  duration of refresh token
+// TokenStore manages refresh token lifecycle in Redis using:
+// - allowlist: rt:active:{familyId}
+// - blacklist: rt:blacklist:{tokenHash}
+// - user families: rt:user:{userId}:families
 type TokenStore struct {
 	client *redis.Client
 }
+
+type ActiveRefreshTokenRecord struct {
+	UserID     string `json:"user_id"`
+	TokenHash  string `json:"token_hash"`
+	JKT        string `json:"jkt,omitempty"`
+	ExpiresAt  string `json:"expires_at"`
+	RefreshJTI string `json:"refresh_jti"`
+	SigningKID string `json:"signing_kid"`
+	IssuedAt   int64  `json:"issued_at"`
+}
+
+type RotateOutcome string
+
+const (
+	RotateSuccess        RotateOutcome = "OK"
+	RotateFamilyNotFound RotateOutcome = "FAMILY_NOT_FOUND"
+	RotateUserMismatch   RotateOutcome = "USER_MISMATCH"
+	RotateHashMismatch   RotateOutcome = "HASH_MISMATCH"
+	RotateJKTMismatch    RotateOutcome = "JKT_MISMATCH"
+	RotateKIDMismatch    RotateOutcome = "KID_MISMATCH"
+)
 
 // New creates a TokenStore from a connected Redis client.
 func New(client *redis.Client) *TokenStore {
@@ -72,112 +111,270 @@ func NewClientFromURL(redisURL string) (*redis.Client, error) {
 	return client, nil
 }
 
-// redisKey returns the full Redis key for a given refresh token JTI.
-func redisKey(jti string) string {
-	return refreshTokenPrefix + jti
+func activeFamilyKey(familyID string) string {
+	return refreshActivePrefix + familyID
 }
 
-// StoreRefreshToken persists a refresh token JTI in Redis.
-// userID is stored as a string value (matches the sqlc-generated db.User.ID type).
-// Call this after successfully minting a refresh token.
-func (s *TokenStore) StoreRefreshToken(ctx context.Context, jti, userID string, ttl time.Duration) error {
-	return s.client.Set(ctx, redisKey(jti), userID, ttl).Err()
+func blacklistKey(tokenHash string) string {
+	return refreshBlacklistPrefix + tokenHash
 }
 
-// ValidateRefreshToken checks if the refresh token JTI is still valid (not revoked).
-// Returns the user ID associated with the JTI, or ErrTokenRevoked if the key is missing.
-func (s *TokenStore) ValidateRefreshToken(ctx context.Context, jti string) (string, error) {
-	userID, err := s.client.Get(ctx, redisKey(jti)).Result()
+func userFamiliesKey(userID string) string {
+	return fmt.Sprintf("%s%s:families", refreshUserSetPrefix, userID)
+}
+
+func rotatedGraceKey(tokenHash string) string {
+	return refreshRotatedPrefix + tokenHash
+}
+
+func (s *TokenStore) StoreFamilyActiveToken(ctx context.Context, familyID string, rec ActiveRefreshTokenRecord, ttl time.Duration) error {
+	raw, err := json.Marshal(rec)
+	if err != nil {
+		return fmt.Errorf("marshal active record: %w", err)
+	}
+	if err := s.client.Set(ctx, activeFamilyKey(familyID), raw, ttl).Err(); err != nil {
+		return fmt.Errorf("redis set active family: %w", err)
+	}
+	if err := s.upsertUserFamily(ctx, rec.UserID, familyID); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *TokenStore) GetFamilyActiveToken(ctx context.Context, familyID string) (*ActiveRefreshTokenRecord, error) {
+	raw, err := s.client.Get(ctx, activeFamilyKey(familyID)).Result()
 	if err == redis.Nil {
-		return "", ErrTokenRevoked
+		return nil, ErrFamilyNotFound
 	}
 	if err != nil {
-		return "", fmt.Errorf("redis get error: %w", err)
+		return nil, fmt.Errorf("redis get active family: %w", err)
 	}
-	return userID, nil
+	var rec ActiveRefreshTokenRecord
+	if err := json.Unmarshal([]byte(raw), &rec); err != nil {
+		return nil, fmt.Errorf("unmarshal active record: %w", err)
+	}
+	return &rec, nil
 }
 
-// RevokeRefreshToken deletes a refresh token from Redis, effectively logging out the user.
-// Returns nil if the key didn't exist (idempotent).
-func (s *TokenStore) RevokeRefreshToken(ctx context.Context, jti string) error {
-	if err := s.client.Del(ctx, redisKey(jti)).Err(); err != nil && err != redis.Nil {
-		return fmt.Errorf("redis del error: %w", err)
+func (s *TokenStore) IsTokenHashBlacklisted(ctx context.Context, tokenHash string) (bool, error) {
+	_, err := s.client.Get(ctx, blacklistKey(tokenHash)).Result()
+	if err == redis.Nil {
+		return false, nil
 	}
-	return nil
+	if err != nil {
+		return false, fmt.Errorf("redis get blacklist: %w", err)
+	}
+	return true, nil
 }
 
-// ClaimRefreshToken atomically asserts the JTI key exists then deletes it in one
-// Lua round-trip — the fast-fail gate at the start of the refresh flow.
-//
-// Once claimed, the old session is unconditionally gone. On success, the caller
-// must store a new JTI via StoreRefreshToken to re-establish a session.
-//
-// Returns ErrTokenRevoked when the key is absent: this means either a legitimate
-// logout, a concurrent replay, or a stolen-token replay — all should be refused.
-func (s *TokenStore) ClaimRefreshToken(ctx context.Context, jti string) error {
-	result := atomicClaimScript.Run(ctx, s.client, []string{redisKey(jti)})
-	if err := result.Err(); err != nil {
-		if strings.Contains(err.Error(), "TOKEN_REVOKED") {
-			return ErrTokenRevoked
-		}
-		return fmt.Errorf("redis claim: %w", err)
+func (s *TokenStore) BlacklistTokenHash(ctx context.Context, tokenHash string, ttl time.Duration) error {
+	if err := s.client.Set(ctx, blacklistKey(tokenHash), "revoked", ttl).Err(); err != nil {
+		return fmt.Errorf("redis set blacklist: %w", err)
 	}
 	return nil
 }
 
-// RotateRefreshToken atomically validates that oldJTI exists in Redis, deletes it,
-// and stores newJTI — all in a single Lua script (one round-trip, zero race window).
-//
-// Prefer ClaimRefreshToken + StoreRefreshToken when you need to perform work
-// (DB fetch, token minting) between the two operations.
-//
-// Returns ErrTokenRevoked when oldJTI is already gone, which signals a concurrent
-// replay or a theft attempt.
-func (s *TokenStore) RotateRefreshToken(
+func (s *TokenStore) RotateFamilyActiveToken(
 	ctx context.Context,
-	oldJTI, newJTI, userID string,
-	ttl time.Duration,
-) error {
-	result := atomicRotateScript.Run(ctx, s.client,
-		[]string{redisKey(oldJTI), redisKey(newJTI)},
-		int64(ttl.Seconds()),
+	familyID, userID, oldTokenHash, oldJKT, signingKID string,
+	newRecord ActiveRefreshTokenRecord,
+	activeTTL, blacklistTTL time.Duration,
+) (RotateOutcome, error) {
+	raw, err := json.Marshal(newRecord)
+	if err != nil {
+		return "", fmt.Errorf("marshal new active record: %w", err)
+	}
+
+	result, err := atomicRotateFamilyScript.Run(ctx, s.client,
+		[]string{activeFamilyKey(familyID), blacklistKey(oldTokenHash), userFamiliesKey(userID)},
 		userID,
-	)
-	if err := result.Err(); err != nil {
-		if strings.Contains(err.Error(), "TOKEN_REVOKED") {
-			return ErrTokenRevoked
+		oldTokenHash,
+		oldJKT,
+		int64(blacklistTTL.Seconds()),
+		string(raw),
+		int64(activeTTL.Seconds()),
+		familyID,
+		signingKID,
+	).Result()
+	if err != nil {
+		return "", fmt.Errorf("redis rotate family: %w", err)
+	}
+
+	outcome, ok := result.(string)
+	if !ok {
+		return "", fmt.Errorf("unexpected redis rotate response type: %T", result)
+	}
+
+	if RotateOutcome(outcome) == RotateSuccess {
+		if err := s.client.Set(ctx, rotatedGraceKey(oldTokenHash), familyID, rotatedGraceTTL).Err(); err != nil {
+			// Best effort marker: missing grace should degrade to strict anti-replay behavior.
 		}
-		return fmt.Errorf("redis rotate: %w", err)
+	}
+
+	return RotateOutcome(outcome), nil
+}
+
+func (s *TokenStore) RevokeFamily(ctx context.Context, familyID string, blacklistTTL time.Duration) error {
+	rec, err := s.GetFamilyActiveToken(ctx, familyID)
+	if err != nil && err != ErrFamilyNotFound {
+		return err
+	}
+	if rec != nil && rec.TokenHash != "" {
+		if blErr := s.BlacklistTokenHash(ctx, rec.TokenHash, blacklistTTL); blErr != nil {
+			return blErr
+		}
+	}
+	if err := s.client.Del(ctx, activeFamilyKey(familyID)).Err(); err != nil {
+		return fmt.Errorf("redis del active family: %w", err)
 	}
 	return nil
 }
 
-// RevokeAllUserTokens scans Redis for every refresh token belonging to userID
-// and deletes them all — used when token reuse is detected (possible theft).
-//
-// Uses SCAN to iterate the keyspace in pages so it never blocks the Redis server.
-// This is an emergency / security path, not the hot path.
-func (s *TokenStore) RevokeAllUserTokens(ctx context.Context, userID string) error {
-	pattern := refreshTokenPrefix + "*"
-	var cursor uint64
-	for {
-		keys, nextCursor, err := s.client.Scan(ctx, cursor, pattern, 100).Result()
-		if err != nil {
-			return fmt.Errorf("redis scan: %w", err)
-		}
-		for _, key := range keys {
-			val, getErr := s.client.Get(ctx, key).Result()
-			if getErr != nil {
-				continue // key expired between SCAN and GET — harmless
-			}
-			if val == userID {
-				s.client.Del(ctx, key) //nolint:errcheck — best-effort revocation
-			}
-		}
-		cursor = nextCursor
-		if cursor == 0 {
-			break
-		}
+func (s *TokenStore) LogoutFamily(ctx context.Context, userID, familyID, tokenHash string, blacklistTTL time.Duration) error {
+	pipe := s.client.TxPipeline()
+	pipe.Del(ctx, activeFamilyKey(familyID))
+	pipe.SRem(ctx, userFamiliesKey(userID), familyID)
+	if tokenHash != "" {
+		pipe.Set(ctx, blacklistKey(tokenHash), "revoked", blacklistTTL)
+	}
+	if _, err := pipe.Exec(ctx); err != nil {
+		return fmt.Errorf("redis logout family: %w", err)
 	}
 	return nil
+}
+
+func (s *TokenStore) RevokeAllUserFamilies(ctx context.Context, userID string, blacklistTTL time.Duration) error {
+	families, err := s.listUserFamiliesPruned(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if len(families) == 0 {
+		return nil
+	}
+
+	pipe := s.client.TxPipeline()
+	for _, familyID := range families {
+		rec, recErr := s.GetFamilyActiveToken(ctx, familyID)
+		if recErr != nil && recErr != ErrFamilyNotFound {
+			return recErr
+		}
+		if rec != nil && rec.TokenHash != "" {
+			pipe.Set(ctx, blacklistKey(rec.TokenHash), "revoked", blacklistTTL)
+		}
+		pipe.Del(ctx, activeFamilyKey(familyID))
+	}
+	pipe.Del(ctx, userFamiliesKey(userID))
+	if _, err := pipe.Exec(ctx); err != nil {
+		return fmt.Errorf("redis revoke all families: %w", err)
+	}
+
+	return nil
+}
+
+func HashTokenSHA256(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return fmt.Sprintf("%x", sum[:])
+}
+
+func (s *TokenStore) AddFamilyToUser(ctx context.Context, userID, familyID string) error {
+	return s.upsertUserFamily(ctx, userID, familyID)
+}
+
+func (s *TokenStore) RemoveFamilyFromUser(ctx context.Context, userID, familyID string) error {
+	if err := s.client.SRem(ctx, userFamiliesKey(userID), familyID).Err(); err != nil {
+		return fmt.Errorf("redis srem family: %w", err)
+	}
+	return nil
+}
+
+func (s *TokenStore) ListUserFamilies(ctx context.Context, userID string) ([]string, error) {
+	return s.listUserFamiliesPruned(ctx, userID)
+}
+
+func (s *TokenStore) upsertUserFamily(ctx context.Context, userID, familyID string) error {
+	pipe := s.client.TxPipeline()
+	pipe.SAdd(ctx, userFamiliesKey(userID), familyID)
+	if _, err := pipe.Exec(ctx); err != nil {
+		return fmt.Errorf("redis upsert user family: %w", err)
+	}
+	return nil
+}
+
+func (s *TokenStore) listUserFamiliesPruned(ctx context.Context, userID string) ([]string, error) {
+	families, err := s.client.SMembers(ctx, userFamiliesKey(userID)).Result()
+	if err == redis.Nil {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("redis smembers families: %w", err)
+	}
+	if len(families) == 0 {
+		return nil, nil
+	}
+
+	pipe := s.client.Pipeline()
+	existsCmds := make([]*redis.IntCmd, len(families))
+	for idx, familyID := range families {
+		existsCmds[idx] = pipe.Exists(ctx, activeFamilyKey(familyID))
+	}
+	if _, err := pipe.Exec(ctx); err != nil {
+		return nil, fmt.Errorf("redis exists family keys: %w", err)
+	}
+
+	activeFamilies := make([]string, 0, len(families))
+	staleFamilies := make([]string, 0)
+	for idx, familyID := range families {
+		exists, existsErr := existsCmds[idx].Result()
+		if existsErr != nil {
+			return nil, fmt.Errorf("redis exists family key: %w", existsErr)
+		}
+		if exists > 0 {
+			activeFamilies = append(activeFamilies, familyID)
+			continue
+		}
+		staleFamilies = append(staleFamilies, familyID)
+	}
+
+	if len(staleFamilies) > 0 {
+		staleArgs := make([]interface{}, len(staleFamilies))
+		for i := range staleFamilies {
+			staleArgs[i] = staleFamilies[i]
+		}
+		if err := s.client.SRem(ctx, userFamiliesKey(userID), staleArgs...).Err(); err != nil {
+			return nil, fmt.Errorf("redis srem stale families: %w", err)
+		}
+	}
+
+	return activeFamilies, nil
+}
+
+// GetFamilyKID returns the signing_kid stored in the active family record.
+func (s *TokenStore) GetFamilyKID(ctx context.Context, familyID string) (string, error) {
+	raw, err := s.client.Get(ctx, activeFamilyKey(familyID)).Result()
+	if err == redis.Nil {
+		return "", ErrFamilyNotFound
+	}
+	if err != nil {
+		return "", fmt.Errorf("redis get family kid: %w", err)
+	}
+
+	var partial struct {
+		SigningKID string `json:"signing_kid"`
+	}
+	if err := json.Unmarshal([]byte(raw), &partial); err != nil {
+		return "", fmt.Errorf("unmarshal family kid: %w", err)
+	}
+	return partial.SigningKID, nil
+}
+
+func (s *TokenStore) GetRotatedTokenGraceFamilyID(ctx context.Context, oldTokenHash string) (string, error) {
+	value, err := s.client.Get(ctx, rotatedGraceKey(oldTokenHash)).Result()
+	if err == redis.Nil {
+		return "", ErrGraceNotFound
+	}
+	if err != nil {
+		return "", fmt.Errorf("redis get rotated grace key: %w", err)
+	}
+
+	return value, nil
 }

@@ -6,6 +6,7 @@ type Config struct {
 	DBURL                   string `mapstructure:"GENERATION_DB_URL"`
 	GRPCPort                string `mapstructure:"GENERATION_GRPC_PORT"`
 	JWTSecret               string `mapstructure:"JWT_SECRET"`
+	AuthServiceJWKSURL      string `mapstructure:"AUTH_SERVICE_JWKS_URL"`
 	CORSOrigin              string `mapstructure:"GENERATION_CORS_ORIGIN"`
 	RedisURL                string `mapstructure:"GENERATION_REDIS_URL"`
 	TTSQueueChannel         string `mapstructure:"GENERATION_TTS_QUEUE_CHANNEL"`

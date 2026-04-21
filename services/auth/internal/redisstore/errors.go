@@ -3,7 +3,9 @@ package redisstore
 import "errors"
 
 var (
-	// ErrTokenRevoked is returned when the refresh token JTI is not found in Redis
-	// (i.e., the user has logged out or the token was explicitly revoked).
-	ErrTokenRevoked = errors.New("refresh token has been revoked")
+	ErrTokenRevoked       = errors.New("refresh token has been revoked")
+	ErrFamilyNotFound     = errors.New("refresh token family not found")
+	ErrTokenReuseDetected = errors.New("refresh token reuse detected")
+	ErrGraceNotFound      = errors.New("refresh token grace marker not found")
+	ErrKeyBindingMismatch = errors.New("refresh token key binding mismatch")
 )

@@ -109,6 +109,16 @@ export class RefreshTokenRequest extends Message<RefreshTokenRequest> {
    */
   refreshToken = "";
 
+  /**
+   * @generated from field: string dpop_proof = 2;
+   */
+  dpopProof = "";
+
+  /**
+   * @generated from field: string dpop_key_thumbprint = 3;
+   */
+  dpopKeyThumbprint = "";
+
   constructor(data?: PartialMessage<RefreshTokenRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -118,6 +128,8 @@ export class RefreshTokenRequest extends Message<RefreshTokenRequest> {
   static readonly typeName = "auth.RefreshTokenRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "refresh_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "dpop_proof", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "dpop_key_thumbprint", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RefreshTokenRequest {
@@ -391,6 +403,80 @@ export class LogoutResponse extends Message<LogoutResponse> {
 
   static equals(a: LogoutResponse | PlainMessage<LogoutResponse> | undefined, b: LogoutResponse | PlainMessage<LogoutResponse> | undefined): boolean {
     return proto3.util.equals(LogoutResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message auth.LogoutAllDevicesRequest
+ */
+export class LogoutAllDevicesRequest extends Message<LogoutAllDevicesRequest> {
+  /**
+   * @generated from field: string user_id = 1;
+   */
+  userId = "";
+
+  constructor(data?: PartialMessage<LogoutAllDevicesRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "auth.LogoutAllDevicesRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "user_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): LogoutAllDevicesRequest {
+    return new LogoutAllDevicesRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): LogoutAllDevicesRequest {
+    return new LogoutAllDevicesRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): LogoutAllDevicesRequest {
+    return new LogoutAllDevicesRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: LogoutAllDevicesRequest | PlainMessage<LogoutAllDevicesRequest> | undefined, b: LogoutAllDevicesRequest | PlainMessage<LogoutAllDevicesRequest> | undefined): boolean {
+    return proto3.util.equals(LogoutAllDevicesRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message auth.LogoutAllDevicesResponse
+ */
+export class LogoutAllDevicesResponse extends Message<LogoutAllDevicesResponse> {
+  /**
+   * @generated from field: string message = 1;
+   */
+  message = "";
+
+  constructor(data?: PartialMessage<LogoutAllDevicesResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "auth.LogoutAllDevicesResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "message", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): LogoutAllDevicesResponse {
+    return new LogoutAllDevicesResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): LogoutAllDevicesResponse {
+    return new LogoutAllDevicesResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): LogoutAllDevicesResponse {
+    return new LogoutAllDevicesResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: LogoutAllDevicesResponse | PlainMessage<LogoutAllDevicesResponse> | undefined, b: LogoutAllDevicesResponse | PlainMessage<LogoutAllDevicesResponse> | undefined): boolean {
+    return proto3.util.equals(LogoutAllDevicesResponse, a, b);
   }
 }
 

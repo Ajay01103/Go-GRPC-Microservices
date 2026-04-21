@@ -23,6 +23,7 @@ import (
 	"github.com/go-grpc-sqlc/auth/internal/repository"
 	"github.com/go-grpc-sqlc/auth/internal/service"
 	"github.com/go-grpc-sqlc/auth/server"
+	"github.com/go-grpc-sqlc/pkg/dpop"
 	"github.com/go-grpc-sqlc/pkg/interceptor"
 	pkglogger "github.com/go-grpc-sqlc/pkg/logger"
 	"github.com/go-grpc-sqlc/pkg/token"
@@ -87,19 +88,45 @@ func main() {
 	querier := db.New(dbLocal)
 	userRepo := repository.NewUserRepo(querier)
 	tokenStore := redisstore.New(redisClient)
-	tokenMaker, err := token.NewJWTMaker(cfg.JWTSecret)
-	if err != nil {
-		logger.Error("cannot create token maker", zap.Error(err))
-		os.Exit(1)
+	dpopStore := dpop.NewDPoPStore(redisClient)
+	rsaKeyRetention := cfg.RSASigningKeyRetentionDuration
+	if rsaKeyRetention < cfg.RefreshTokenDuration {
+		logger.Warn(
+			"rsa signing key retention is shorter than refresh token duration; clamping to refresh duration",
+			zap.Duration("rsaSigningKeyRetention", rsaKeyRetention),
+			zap.Duration("refreshTokenDuration", cfg.RefreshTokenDuration),
+		)
+		rsaKeyRetention = cfg.RefreshTokenDuration
 	}
 
-	authService := service.New(userRepo, tokenMaker, tokenStore, cfg, logger)
+	rsaMaker, err := token.NewRSAMakerWithRedis(redisClient, rsaKeyRetention)
+	if err != nil {
+		logger.Error("cannot create RSA token maker", zap.Error(err))
+		os.Exit(1)
+	}
+	var tokenMaker token.TokenMaker = rsaMaker
+
+	authService := service.New(userRepo, tokenMaker, tokenStore, dpopStore, cfg, logger)
 	authServer := server.New(authService)
 
 	loggingInterceptor := interceptor.NewLoggingInterceptor(logger)
 
 	// 5. Start ConnectRPC server (HTTP/2 with h2c)
 	mux := http.NewServeMux()
+
+	// JWKS endpoint for token validation by other services
+	mux.HandleFunc("GET /.well-known/jwks.json", func(w http.ResponseWriter, r *http.Request) {
+		jwksData, err := rsaMaker.ExportPublicKeys()
+		if err != nil {
+			logger.Error("export jwks", zap.Error(err))
+			http.Error(w, "Failed to export JWKS", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Cache-Control", "public, max-age=3600")
+		w.Write(jwksData)
+	})
+
 	path, handler := pbconnect.NewAuthServiceHandler(
 		authServer,
 		connect.WithInterceptors(loggingInterceptor),

@@ -26,9 +26,10 @@ export type TTSFormValues = z.infer<typeof ttsFormSchema>
 export const defaultTTSValues: TTSFormValues = {
   text: "",
   voiceId: "",
-  temperature: 0.8,
-  exaggeration: 0.5,
-  cfgWeight: 0.5,
+  // Conservative defaults for more natural pacing with most cloned voices.
+  temperature: 0.6,
+  exaggeration: 0.35,
+  cfgWeight: 0.35,
 }
 
 function resolveLanguageID(language: string): string {

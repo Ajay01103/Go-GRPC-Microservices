@@ -105,10 +105,14 @@ func main() {
 
 	generationServer := server.NewGenerationServer(queries, redisClient, s3Client, cfg.TTSQueueChannel, logger)
 	loggingInterceptor := interceptor.NewLoggingInterceptor(logger)
-	tokenMaker, err := token.NewJWTMaker(cfg.JWTSecret)
-	if err != nil {
-		logger.Fatal("failed to initialize JWT token maker", zap.Error(err))
+	
+	if cfg.AuthServiceJWKSURL == "" {
+		logger.Fatal("AUTH_SERVICE_JWKS_URL must be configured for JWKS-based token validation")
 	}
+	
+	tokenMaker := token.NewRemoteValidator(cfg.AuthServiceJWKSURL)
+	logger.Info("using remote JWKS validator for token validation", zap.String("jwks_url", cfg.AuthServiceJWKSURL))
+	
 	authInterceptor := interceptor.AuthInterceptor(tokenMaker, map[string]bool{})
 
 	path, handler := pbconnect.NewGenerationServiceHandler(

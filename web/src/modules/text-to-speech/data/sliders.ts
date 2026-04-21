@@ -18,7 +18,7 @@ export const sliders: Slider[] = [
     min: 0,
     max: 2,
     step: 0.1,
-    defaultValue: 0.8,
+    defaultValue: 0.6,
   },
   {
     id: "exaggeration",
@@ -28,7 +28,7 @@ export const sliders: Slider[] = [
     min: 0.25,
     max: 2,
     step: 0.05,
-    defaultValue: 0.5,
+    defaultValue: 0.35,
   },
   {
     id: "cfgWeight",
@@ -38,6 +38,6 @@ export const sliders: Slider[] = [
     min: 0.2,
     max: 1,
     step: 0.05,
-    defaultValue: 0.5,
+    defaultValue: 0.35,
   },
 ]

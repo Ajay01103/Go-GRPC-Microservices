@@ -8,12 +8,13 @@ import (
 
 // Config holds all configuration values loaded from environment variables.
 type Config struct {
-	DBUrl                string        `mapstructure:"AUTH_DB_URL"`
-	RedisUrl             string        `mapstructure:"REDIS_URL"`
-	JWTSecret            string        `mapstructure:"JWT_SECRET"`
-	GRPCPort             string        `mapstructure:"AUTH_GRPC_PORT"`
-	AccessTokenDuration  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
-	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
+	DBUrl                          string        `mapstructure:"AUTH_DB_URL"`
+	RedisUrl                       string        `mapstructure:"REDIS_URL"`
+	JWTSecret                      string        `mapstructure:"JWT_SECRET"`
+	GRPCPort                       string        `mapstructure:"AUTH_GRPC_PORT"`
+	AccessTokenDuration            time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
+	RefreshTokenDuration           time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
+	RSASigningKeyRetentionDuration time.Duration `mapstructure:"RSA_SIGNING_KEY_RETENTION_DURATION"`
 }
 
 // Load reads configuration from environment variables (and optionally a .env file).
@@ -30,6 +31,7 @@ func Load() (Config, error) {
 	viper.SetDefault("AUTH_GRPC_PORT", "50051")
 	viper.SetDefault("ACCESS_TOKEN_DURATION", "15m")
 	viper.SetDefault("REFRESH_TOKEN_DURATION", "168h")
+	viper.SetDefault("RSA_SIGNING_KEY_RETENTION_DURATION", "2160h")
 
 	// Backward-compatible fallback for older GRPC_PORT env var.
 	if !viper.IsSet("AUTH_GRPC_PORT") && viper.IsSet("GRPC_PORT") {

@@ -1,6 +1,6 @@
 "use server"
 
-import { refreshAccessTokenAction } from "@/actions/auth"
+import { requireAccessTokenAction } from "@/actions/auth"
 import { getSignedAudioUrl } from "@/lib/s3"
 
 export type GenerationPlaybackUrlResult = {
@@ -15,10 +15,7 @@ export async function getGenerationPlaybackUrlAction(
     throw new Error("s3ObjectKey is required")
   }
 
-  const token = await refreshAccessTokenAction()
-  if (!token) {
-    throw new Error("Unauthorized")
-  }
+  await requireAccessTokenAction()
 
   const url = await getSignedAudioUrl(normalizedKey)
   if (!url) {

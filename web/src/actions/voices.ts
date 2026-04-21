@@ -1,6 +1,6 @@
 "use server"
 
-import { refreshAccessTokenAction } from "@/actions/auth"
+import { requireAccessTokenAction } from "@/actions/auth"
 import { VoiceCategory } from "@/gen/pb/voice_pb"
 import { voiceRpcClient } from "@/lib/rpc"
 
@@ -59,10 +59,7 @@ export async function getVoicePlaybackUrlAction(
     throw new Error("voiceId is required")
   }
 
-  const token = accessToken ?? (await refreshAccessTokenAction())
-  if (!token) {
-    throw new Error("Unauthorized")
-  }
+  const token = accessToken ?? (await requireAccessTokenAction())
 
   const response = await voiceRpcClient.getVoicePlaybackUrl(
     {
@@ -102,10 +99,7 @@ export async function createVoiceAction(
     throw new Error("Audio data is required")
   }
 
-  const token = accessToken ?? (await refreshAccessTokenAction())
-  if (!token) {
-    throw new Error("Unauthorized")
-  }
+  const token = accessToken ?? (await requireAccessTokenAction())
 
   const response = await voiceRpcClient.createVoice(
     {

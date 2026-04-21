@@ -20,6 +20,8 @@ message LoginRequest {
 // RefreshTokenRequest: the client passes its current refresh token
 message RefreshTokenRequest {
   string refresh_token = 1;
+  string dpop_proof = 2;
+  string dpop_key_thumbprint = 3;
 }
 
 // LogoutRequest: the client passes its current refresh token so the server
@@ -57,6 +59,14 @@ message LogoutResponse {
   string message = 1;
 }
 
+message LogoutAllDevicesRequest {
+  string user_id = 1;
+}
+
+message LogoutAllDevicesResponse {
+  string message = 1;
+}
+
 message ValidateTokenResponse {
   bool   valid    = 1;
   string user_id  = 2;
@@ -79,6 +89,9 @@ service AuthService {
 
   // Invalidate the refresh token in Redis (logout)
   rpc Logout(LogoutRequest) returns (LogoutResponse);
+
+  // Invalidate all active refresh token families for a user.
+  rpc LogoutAllDevices(LogoutAllDevicesRequest) returns (LogoutAllDevicesResponse);
 
   // Validate an access token (used by other services / Next.js middleware)
   rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);

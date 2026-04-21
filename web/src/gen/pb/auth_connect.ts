@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AuthResponse, GetCurrentUserRequest, GetCurrentUserResponse, LoginRequest, LogoutRequest, LogoutResponse, RefreshTokenRequest, RegisterRequest, ValidateTokenRequest, ValidateTokenResponse } from "./auth_pb";
+import { AuthResponse, GetCurrentUserRequest, GetCurrentUserResponse, LoginRequest, LogoutAllDevicesRequest, LogoutAllDevicesResponse, LogoutRequest, LogoutResponse, RefreshTokenRequest, RegisterRequest, ValidateTokenRequest, ValidateTokenResponse } from "./auth_pb";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -55,6 +55,17 @@ export const AuthService = {
       name: "Logout",
       I: LogoutRequest,
       O: LogoutResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * Invalidate all active refresh token families for a user.
+     *
+     * @generated from rpc auth.AuthService.LogoutAllDevices
+     */
+    logoutAllDevices: {
+      name: "LogoutAllDevices",
+      I: LogoutAllDevicesRequest,
+      O: LogoutAllDevicesResponse,
       kind: MethodKind.Unary,
     },
     /**

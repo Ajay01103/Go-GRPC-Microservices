@@ -42,6 +42,9 @@ const (
 	AuthServiceRefreshTokenProcedure = "/auth.AuthService/RefreshToken"
 	// AuthServiceLogoutProcedure is the fully-qualified name of the AuthService's Logout RPC.
 	AuthServiceLogoutProcedure = "/auth.AuthService/Logout"
+	// AuthServiceLogoutAllDevicesProcedure is the fully-qualified name of the AuthService's
+	// LogoutAllDevices RPC.
+	AuthServiceLogoutAllDevicesProcedure = "/auth.AuthService/LogoutAllDevices"
 	// AuthServiceValidateTokenProcedure is the fully-qualified name of the AuthService's ValidateToken
 	// RPC.
 	AuthServiceValidateTokenProcedure = "/auth.AuthService/ValidateToken"
@@ -61,6 +64,8 @@ type AuthServiceClient interface {
 	RefreshToken(context.Context, *connect.Request[pb.RefreshTokenRequest]) (*connect.Response[pb.AuthResponse], error)
 	// Invalidate the refresh token in Redis (logout)
 	Logout(context.Context, *connect.Request[pb.LogoutRequest]) (*connect.Response[pb.LogoutResponse], error)
+	// Invalidate all active refresh token families for a user.
+	LogoutAllDevices(context.Context, *connect.Request[pb.LogoutAllDevicesRequest]) (*connect.Response[pb.LogoutAllDevicesResponse], error)
 	// Validate an access token (used by other services / Next.js middleware)
 	ValidateToken(context.Context, *connect.Request[pb.ValidateTokenRequest]) (*connect.Response[pb.ValidateTokenResponse], error)
 	// Return info about the currently logged in user based on the bearer token
@@ -102,6 +107,12 @@ func NewAuthServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(authServiceMethods.ByName("Logout")),
 			connect.WithClientOptions(opts...),
 		),
+		logoutAllDevices: connect.NewClient[pb.LogoutAllDevicesRequest, pb.LogoutAllDevicesResponse](
+			httpClient,
+			baseURL+AuthServiceLogoutAllDevicesProcedure,
+			connect.WithSchema(authServiceMethods.ByName("LogoutAllDevices")),
+			connect.WithClientOptions(opts...),
+		),
 		validateToken: connect.NewClient[pb.ValidateTokenRequest, pb.ValidateTokenResponse](
 			httpClient,
 			baseURL+AuthServiceValidateTokenProcedure,
@@ -119,12 +130,13 @@ func NewAuthServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 
 // authServiceClient implements AuthServiceClient.
 type authServiceClient struct {
-	register       *connect.Client[pb.RegisterRequest, pb.AuthResponse]
-	login          *connect.Client[pb.LoginRequest, pb.AuthResponse]
-	refreshToken   *connect.Client[pb.RefreshTokenRequest, pb.AuthResponse]
-	logout         *connect.Client[pb.LogoutRequest, pb.LogoutResponse]
-	validateToken  *connect.Client[pb.ValidateTokenRequest, pb.ValidateTokenResponse]
-	getCurrentUser *connect.Client[pb.GetCurrentUserRequest, pb.GetCurrentUserResponse]
+	register         *connect.Client[pb.RegisterRequest, pb.AuthResponse]
+	login            *connect.Client[pb.LoginRequest, pb.AuthResponse]
+	refreshToken     *connect.Client[pb.RefreshTokenRequest, pb.AuthResponse]
+	logout           *connect.Client[pb.LogoutRequest, pb.LogoutResponse]
+	logoutAllDevices *connect.Client[pb.LogoutAllDevicesRequest, pb.LogoutAllDevicesResponse]
+	validateToken    *connect.Client[pb.ValidateTokenRequest, pb.ValidateTokenResponse]
+	getCurrentUser   *connect.Client[pb.GetCurrentUserRequest, pb.GetCurrentUserResponse]
 }
 
 // Register calls auth.AuthService.Register.
@@ -145,6 +157,11 @@ func (c *authServiceClient) RefreshToken(ctx context.Context, req *connect.Reque
 // Logout calls auth.AuthService.Logout.
 func (c *authServiceClient) Logout(ctx context.Context, req *connect.Request[pb.LogoutRequest]) (*connect.Response[pb.LogoutResponse], error) {
 	return c.logout.CallUnary(ctx, req)
+}
+
+// LogoutAllDevices calls auth.AuthService.LogoutAllDevices.
+func (c *authServiceClient) LogoutAllDevices(ctx context.Context, req *connect.Request[pb.LogoutAllDevicesRequest]) (*connect.Response[pb.LogoutAllDevicesResponse], error) {
+	return c.logoutAllDevices.CallUnary(ctx, req)
 }
 
 // ValidateToken calls auth.AuthService.ValidateToken.
@@ -168,6 +185,8 @@ type AuthServiceHandler interface {
 	RefreshToken(context.Context, *connect.Request[pb.RefreshTokenRequest]) (*connect.Response[pb.AuthResponse], error)
 	// Invalidate the refresh token in Redis (logout)
 	Logout(context.Context, *connect.Request[pb.LogoutRequest]) (*connect.Response[pb.LogoutResponse], error)
+	// Invalidate all active refresh token families for a user.
+	LogoutAllDevices(context.Context, *connect.Request[pb.LogoutAllDevicesRequest]) (*connect.Response[pb.LogoutAllDevicesResponse], error)
 	// Validate an access token (used by other services / Next.js middleware)
 	ValidateToken(context.Context, *connect.Request[pb.ValidateTokenRequest]) (*connect.Response[pb.ValidateTokenResponse], error)
 	// Return info about the currently logged in user based on the bearer token
@@ -205,6 +224,12 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(authServiceMethods.ByName("Logout")),
 		connect.WithHandlerOptions(opts...),
 	)
+	authServiceLogoutAllDevicesHandler := connect.NewUnaryHandler(
+		AuthServiceLogoutAllDevicesProcedure,
+		svc.LogoutAllDevices,
+		connect.WithSchema(authServiceMethods.ByName("LogoutAllDevices")),
+		connect.WithHandlerOptions(opts...),
+	)
 	authServiceValidateTokenHandler := connect.NewUnaryHandler(
 		AuthServiceValidateTokenProcedure,
 		svc.ValidateToken,
@@ -227,6 +252,8 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 			authServiceRefreshTokenHandler.ServeHTTP(w, r)
 		case AuthServiceLogoutProcedure:
 			authServiceLogoutHandler.ServeHTTP(w, r)
+		case AuthServiceLogoutAllDevicesProcedure:
+			authServiceLogoutAllDevicesHandler.ServeHTTP(w, r)
 		case AuthServiceValidateTokenProcedure:
 			authServiceValidateTokenHandler.ServeHTTP(w, r)
 		case AuthServiceGetCurrentUserProcedure:
@@ -254,6 +281,10 @@ func (UnimplementedAuthServiceHandler) RefreshToken(context.Context, *connect.Re
 
 func (UnimplementedAuthServiceHandler) Logout(context.Context, *connect.Request[pb.LogoutRequest]) (*connect.Response[pb.LogoutResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.AuthService.Logout is not implemented"))
+}
+
+func (UnimplementedAuthServiceHandler) LogoutAllDevices(context.Context, *connect.Request[pb.LogoutAllDevicesRequest]) (*connect.Response[pb.LogoutAllDevicesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.AuthService.LogoutAllDevices is not implemented"))
 }
 
 func (UnimplementedAuthServiceHandler) ValidateToken(context.Context, *connect.Request[pb.ValidateTokenRequest]) (*connect.Response[pb.ValidateTokenResponse], error) {

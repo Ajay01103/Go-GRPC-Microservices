@@ -29,15 +29,19 @@ func NewJWTMaker(secretKey string) (*JWTMaker, error) {
 // CreateRefreshToken mints a new refresh token.
 // The payload's JTI must be stored in Redis by the caller before responding.
 func (m *JWTMaker) CreateRefreshToken(
-	userID, email, name string,
+	userID, email, name, familyID, dpopKeyThumbprint string,
 	duration time.Duration,
 ) (string, *RefreshPayload, error) {
 	uid, err := uuid.Parse(userID)
 	if err != nil {
 		return "", nil, fmt.Errorf("invalid user id: %w", err)
 	}
+	fid, err := uuid.Parse(familyID)
+	if err != nil {
+		return "", nil, fmt.Errorf("invalid family id: %w", err)
+	}
 
-	payload, err := NewRefreshPayload(uid, email, name, duration)
+	payload, err := NewRefreshPayload(uid, email, name, fid, dpopKeyThumbprint, duration)
 	if err != nil {
 		return "", nil, err
 	}
@@ -48,8 +52,12 @@ func (m *JWTMaker) CreateRefreshToken(
 		"email":      payload.Email,
 		"name":       payload.Name,
 		"token_type": string(payload.TokenType),
+		"family_id":  payload.FamilyID.String(),
 		"iat":        payload.IssuedAt.Unix(),
 		"exp":        payload.ExpiredAt.Unix(),
+	}
+	if payload.DPoPKeyThumbprint != "" {
+		claims["dpop_key_thumbprint"] = payload.DPoPKeyThumbprint
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -64,19 +72,23 @@ func (m *JWTMaker) CreateRefreshToken(
 
 // CreateAccessToken mints a new access token paired with the given refresh token JTI.
 func (m *JWTMaker) CreateAccessToken(
-	userID, email, name, refreshJTI string,
+	userID, email, name, familyID, refreshJTI, dpopKeyThumbprint string,
 	duration time.Duration,
 ) (string, *AccessPayload, error) {
 	uid, err := uuid.Parse(userID)
 	if err != nil {
 		return "", nil, fmt.Errorf("invalid user id: %w", err)
 	}
+	fid, err := uuid.Parse(familyID)
+	if err != nil {
+		return "", nil, fmt.Errorf("invalid family id: %w", err)
+	}
 	rjti, err := uuid.Parse(refreshJTI)
 	if err != nil {
 		return "", nil, fmt.Errorf("invalid refresh jti: %w", err)
 	}
 
-	payload, err := NewAccessPayload(uid, email, name, rjti, duration)
+	payload, err := NewAccessPayload(uid, email, name, fid, rjti, dpopKeyThumbprint, duration)
 	if err != nil {
 		return "", nil, err
 	}
@@ -87,9 +99,13 @@ func (m *JWTMaker) CreateAccessToken(
 		"email":       payload.Email,
 		"name":        payload.Name,
 		"token_type":  string(payload.TokenType),
+		"family_id":   payload.FamilyID.String(),
 		"refresh_jti": payload.RefreshJTI.String(),
 		"iat":         payload.IssuedAt.Unix(),
 		"exp":         payload.ExpiredAt.Unix(),
+	}
+	if payload.DPoPKeyThumbprint != "" {
+		claims["dpop_key_thumbprint"] = payload.DPoPKeyThumbprint
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -185,6 +201,13 @@ func timeFromClaims(claims jwt.MapClaims, key string) (time.Time, error) {
 	return time.Unix(int64(raw), 0), nil
 }
 
+func optionalStringClaim(claims jwt.MapClaims, key string) string {
+	if v, ok := claims[key].(string); ok {
+		return v
+	}
+	return ""
+}
+
 func accessPayloadFromClaims(claims jwt.MapClaims) (*AccessPayload, error) {
 	jti, err := uuidFromClaims(claims, "jti")
 	if err != nil {
@@ -198,6 +221,10 @@ func accessPayloadFromClaims(claims jwt.MapClaims) (*AccessPayload, error) {
 	if err != nil {
 		return nil, err
 	}
+	familyID, err := uuidFromClaims(claims, "family_id")
+	if err != nil {
+		return nil, err
+	}
 	exp, err := timeFromClaims(claims, "exp")
 	if err != nil {
 		return nil, err
@@ -208,14 +235,16 @@ func accessPayloadFromClaims(claims jwt.MapClaims) (*AccessPayload, error) {
 	}
 
 	return &AccessPayload{
-		JTI:        jti,
-		UserID:     sub,
-		Email:      fmt.Sprintf("%v", claims["email"]),
-		Name:       fmt.Sprintf("%v", claims["name"]),
-		TokenType:  TokenTypeAccess,
-		RefreshJTI: rjti,
-		IssuedAt:   iat,
-		ExpiredAt:  exp,
+		JTI:               jti,
+		UserID:            sub,
+		Email:             fmt.Sprintf("%v", claims["email"]),
+		Name:              fmt.Sprintf("%v", claims["name"]),
+		TokenType:         TokenTypeAccess,
+		FamilyID:          familyID,
+		RefreshJTI:        rjti,
+		IssuedAt:          iat,
+		ExpiredAt:         exp,
+		DPoPKeyThumbprint: optionalStringClaim(claims, "dpop_key_thumbprint"),
 	}, nil
 }
 
@@ -225,6 +254,10 @@ func refreshPayloadFromClaims(claims jwt.MapClaims) (*RefreshPayload, error) {
 		return nil, err
 	}
 	sub, err := uuidFromClaims(claims, "sub")
+	if err != nil {
+		return nil, err
+	}
+	familyID, err := uuidFromClaims(claims, "family_id")
 	if err != nil {
 		return nil, err
 	}
@@ -238,12 +271,14 @@ func refreshPayloadFromClaims(claims jwt.MapClaims) (*RefreshPayload, error) {
 	}
 
 	return &RefreshPayload{
-		JTI:       jti,
-		UserID:    sub,
-		Email:     fmt.Sprintf("%v", claims["email"]),
-		Name:       fmt.Sprintf("%v", claims["name"]),
-		TokenType: TokenTypeRefresh,
-		IssuedAt:  iat,
-		ExpiredAt: exp,
+		JTI:               jti,
+		UserID:            sub,
+		Email:             fmt.Sprintf("%v", claims["email"]),
+		Name:              fmt.Sprintf("%v", claims["name"]),
+		TokenType:         TokenTypeRefresh,
+		FamilyID:          familyID,
+		IssuedAt:          iat,
+		ExpiredAt:         exp,
+		DPoPKeyThumbprint: optionalStringClaim(claims, "dpop_key_thumbprint"),
 	}, nil
 }

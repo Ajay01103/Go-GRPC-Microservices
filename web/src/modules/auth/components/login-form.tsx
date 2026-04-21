@@ -8,7 +8,7 @@ import { LogoIcon } from "@/components/logo"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { rpcClient } from "@/lib/rpc"
+import { authRpcClient } from "@/lib/rpc"
 import { setAuthCookies } from "@/actions/auth"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
@@ -46,7 +46,7 @@ export default function LoginForm() {
     },
     onSubmit: async ({ value }) => {
       try {
-        const response = await rpcClient.login({
+        const response = await authRpcClient.login({
           email: value.email,
           password: value.password,
         })
@@ -83,7 +83,9 @@ export default function LoginForm() {
               <LogoIcon />
             </Link>
             <h1 className="mt-4 text-xl font-semibold">Sign in to Tailark</h1>
-            <p className="text-muted-foreground mt-1 text-sm">Welcome back! Sign in to continue</p>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Welcome back! Sign in to continue
+            </p>
           </div>
 
           <div className="mt-6 space-y-5">

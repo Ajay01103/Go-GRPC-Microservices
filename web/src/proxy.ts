@@ -11,7 +11,6 @@ function redirectToLogin(request: NextRequest) {
 export async function proxy(request: NextRequest) {
   const refreshToken = request.cookies.get(REFRESH_TOKEN_COOKIE_NAME)?.value
   const validation = await validateRefreshToken(refreshToken)
-
   if (!validation.valid) {
     return redirectToLogin(request)
   }

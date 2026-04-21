@@ -68,9 +68,10 @@ with image.imports():
         prompt: str = Field(..., min_length=1, max_length=5000)
         voice_key: str = Field(..., min_length=1, max_length=300)
         language_id: str = Field(default="en", min_length=2, max_length=10)
-        temperature: float = Field(default=0.8, ge=0.0, le=2.0)
-        exaggeration: float = Field(default=0.5, ge=0.25, le=2.0)
-        cfg_weight: float = Field(default=0.5, ge=0.2, le=1.0)
+        # Defaults tuned for steadier pacing on cloned voices.
+        temperature: float = Field(default=0.6, ge=0.0, le=2.0)
+        exaggeration: float = Field(default=0.35, ge=0.25, le=2.0)
+        cfg_weight: float = Field(default=0.35, ge=0.2, le=1.0)
         # Backward-compatible fields kept temporarily and ignored by model.generate.
         top_p: float | None = Field(default=None)
         top_k: int | None = Field(default=None)
@@ -176,9 +177,9 @@ class Chatterbox:
         prompt: str,
         voice_key: str,
         language_id: str = "en",
-        temperature: float = 0.8,
-        exaggeration: float = 0.5,
-        cfg_weight: float = 0.5,
+        temperature: float = 0.6,
+        exaggeration: float = 0.35,
+        cfg_weight: float = 0.35,
     ):
         tmp_path: str | None = None
         normalized_key = self._normalize_voice_key(voice_key)
@@ -221,9 +222,9 @@ def test(
     voice_key: str = "voices/system/default.wav",
     language_id: str = "en",
     output_path: str = "/tmp/chatterbox-tts/output.wav",
-    temperature: float = 0.8,
-    exaggeration: float = 0.5,
-    cfg_weight: float = 0.5,
+    temperature: float = 0.6,
+    exaggeration: float = 0.35,
+    cfg_weight: float = 0.35,
 ):
     import pathlib
 

@@ -75,10 +75,10 @@ func (s *AuthServer) RefreshToken(ctx context.Context, req *connect.Request[pb.R
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("missing refresh token"))
 	}
 
-	res, err := s.svc.RefreshToken(ctx, req.Msg.GetRefreshToken())
+	res, err := s.svc.RefreshToken(ctx, req.Msg.GetRefreshToken(), req.Msg.GetDpopProof(), req.Msg.GetDpopKeyThumbprint())
 	if err != nil {
 		switch err {
-		case service.ErrTokenExpired, service.ErrInvalidToken, service.ErrTokenRevoked:
+		case service.ErrTokenExpired, service.ErrInvalidToken, service.ErrTokenRevoked, service.ErrTokenReuseDetected, service.ErrRefreshFamilyMissing, service.ErrDPoPProofReplayed, service.ErrKeyBindingMismatch:
 			return nil, connect.NewError(connect.CodeUnauthenticated, err)
 		case service.ErrUserNotFound:
 			return nil, connect.NewError(connect.CodeNotFound, err)
@@ -100,12 +100,33 @@ func (s *AuthServer) Logout(ctx context.Context, req *connect.Request[pb.LogoutR
 	}
 
 	if err := s.svc.Logout(ctx, req.Msg.GetRefreshToken()); err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		switch err {
+		case service.ErrTokenExpired, service.ErrInvalidToken:
+			return nil, connect.NewError(connect.CodeUnauthenticated, err)
+		default:
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
 	}
 
 	return connect.NewResponse(&pb.LogoutResponse{
 		Message: "successfully logged out",
 	}), nil
+}
+
+// LogoutAllDevices invalidates all refresh token families for a user.
+func (s *AuthServer) LogoutAllDevices(ctx context.Context, req *connect.Request[pb.LogoutAllDevicesRequest]) (*connect.Response[pb.LogoutAllDevicesResponse], error) {
+	if req.Msg.GetUserId() == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("missing user id"))
+	}
+
+	if err := s.svc.LogoutAllDevices(ctx, req.Msg.GetUserId()); err != nil {
+		if err == service.ErrInvalidToken {
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	return connect.NewResponse(&pb.LogoutAllDevicesResponse{Message: "successfully logged out from all devices"}), nil
 }
 
 // ValidateToken checks if an access token is valid and returns user info.
@@ -125,10 +146,10 @@ func (s *AuthServer) ValidateToken(ctx context.Context, req *connect.Request[pb.
 	}
 
 	return connect.NewResponse(&pb.ValidateTokenResponse{
-		Valid:    true,
-		UserId:   res.UserID.String(),
-		Email:    res.Email,
-		Name:     res.Name,
+		Valid:  true,
+		UserId: res.UserID.String(),
+		Email:  res.Email,
+		Name:   res.Name,
 	}), nil
 }
 
@@ -158,8 +179,8 @@ func (s *AuthServer) GetCurrentUser(ctx context.Context, req *connect.Request[pb
 
 	// 3. Return user info
 	return connect.NewResponse(&pb.GetCurrentUserResponse{
-		UserId:   res.UserID.String(),
-		Email:    res.Email,
-		Name:     res.Name,
+		UserId: res.UserID.String(),
+		Email:  res.Email,
+		Name:   res.Name,
 	}), nil
 }
