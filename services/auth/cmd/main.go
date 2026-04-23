@@ -44,6 +44,13 @@ func corsMiddleware(next http.Handler) http.Handler {
 }
 
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "auth service exited with error: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	logger := pkglogger.New()
 	defer logger.Sync()
 
@@ -54,14 +61,14 @@ func main() {
 	cfg, err := config.Load()
 	if err != nil {
 		logger.Error("cannot load config", zap.Error(err))
-		os.Exit(1)
+		return fmt.Errorf("load config: %w", err)
 	}
 
 	// 2. Connect to PostgreSQL (tuned pool)
 	poolCfg, err := pgxpool.ParseConfig(cfg.DBUrl)
 	if err != nil {
 		logger.Error("cannot parse db config", zap.Error(err))
-		os.Exit(1)
+		return fmt.Errorf("parse db config: %w", err)
 	}
 	poolCfg.MaxConns = 20
 	poolCfg.MinConns = 5
@@ -72,7 +79,7 @@ func main() {
 	dbLocal, err := pgxpool.NewWithConfig(context.Background(), poolCfg)
 	if err != nil {
 		logger.Error("cannot connect to db", zap.Error(err))
-		os.Exit(1)
+		return fmt.Errorf("connect db: %w", err)
 	}
 	defer dbLocal.Close()
 
@@ -80,7 +87,7 @@ func main() {
 	redisClient, err := redisstore.NewClientFromURL(cfg.RedisUrl)
 	if err != nil {
 		logger.Error("cannot connect to redis", zap.Error(err))
-		os.Exit(1)
+		return fmt.Errorf("connect redis: %w", err)
 	}
 	defer redisClient.Close()
 
@@ -89,22 +96,22 @@ func main() {
 	userRepo := repository.NewUserRepo(querier)
 	tokenStore := redisstore.New(redisClient)
 	dpopStore := dpop.NewDPoPStore(redisClient)
-	rsaKeyRetention := cfg.RSASigningKeyRetentionDuration
-	if rsaKeyRetention < cfg.RefreshTokenDuration {
+	eddsaKeyRetention := cfg.EDDSASigningKeyRetentionDuration
+	if eddsaKeyRetention < cfg.RefreshTokenDuration {
 		logger.Warn(
-			"rsa signing key retention is shorter than refresh token duration; clamping to refresh duration",
-			zap.Duration("rsaSigningKeyRetention", rsaKeyRetention),
+			"eddsa signing key retention is shorter than refresh token duration; clamping to refresh duration",
+			zap.Duration("eddsaSigningKeyRetention", eddsaKeyRetention),
 			zap.Duration("refreshTokenDuration", cfg.RefreshTokenDuration),
 		)
-		rsaKeyRetention = cfg.RefreshTokenDuration
+		eddsaKeyRetention = cfg.RefreshTokenDuration
 	}
 
-	rsaMaker, err := token.NewRSAMakerWithRedis(redisClient, rsaKeyRetention)
+	eddsaMaker, err := token.NewEDDSAMakerWithRedis(redisClient, eddsaKeyRetention)
 	if err != nil {
-		logger.Error("cannot create RSA token maker", zap.Error(err))
-		os.Exit(1)
+		logger.Error("cannot create EdDSA token maker", zap.Error(err))
+		return fmt.Errorf("create eddsa token maker: %w", err)
 	}
-	var tokenMaker token.TokenMaker = rsaMaker
+	var tokenMaker token.TokenMaker = eddsaMaker
 
 	authService := service.New(userRepo, tokenMaker, tokenStore, dpopStore, cfg, logger)
 	authServer := server.New(authService)
@@ -116,7 +123,7 @@ func main() {
 
 	// JWKS endpoint for token validation by other services
 	mux.HandleFunc("GET /.well-known/jwks.json", func(w http.ResponseWriter, r *http.Request) {
-		jwksData, err := rsaMaker.ExportPublicKeys()
+		jwksData, err := eddsaMaker.ExportPublicKeys()
 		if err != nil {
 			logger.Error("export jwks", zap.Error(err))
 			http.Error(w, "Failed to export JWKS", http.StatusInternalServerError)
@@ -138,26 +145,37 @@ func main() {
 		Addr:    addr,
 		Handler: h2c.NewHandler(mux, &http2.Server{}),
 	}
+	serverErrCh := make(chan error, 1)
 
 	go func() {
 		logger.Info("AUTH SERVICE started at ConnectRPC server", zap.String("addr", addr))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Error("cannot start server", zap.Error(err))
-			os.Exit(1)
+			serverErrCh <- err
 		}
 	}()
 
 	// Graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	defer signal.Stop(quit)
+
+	select {
+	case err := <-serverErrCh:
+		logger.Error("server terminated unexpectedly", zap.Error(err))
+		return fmt.Errorf("listen and serve: %w", err)
+	case sig := <-quit:
+		logger.Info("received shutdown signal", zap.String("signal", sig.String()))
+	}
+
 	logger.Info("shutting down server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
 		logger.Error("server forced to shutdown", zap.Error(err))
-		os.Exit(1)
+		return fmt.Errorf("graceful shutdown: %w", err)
 	}
 	logger.Info("server stopped")
+
+	return nil
 }

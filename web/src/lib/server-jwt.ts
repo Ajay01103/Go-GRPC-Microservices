@@ -1,9 +1,11 @@
 import { jwtVerify, type JWTPayload, importJWK, decodeProtectedHeader } from "jose"
 
 type JsonWebKey = Parameters<typeof importJWK>[0]
+type SupportedJwsAlgorithm = "EdDSA" | "RS256"
 
 type CachedJwkEntry = {
   key: JsonWebKey
+  alg: SupportedJwsAlgorithm
   observedAt: number
 }
 
@@ -42,7 +44,7 @@ export async function validateRefreshToken(
       return { valid: false, reason: "invalid-token" }
     }
 
-    if (algorithm !== "RS256") {
+    if (!isSupportedAlgorithm(algorithm)) {
       return { valid: false, reason: "invalid-algorithm" }
     }
 
@@ -61,10 +63,14 @@ export async function validateRefreshToken(
     }
 
     try {
-      const publicKey = await importJWK(jwkKey.key as any, "RS256")
+      if (jwkKey.alg !== algorithm) {
+        return { valid: false, reason: "invalid-token" }
+      }
+
+      const publicKey = await importJWK(jwkKey.key as any, algorithm)
 
       const { payload } = await jwtVerify(token, publicKey, {
-        algorithms: ["RS256"],
+        algorithms: [algorithm],
         requiredClaims: ["exp", "iat", "sub", "token_type"],
       })
 
@@ -82,7 +88,7 @@ export async function validateRefreshToken(
 }
 
 type JwkResolutionResult =
-  | { key: JsonWebKey }
+  | { key: JsonWebKey; alg: SupportedJwsAlgorithm }
   | { reason: "invalid-token" | "jwks-fetch-failed" }
 
 async function resolveRefreshTokenJwk(
@@ -94,17 +100,17 @@ async function resolveRefreshTokenJwk(
 
   const cachedEntry = jwksCache.get(kid)
   if (cachedEntry && now - lastJwksFetchAt < JWKS_REFRESH_INTERVAL_MS) {
-    return { key: cachedEntry.key }
+    return { key: cachedEntry.key, alg: cachedEntry.alg }
   }
 
   const refreshResult = await refreshJwksCache(jwksUrl, now)
   const refreshedEntry = jwksCache.get(kid)
   if (refreshedEntry) {
-    return { key: refreshedEntry.key }
+    return { key: refreshedEntry.key, alg: refreshedEntry.alg }
   }
 
   if (cachedEntry) {
-    return { key: cachedEntry.key }
+    return { key: cachedEntry.key, alg: cachedEntry.alg }
   }
 
   if (!refreshResult.ok) {
@@ -129,10 +135,13 @@ async function refreshJwksCache(
 
     for (const key of keys) {
       if (!key || typeof key.kid !== "string") continue
-      if (key.alg !== "RS256" || key.kty !== "RSA") continue
+
+      const keyAlg = normalizeJwkAlgorithm(key)
+      if (!keyAlg) continue
 
       jwksCache.set(key.kid, {
         key,
+        alg: keyAlg,
         observedAt: now,
       })
     }
@@ -151,4 +160,20 @@ function pruneExpiredJwksEntries(now: number) {
       jwksCache.delete(kid)
     }
   }
+}
+
+function isSupportedAlgorithm(algorithm: string): algorithm is SupportedJwsAlgorithm {
+  return algorithm === "EdDSA" || algorithm === "RS256"
+}
+
+function normalizeJwkAlgorithm(key: any): SupportedJwsAlgorithm | null {
+  if (key?.alg === "EdDSA" || (key?.kty === "OKP" && key?.crv === "Ed25519")) {
+    return "EdDSA"
+  }
+
+  if (key?.alg === "RS256" || key?.kty === "RSA") {
+    return "RS256"
+  }
+
+  return null
 }

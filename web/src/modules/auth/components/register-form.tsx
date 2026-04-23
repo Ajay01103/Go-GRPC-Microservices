@@ -8,7 +8,7 @@ import { LogoIcon } from "@/components/logo"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { rpcClient } from "@/lib/rpc"
+import { authRpcClient } from "@/lib/rpc"
 import { setAuthCookies } from "@/actions/auth"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
@@ -48,7 +48,7 @@ export default function RegisterPage() {
     },
     onSubmit: async ({ value }) => {
       try {
-        const response = await rpcClient.register({
+        const response = await authRpcClient.register({
           name: value.name,
           email: value.email,
           password: value.password,

@@ -1,35 +1,45 @@
 package token
 
 import (
-	"crypto/rsa"
+	"crypto/ed25519"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"math/big"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/sync/singleflight"
 )
+
+const jwksRefreshSingleflightKey = "jwks_refresh"
 
 // RemoteValidator validates JWT tokens using a remote JWKS endpoint.
 // It caches public keys locally and validates tokens without calling auth service on every request.
 // This allows other microservices to validate tokens independently.
 type RemoteValidator struct {
 	jwksUrl    string
-	publicKeys map[string]*rsa.PublicKey
+	publicKeys map[string]cachedJWK
 	mu         sync.RWMutex
 	lastFetch  time.Time
 	cacheTTL   time.Duration
 	httpClient *http.Client
+	refreshGrp singleflight.Group
+}
+
+type cachedJWK struct {
+	alg string
+	key interface{}
 }
 
 // NewRemoteValidator creates a new RemoteValidator that fetches keys from the given JWKS URL.
 func NewRemoteValidator(jwksUrl string) *RemoteValidator {
 	return &RemoteValidator{
 		jwksUrl:    jwksUrl,
-		publicKeys: make(map[string]*rsa.PublicKey),
+		publicKeys: make(map[string]cachedJWK),
 		cacheTTL:   1 * time.Hour,
 		httpClient: &http.Client{Timeout: 5 * time.Second},
 	}
@@ -60,14 +70,35 @@ func (v *RemoteValidator) VerifyRefreshToken(tokenStr string) (*RefreshPayload, 
 // ensureKeysCached fetches keys from JWKS endpoint if cache is stale.
 func (v *RemoteValidator) ensureKeysCached() error {
 	v.mu.RLock()
-	isCached := len(v.publicKeys) > 0 && time.Since(v.lastFetch) < v.cacheTTL
+	hasCachedKeys := len(v.publicKeys) > 0
+	isCached := hasCachedKeys && time.Since(v.lastFetch) < v.cacheTTL
 	v.mu.RUnlock()
 
 	if isCached {
 		return nil
 	}
 
-	return v.refreshKeys()
+	refreshErr := v.refreshKeysSingleflight()
+	if refreshErr == nil {
+		return nil
+	}
+
+	// If refresh fails but there are stale keys, continue to use them.
+	v.mu.RLock()
+	hasStaleFallback := len(v.publicKeys) > 0
+	v.mu.RUnlock()
+	if hasStaleFallback {
+		return nil
+	}
+
+	return refreshErr
+}
+
+func (v *RemoteValidator) refreshKeysSingleflight() error {
+	_, err, _ := v.refreshGrp.Do(jwksRefreshSingleflightKey, func() (interface{}, error) {
+		return nil, v.refreshKeys()
+	})
+	return err
 }
 
 // refreshKeys fetches the latest public keys from the JWKS endpoint.
@@ -94,18 +125,27 @@ func (v *RemoteValidator) refreshKeys() error {
 	}
 
 	// Parse keys and cache them
-	keys := make(map[string]*rsa.PublicKey)
+	keys := make(map[string]cachedJWK)
 	for _, key := range jwksResp.Keys {
-		if key.Alg != "RS256" {
+		alg := normalizedJWKAlg(key)
+		if alg == "" {
 			continue
 		}
 
-		pubKey, err := parseRSAPublicKey(key)
-		if err != nil {
-			return fmt.Errorf("parse key %s: %w", key.KID, err)
+		switch alg {
+		case jwt.SigningMethodEdDSA.Alg():
+			pubKey, err := parseEd25519PublicKey(key)
+			if err != nil {
+				return fmt.Errorf("parse key %s: %w", key.KID, err)
+			}
+			keys[key.KID] = cachedJWK{alg: alg, key: pubKey}
+		default:
+			continue
 		}
+	}
 
-		keys[key.KID] = pubKey
+	if len(keys) == 0 {
+		return errors.New("jwks contains no valid signing keys")
 	}
 
 	v.mu.Lock()
@@ -126,12 +166,31 @@ func (v *RemoteValidator) validateAccessTokenWithCache(tokenStr string) (*Access
 		return nil, errors.New("no public keys cached")
 	}
 
-	// For RemoteValidator, we use RSAMaker logic since tokens are RS256
-	// We need to validate against the cached public keys
-	tokenMaker := &RSAMaker{
-		publicKeys: publicKeys,
+	claims := &AccessTokenClaims{}
+	token, err := jwt.ParseWithClaims(tokenStr, claims,
+		func(token *jwt.Token) (interface{}, error) {
+			return keyForTokenHeader(publicKeys, token)
+		},
+	)
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, ErrExpiredToken
+		}
+		return nil, ErrInvalidToken
 	}
-	return tokenMaker.VerifyAccessToken(tokenStr)
+
+	if !token.Valid {
+		return nil, ErrInvalidToken
+	}
+
+	payload, err := accessPayloadFromTokenClaims(claims)
+	if err != nil {
+		return nil, err
+	}
+
+	payload.KeyID, _ = token.Header["kid"].(string)
+
+	return payload, nil
 }
 
 // validateRefreshTokenWithCache validates a refresh token using cached keys.
@@ -144,57 +203,95 @@ func (v *RemoteValidator) validateRefreshTokenWithCache(tokenStr string) (*Refre
 		return nil, errors.New("no public keys cached")
 	}
 
-	// For RemoteValidator, we use RSAMaker logic since tokens are RS256
-	// We need to validate against the cached public keys
-	tokenMaker := &RSAMaker{
-		publicKeys: publicKeys,
+	claims := &RefreshTokenClaims{}
+	token, err := jwt.ParseWithClaims(tokenStr, claims,
+		func(token *jwt.Token) (interface{}, error) {
+			return keyForTokenHeader(publicKeys, token)
+		},
+	)
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, ErrExpiredToken
+		}
+		return nil, ErrInvalidToken
 	}
-	return tokenMaker.VerifyRefreshToken(tokenStr)
+
+	if !token.Valid {
+		return nil, ErrInvalidToken
+	}
+
+	payload, err := refreshPayloadFromTokenClaims(claims)
+	if err != nil {
+		return nil, err
+	}
+
+	payload.KeyID, _ = token.Header["kid"].(string)
+
+	return payload, nil
 }
 
-// parseRSAPublicKey extracts an RSA public key from a JWKS key entry.
-func parseRSAPublicKey(key JWKSKey) (*rsa.PublicKey, error) {
-	if key.KTY != "RSA" {
-		return nil, errors.New("not an RSA key")
+func keyForTokenHeader(publicKeys map[string]cachedJWK, token *jwt.Token) (interface{}, error) {
+	kid, ok := token.Header["kid"].(string)
+	if !ok || kid == "" {
+		return nil, errors.New("missing kid in token header")
 	}
 
-	nBytes, err := base64.RawURLEncoding.DecodeString(key.N)
+	entry, exists := publicKeys[kid]
+	if !exists {
+		return nil, fmt.Errorf("unknown key id: %s", kid)
+	}
+
+	headerAlg, _ := token.Header["alg"].(string)
+	if entry.alg != "" && headerAlg != "" && entry.alg != headerAlg {
+		return nil, fmt.Errorf("algorithm mismatch for key id %s", kid)
+	}
+
+	switch entry.alg {
+	case jwt.SigningMethodEdDSA.Alg():
+		if token.Method.Alg() != jwt.SigningMethodEdDSA.Alg() {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+	default:
+		return nil, fmt.Errorf("unsupported signing algorithm: %s", entry.alg)
+	}
+
+	return entry.key, nil
+}
+
+func normalizedJWKAlg(key JWKSKey) string {
+	if key.Alg != "" {
+		if key.Alg == jwt.SigningMethodEdDSA.Alg() {
+			return key.Alg
+		}
+		return ""
+	}
+
+	switch {
+	case key.KTY == "OKP" && key.CRV == "Ed25519":
+		return jwt.SigningMethodEdDSA.Alg()
+	default:
+		return ""
+	}
+}
+
+func parseEd25519PublicKey(key JWKSKey) (ed25519.PublicKey, error) {
+	if key.KTY != "OKP" {
+		return nil, errors.New("not an okp key")
+	}
+	if key.CRV != "Ed25519" {
+		return nil, errors.New("unsupported okp curve")
+	}
+
+	xBytes, err := base64.RawURLEncoding.DecodeString(key.X)
 	if err != nil {
-		return nil, fmt.Errorf("decode modulus n: %w", err)
+		return nil, fmt.Errorf("decode ed25519 x: %w", err)
 	}
-	if len(nBytes) == 0 {
-		return nil, errors.New("empty modulus n")
-	}
-
-	eBytes, err := base64.RawURLEncoding.DecodeString(key.E)
-	if err != nil {
-		return nil, fmt.Errorf("decode exponent e: %w", err)
-	}
-	if len(eBytes) == 0 {
-		return nil, errors.New("empty exponent e")
+	if len(xBytes) != ed25519.PublicKeySize {
+		return nil, errors.New("invalid ed25519 public key size")
 	}
 
-	eBig := new(big.Int).SetBytes(eBytes)
-	if !eBig.IsInt64() {
-		return nil, errors.New("exponent does not fit int64")
-	}
-	e := int(eBig.Int64())
-	if e < 3 || e%2 == 0 {
-		return nil, errors.New("invalid RSA exponent")
-	}
-
-	pub := &rsa.PublicKey{
-		N: new(big.Int).SetBytes(nBytes),
-		E: e,
-	}
-
-	if pub.N == nil || pub.N.Sign() <= 0 {
-		return nil, errors.New("invalid RSA modulus")
-	}
-	if pub.N.BitLen() < 2048 {
-		return nil, errors.New("rsa modulus too small")
-	}
-
+	pub := make(ed25519.PublicKey, ed25519.PublicKeySize)
+	copy(pub, xBytes)
 	return pub, nil
 }
 
@@ -207,22 +304,22 @@ func (v *RemoteValidator) SetCacheTTL(ttl time.Duration) {
 
 // CreateAccessToken is not implemented for RemoteValidator.
 // RemoteValidator is for validation only, not token creation.
-// Use RSAMaker in the auth service for token creation.
+// Use the auth service token maker for token creation.
 func (v *RemoteValidator) CreateAccessToken(
 	userID, email, name, familyID, refreshJTI, dpopKeyThumbprint string,
 	duration time.Duration,
 ) (string, *AccessPayload, error) {
-	return "", nil, errors.New("CreateAccessToken not implemented in RemoteValidator; use RSAMaker in auth service")
+	return "", nil, errors.New("CreateAccessToken not implemented in RemoteValidator; use auth service token maker")
 }
 
 // CreateRefreshToken is not implemented for RemoteValidator.
 // RemoteValidator is for validation only, not token creation.
-// Use RSAMaker in the auth service for token creation.
+// Use the auth service token maker for token creation.
 func (v *RemoteValidator) CreateRefreshToken(
 	userID, email, name, familyID, dpopKeyThumbprint string,
 	duration time.Duration,
 ) (string, *RefreshPayload, error) {
-	return "", nil, errors.New("CreateRefreshToken not implemented in RemoteValidator; use RSAMaker in auth service")
+	return "", nil, errors.New("CreateRefreshToken not implemented in RemoteValidator; use auth service token maker")
 }
 
 // GetCurrentKeyID returns an empty key id because RemoteValidator only verifies tokens.
