@@ -45,6 +45,12 @@ type DPoPPayload struct {
 	Nonce      string `json:"nonce,omitempty"`
 }
 
+// VerifiedProof contains validated DPoP proof details for downstream checks.
+type VerifiedProof struct {
+	PublicKey ed25519.PublicKey
+	Payload   DPoPPayload
+}
+
 // GenerateDPoPProof generates a DPoP proof signed with the given Ed25519 private key.
 func GenerateDPoPProof(
 	privateKey ed25519.PrivateKey,
@@ -105,6 +111,19 @@ func ValidateDPoPProof(
 	expectedMethod, expectedUrl string,
 	expectedNonce string,
 ) (ed25519.PublicKey, error) {
+	verified, err := ValidateDPoPProofDetailed(proofStr, expectedMethod, expectedUrl, expectedNonce)
+	if err != nil {
+		return nil, err
+	}
+	return verified.PublicKey, nil
+}
+
+// ValidateDPoPProofDetailed validates a DPoP proof JWT and returns verified key and claims.
+func ValidateDPoPProofDetailed(
+	proofStr string,
+	expectedMethod, expectedUrl string,
+	expectedNonce string,
+) (*VerifiedProof, error) {
 	if proofStr == "" {
 		return nil, ErrMissingDPoPHeader
 	}
@@ -157,9 +176,20 @@ func ValidateDPoPProof(
 		return nil, fmt.Errorf("HTTP URL mismatch: expected %s, got %s", expectedUrl, htu)
 	}
 
+	iat, ok := (*claims)["iat"].(float64)
+	if !ok {
+		return nil, ErrInvalidDPoPProof
+	}
+
+	jti, ok := (*claims)["jti"].(string)
+	if !ok || jti == "" {
+		return nil, ErrInvalidDPoPProof
+	}
+
+	nonce, _ := (*claims)["nonce"].(string)
+
 	if expectedNonce != "" {
-		nonce, ok := (*claims)["nonce"].(string)
-		if !ok || nonce != expectedNonce {
+		if nonce == "" || nonce != expectedNonce {
 			return nil, ErrDPoPNonceMissing
 		}
 	}
@@ -168,7 +198,16 @@ func ValidateDPoPProof(
 		return nil, ErrInvalidDPoPProof
 	}
 
-	return verifiedKey, nil
+	return &VerifiedProof{
+		PublicKey: verifiedKey,
+		Payload: DPoPPayload{
+			HTTPMethod: htm,
+			HTTPUrl:    htu,
+			IssuedAt:   int64(iat),
+			UUID:       jti,
+			Nonce:      nonce,
+		},
+	}, nil
 }
 
 // ComputeKeyThumbprint computes the S256 thumbprint of an Ed25519 public key.

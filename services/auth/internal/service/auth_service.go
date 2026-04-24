@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"crypto/ed25519"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -118,7 +120,7 @@ type RefreshResult struct {
 	RefreshToken string
 }
 
-func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr, dpopProof, dpopKeyThumbprint string) (*RefreshResult, error) {
+func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr, dpopProof, expectedHTU string) (*RefreshResult, error) {
 	payload, err := s.tokenMaker.VerifyRefreshToken(refreshTokenStr)
 	if err != nil {
 		if errors.Is(err, token.ErrExpiredToken) {
@@ -154,7 +156,37 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr, dpopPro
 
 	kid := state.FamilyKID
 
-	if dpopProof != "" && s.dpopStore != nil {
+	presentedJKT := payload.DPoPKeyThumbprint
+	if s.dpopStore != nil {
+		if dpopProof == "" {
+			return nil, s.challengeDPoPNonce(ctx)
+		}
+
+		verifiedProof, verifyErr := dpop.ValidateDPoPProofDetailed(
+			dpopProof,
+			"POST",
+			expectedHTU,
+			"",
+		)
+		if verifyErr != nil {
+			if errors.Is(verifyErr, dpop.ErrExpiredDPoPProof) {
+				return nil, ErrTokenExpired
+			}
+			return nil, ErrInvalidToken
+		}
+
+		if verifiedProof.Payload.Nonce == "" {
+			return nil, s.challengeDPoPNonce(ctx)
+		}
+
+		nonceValid, nonceErr := s.dpopStore.ValidateNonce(ctx, verifiedProof.Payload.Nonce)
+		if nonceErr != nil {
+			return nil, fmt.Errorf("validate dpop nonce: %w", nonceErr)
+		}
+		if !nonceValid {
+			return nil, s.challengeDPoPNonce(ctx)
+		}
+
 		proofKey := hashDPoPProof(dpopProof)
 		proofFresh, proofErr := s.dpopStore.UseProofOnce(ctx, proofKey, 60*time.Second)
 		if proofErr != nil {
@@ -168,11 +200,12 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr, dpopPro
 			s.nukeFamily(ctx, payload.UserID.String(), payload.FamilyID.String())
 			return nil, ErrDPoPProofReplayed
 		}
-	}
 
-	presentedJKT := dpopKeyThumbprint
-	if presentedJKT == "" {
-		presentedJKT = payload.DPoPKeyThumbprint
+		jkt, thumbErr := computeThumbprintFromPublicKey(verifiedProof.PublicKey)
+		if thumbErr != nil {
+			return nil, fmt.Errorf("compute dpop thumbprint: %w", thumbErr)
+		}
+		presentedJKT = jkt
 	}
 
 	if payload.DPoPKeyThumbprint != "" && presentedJKT != payload.DPoPKeyThumbprint {
@@ -275,6 +308,22 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr, dpopPro
 	}
 
 	return &RefreshResult{AccessToken: newAccessStr, RefreshToken: newRefreshStr}, nil
+}
+
+func (s *AuthService) challengeDPoPNonce(ctx context.Context) error {
+	nonce, err := dpop.GenerateNonce()
+	if err != nil {
+		return fmt.Errorf("generate dpop nonce: %w", err)
+	}
+	if err := s.dpopStore.StoreNonce(ctx, nonce, 60*time.Second); err != nil {
+		return fmt.Errorf("store dpop nonce: %w", err)
+	}
+	return &DPoPNonceRequiredError{Nonce: nonce}
+}
+
+func computeThumbprintFromPublicKey(pubKey ed25519.PublicKey) (string, error) {
+	xBase64 := base64.RawURLEncoding.EncodeToString(pubKey)
+	return dpop.ComputeKeyThumbprint(xBase64)
 }
 
 // ─── Logout ───────────────────────────────────────────────────────────────────

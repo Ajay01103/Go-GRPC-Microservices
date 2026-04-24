@@ -26,18 +26,6 @@ func NewDPoPStore(client *redis.Client) *DPoPStore {
 	return &DPoPStore{client: client}
 }
 
-// recordProof records that a DPoP proof has been used.
-// This prevents the same proof from being used twice (replay attack).
-// The TTL matches the proof's validity window.
-// Deprecated: use UseProofOnce instead for atomic check-and-set semantics.
-func (s *DPoPStore) recordProof(ctx context.Context, proofJTI string, ttl time.Duration) error {
-	key := dPoPProofPrefix + proofJTI
-	if err := s.client.Set(ctx, key, "used", ttl).Err(); err != nil {
-		return fmt.Errorf("redis record proof: %w", err)
-	}
-	return nil
-}
-
 // UseProofOnce atomically marks a proof as used.
 // It returns true when the proof was newly recorded and false when it was already present.
 func (s *DPoPStore) UseProofOnce(ctx context.Context, proofJTI string, ttl time.Duration) (bool, error) {
@@ -51,20 +39,6 @@ func (s *DPoPStore) UseProofOnce(ctx context.Context, proofJTI string, ttl time.
 	}
 	return result == "OK", nil
 }
-
-// isProofUsed checks if a DPoP proof has already been used.
-// Deprecated: use UseProofOnce instead for atomic check-and-set semantics.
-func (s *DPoPStore) isProofUsed(ctx context.Context, proofJTI string) (bool, error) {
-	result, err := s.client.Get(ctx, dPoPProofPrefix+proofJTI).Result()
-	if err == redis.Nil {
-		return false, nil
-	}
-	if err != nil {
-		return false, fmt.Errorf("redis check proof: %w", err)
-	}
-	return result == "used", nil
-}
-
 // StoreNonce stores a server-issued nonce for DPoP challenges.
 // This is used to prevent DPoP replay across different endpoints.
 func (s *DPoPStore) StoreNonce(ctx context.Context, nonce string, ttl time.Duration) error {

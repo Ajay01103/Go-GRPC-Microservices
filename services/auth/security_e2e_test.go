@@ -166,18 +166,16 @@ func TestDPoPProofSecondUseRejected(t *testing.T) {
 
 	proof := "REPLAYME-" + strings.ReplaceAll(name, " ", "")
 	firstResp, err := client.RefreshToken(ctx, connect.NewRequest(&pb.RefreshTokenRequest{
-		RefreshToken:      regResp.Msg.GetRefreshToken(),
-		DpopProof:         proof,
-		DpopKeyThumbprint: "thumb1",
+		RefreshToken: regResp.Msg.GetRefreshToken(),
+		DpopProof:    proof,
 	}))
 	if err != nil {
 		t.Fatalf("first dpop refresh failed: %v", err)
 	}
 
 	_, err = client.RefreshToken(ctx, connect.NewRequest(&pb.RefreshTokenRequest{
-		RefreshToken:      firstResp.Msg.GetRefreshToken(),
-		DpopProof:         proof,
-		DpopKeyThumbprint: "thumb1",
+		RefreshToken: firstResp.Msg.GetRefreshToken(),
+		DpopProof:    proof,
 	}))
 	requireConnectErrorContains(t, err, connect.CodeUnauthenticated, "dpop proof replay detected")
 }

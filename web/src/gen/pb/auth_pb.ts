@@ -112,7 +112,7 @@ export class LoginRequest extends Message<LoginRequest> {
 }
 
 /**
- * RefreshTokenRequest: the client passes its current refresh token
+ * RefreshTokenRequest: the client passes its current refresh token and DPoP proof.
  *
  * @generated from message auth.RefreshTokenRequest
  */
@@ -127,11 +127,6 @@ export class RefreshTokenRequest extends Message<RefreshTokenRequest> {
    */
   dpopProof = ""
 
-  /**
-   * @generated from field: string dpop_key_thumbprint = 3;
-   */
-  dpopKeyThumbprint = ""
-
   constructor(data?: PartialMessage<RefreshTokenRequest>) {
     super()
     proto3.util.initPartial(data, this)
@@ -142,7 +137,6 @@ export class RefreshTokenRequest extends Message<RefreshTokenRequest> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "refresh_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "dpop_proof", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 3, name: "dpop_key_thumbprint", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ])
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RefreshTokenRequest {

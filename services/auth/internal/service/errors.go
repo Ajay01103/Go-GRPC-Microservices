@@ -15,3 +15,11 @@ var (
 	ErrKeyBindingMismatch = errors.New("refresh token key binding mismatch")
 	ErrUserNotFound       = errors.New("user not found")
 )
+
+type DPoPNonceRequiredError struct {
+	Nonce string
+}
+
+func (e *DPoPNonceRequiredError) Error() string {
+	return "dpop nonce required"
+}

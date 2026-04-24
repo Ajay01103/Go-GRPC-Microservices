@@ -17,11 +17,13 @@ message LoginRequest {
   string password = 2;
 }
 
-// RefreshTokenRequest: the client passes its current refresh token
+// RefreshTokenRequest: the client passes its current refresh token and DPoP proof.
 message RefreshTokenRequest {
+  reserved 3;
+  reserved "dpop_key_thumbprint";
+
   string refresh_token = 1;
   string dpop_proof = 2;
-  string dpop_key_thumbprint = 3;
 }
 
 // LogoutRequest: the client passes its current refresh token so the server
@@ -84,7 +86,7 @@ service AuthService {
   rpc Login(LoginRequest) returns (AuthResponse);
 
   // Issue a new access token + rotate the refresh token.
-  // Validates the refresh token JWT AND checks Redis (revocation check).
+  // Validates the refresh token JWT, DPoP proof, and checks Redis (revocation check).
   rpc RefreshToken(RefreshTokenRequest) returns (AuthResponse);
 
   // Invalidate the refresh token in Redis (logout)

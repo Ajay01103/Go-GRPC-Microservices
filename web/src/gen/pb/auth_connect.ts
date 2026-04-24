@@ -49,7 +49,7 @@ export const AuthService = {
     },
     /**
      * Issue a new access token + rotate the refresh token.
-     * Validates the refresh token JWT AND checks Redis (revocation check).
+     * Validates the refresh token JWT, DPoP proof, and checks Redis (revocation check).
      *
      * @generated from rpc auth.AuthService.RefreshToken
      */

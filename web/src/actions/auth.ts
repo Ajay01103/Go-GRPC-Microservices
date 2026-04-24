@@ -2,8 +2,10 @@
 
 import { createHash } from "node:crypto"
 import { cookies } from "next/headers"
+import { ConnectError } from "@connectrpc/connect"
 import { authRpcClient } from "@/lib/rpc"
 import { REFRESH_TOKEN_COOKIE_NAME } from "@/lib/auth-cookie"
+import { createRefreshDPoPProof } from "@/lib/server-dpop"
 
 const serverInflightRefresh = new Map<string, Promise<string | null>>()
 
@@ -39,7 +41,25 @@ export async function refreshAccessTokenAction() {
 
   const refreshPromise = (async () => {
     try {
-      const response = await authRpcClient.refreshToken({ refreshToken })
+      const firstProof = await createRefreshDPoPProof(cookieStore)
+      let response
+      try {
+        response = await authRpcClient.refreshToken({
+          refreshToken,
+          dpopProof: firstProof,
+        })
+      } catch (error) {
+        const nonce = getDPoPNonceFromError(error)
+        if (!nonce) {
+          throw error
+        }
+
+        const nonceBoundProof = await createRefreshDPoPProof(cookieStore, nonce)
+        response = await authRpcClient.refreshToken({
+          refreshToken,
+          dpopProof: nonceBoundProof,
+        })
+      }
 
       // Update the cookie with the newly issued refresh token
       setRefreshCookie(cookieStore, response.refreshToken)
@@ -58,6 +78,19 @@ export async function refreshAccessTokenAction() {
 
   serverInflightRefresh.set(dedupKey, refreshPromise)
   return refreshPromise
+}
+
+function getDPoPNonceFromError(error: unknown): string | null {
+  if (!(error instanceof ConnectError)) {
+    return null
+  }
+
+  return (
+    error.metadata.get("dpop-nonce") ??
+    error.metadata.get("Dpop-Nonce") ??
+    error.metadata.get("DPoP-Nonce") ??
+    null
+  )
 }
 
 export async function requireAccessTokenAction(): Promise<string> {
