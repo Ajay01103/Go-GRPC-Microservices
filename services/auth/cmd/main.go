@@ -26,6 +26,7 @@ import (
 	"github.com/go-grpc-sqlc/pkg/dpop"
 	"github.com/go-grpc-sqlc/pkg/interceptor"
 	pkglogger "github.com/go-grpc-sqlc/pkg/logger"
+	"github.com/go-grpc-sqlc/pkg/redisclient"
 	"github.com/go-grpc-sqlc/pkg/token"
 )
 
@@ -84,7 +85,7 @@ func run() error {
 	defer dbLocal.Close()
 
 	// 3. Connect to Redis
-	redisClient, err := redisstore.NewClientFromURL(cfg.RedisUrl)
+	redisClient, err := redisclient.NewClientFromURL(cfg.RedisUrl)
 	if err != nil {
 		logger.Error("cannot connect to redis", zap.Error(err))
 		return fmt.Errorf("connect redis: %w", err)

@@ -2,7 +2,7 @@ package dpop
 
 import (
 	"context"
-	"crypto/sha256"
+	"crypto/rand"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -26,10 +26,11 @@ func NewDPoPStore(client *redis.Client) *DPoPStore {
 	return &DPoPStore{client: client}
 }
 
-// RecordProof records that a DPoP proof has been used.
+// recordProof records that a DPoP proof has been used.
 // This prevents the same proof from being used twice (replay attack).
 // The TTL matches the proof's validity window.
-func (s *DPoPStore) RecordProof(ctx context.Context, proofJTI string, ttl time.Duration) error {
+// Deprecated: use UseProofOnce instead for atomic check-and-set semantics.
+func (s *DPoPStore) recordProof(ctx context.Context, proofJTI string, ttl time.Duration) error {
 	key := dPoPProofPrefix + proofJTI
 	if err := s.client.Set(ctx, key, "used", ttl).Err(); err != nil {
 		return fmt.Errorf("redis record proof: %w", err)
@@ -37,8 +38,23 @@ func (s *DPoPStore) RecordProof(ctx context.Context, proofJTI string, ttl time.D
 	return nil
 }
 
-// IsProofUsed checks if a DPoP proof has already been used.
-func (s *DPoPStore) IsProofUsed(ctx context.Context, proofJTI string) (bool, error) {
+// UseProofOnce atomically marks a proof as used.
+// It returns true when the proof was newly recorded and false when it was already present.
+func (s *DPoPStore) UseProofOnce(ctx context.Context, proofJTI string, ttl time.Duration) (bool, error) {
+	key := dPoPProofPrefix + proofJTI
+	result, err := s.client.SetArgs(ctx, key, "used", redis.SetArgs{Mode: "NX", TTL: ttl}).Result()
+	if err == redis.Nil {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("redis use proof once: %w", err)
+	}
+	return result == "OK", nil
+}
+
+// isProofUsed checks if a DPoP proof has already been used.
+// Deprecated: use UseProofOnce instead for atomic check-and-set semantics.
+func (s *DPoPStore) isProofUsed(ctx context.Context, proofJTI string) (bool, error) {
 	result, err := s.client.Get(ctx, dPoPProofPrefix+proofJTI).Result()
 	if err == redis.Nil {
 		return false, nil
@@ -98,7 +114,11 @@ func (s *DPoPStore) GetKeyBinding(ctx context.Context, tokenJTI string) (string,
 }
 
 // GenerateNonce generates a random server nonce for DPoP challenges.
-func GenerateNonce() string {
-	hash := sha256.Sum256([]byte(time.Now().String()))
-	return hex.EncodeToString(hash[:])
+// It uses crypto/rand for cryptographically secure randomness.
+func GenerateNonce() (string, error) {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return "", fmt.Errorf("generate nonce: %w", err)
+	}
+	return hex.EncodeToString(b), nil
 }

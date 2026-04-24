@@ -61,12 +61,7 @@ async function getCachedPlaybackUrl(
   return request
 }
 
-function VoiceAudioPreviewContent({
-  voiceId,
-  src,
-  itemId,
-  className,
-}: VoiceAudioPreviewProps) {
+function VoiceAudioPreviewContent({ voiceId, src, itemId, className }: VoiceAudioPreviewProps) {
   const { accessToken } = useAuth()
   const player = useAudioPlayer()
   const [isLoadingUrl, setIsLoadingUrl] = useState(false)
@@ -136,12 +131,7 @@ function VoiceAudioPreviewContent({
   )
 }
 
-export function VoiceAudioPreview({
-  voiceId,
-  src,
-  itemId,
-  className,
-}: VoiceAudioPreviewProps) {
+export function VoiceAudioPreview({ voiceId, src, itemId, className }: VoiceAudioPreviewProps) {
   return (
     <AudioPlayerProvider>
       <VoiceAudioPreviewContent

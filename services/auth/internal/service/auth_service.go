@@ -128,25 +128,20 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr, dpopPro
 	}
 
 	oldTokenHash := redisstore.HashTokenSHA256(refreshTokenStr)
-	blacklisted, err := s.tokenStore.IsTokenHashBlacklisted(ctx, oldTokenHash)
+	state, err := s.tokenStore.LoadRefreshTokenState(ctx, payload.FamilyID.String(), oldTokenHash)
 	if err != nil {
-		return nil, fmt.Errorf("check blacklist: %w", err)
+		if errors.Is(err, redisstore.ErrFamilyNotFound) {
+			return nil, ErrRefreshFamilyMissing
+		}
+		return nil, fmt.Errorf("load refresh token state: %w", err)
 	}
-	if blacklisted {
-		graceFamilyID, graceErr := s.tokenStore.GetRotatedTokenGraceFamilyID(ctx, oldTokenHash)
-		if graceErr == nil && graceFamilyID == payload.FamilyID.String() {
+	if state.Blacklisted {
+		if state.GraceFamilyID == payload.FamilyID.String() {
 			s.logger.Info("concurrent refresh stale token hit grace window",
 				zap.String("userID", payload.UserID.String()),
 				zap.String("familyID", payload.FamilyID.String()),
 			)
 			return nil, ErrTokenExpired
-		}
-		if graceErr != nil && !errors.Is(graceErr, redisstore.ErrGraceNotFound) {
-			s.logger.Warn("failed to check rotated grace key",
-				zap.String("userID", payload.UserID.String()),
-				zap.String("familyID", payload.FamilyID.String()),
-				zap.Error(graceErr),
-			)
 		}
 
 		s.logger.Warn("blacklisted refresh token reuse detected",
@@ -157,30 +152,21 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr, dpopPro
 		return nil, ErrTokenReuseDetected
 	}
 
-	kid, err := s.tokenStore.GetFamilyKID(ctx, payload.FamilyID.String())
-	if err != nil {
-		if errors.Is(err, redisstore.ErrFamilyNotFound) {
-			return nil, ErrRefreshFamilyMissing
-		}
-		return nil, fmt.Errorf("get family kid: %w", err)
-	}
+	kid := state.FamilyKID
 
 	if dpopProof != "" && s.dpopStore != nil {
 		proofKey := hashDPoPProof(dpopProof)
-		proofUsed, proofErr := s.dpopStore.IsProofUsed(ctx, proofKey)
+		proofFresh, proofErr := s.dpopStore.UseProofOnce(ctx, proofKey, 60*time.Second)
 		if proofErr != nil {
 			return nil, fmt.Errorf("check dpop proof replay: %w", proofErr)
 		}
-		if proofUsed {
+		if !proofFresh {
 			s.logger.Warn("dpop proof replay detected",
 				zap.String("userID", payload.UserID.String()),
 				zap.String("familyID", payload.FamilyID.String()),
 			)
 			s.nukeFamily(ctx, payload.UserID.String(), payload.FamilyID.String())
 			return nil, ErrDPoPProofReplayed
-		}
-		if proofErr = s.dpopStore.RecordProof(ctx, proofKey, 60*time.Second); proofErr != nil {
-			return nil, fmt.Errorf("record dpop proof replay key: %w", proofErr)
 		}
 	}
 

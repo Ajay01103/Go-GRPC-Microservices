@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+
+	"github.com/go-grpc-sqlc/pkg/redisclient"
 )
 
 const (
@@ -103,12 +105,7 @@ func New(client *redis.Client) *TokenStore {
 
 // NewClientFromURL parses the Redis URL and returns a connected client.
 func NewClientFromURL(redisURL string) (*redis.Client, error) {
-	opts, err := redis.ParseURL(redisURL)
-	if err != nil {
-		return nil, fmt.Errorf("invalid redis url: %w", err)
-	}
-	client := redis.NewClient(opts)
-	return client, nil
+	return redisclient.NewClientFromURL(redisURL)
 }
 
 func activeFamilyKey(familyID string) string {
@@ -125,6 +122,60 @@ func userFamiliesKey(userID string) string {
 
 func rotatedGraceKey(tokenHash string) string {
 	return refreshRotatedPrefix + tokenHash
+}
+
+// RefreshTokenState captures the refresh-token state needed by the auth service
+// in a single Redis round-trip.
+type RefreshTokenState struct {
+	Blacklisted   bool
+	GraceFamilyID string
+	FamilyKID     string
+	ActiveRecord   *ActiveRefreshTokenRecord
+}
+
+// LoadRefreshTokenState fetches blacklist, rotated-grace, and active family data
+// together so the refresh path does not pay multiple sequential Redis RTTs.
+func (s *TokenStore) LoadRefreshTokenState(ctx context.Context, familyID, tokenHash string) (*RefreshTokenState, error) {
+	pipe := s.client.Pipeline()
+	blacklistCmd := pipe.Get(ctx, blacklistKey(tokenHash))
+	graceCmd := pipe.Get(ctx, rotatedGraceKey(tokenHash))
+	activeCmd := pipe.Get(ctx, activeFamilyKey(familyID))
+
+	if _, err := pipe.Exec(ctx); err != nil && err != redis.Nil {
+		return nil, fmt.Errorf("redis load refresh state: %w", err)
+	}
+
+	state := &RefreshTokenState{}
+
+	blacklistVal, err := blacklistCmd.Result()
+	if err != nil && err != redis.Nil {
+		return nil, fmt.Errorf("redis get blacklist: %w", err)
+	}
+	state.Blacklisted = err == nil && blacklistVal != ""
+
+	graceFamilyID, err := graceCmd.Result()
+	if err == nil {
+		state.GraceFamilyID = graceFamilyID
+	} else if err != redis.Nil {
+		return nil, fmt.Errorf("redis get rotated grace key: %w", err)
+	}
+
+	raw, err := activeCmd.Result()
+	if err == redis.Nil {
+		return nil, ErrFamilyNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("redis get active family: %w", err)
+	}
+
+	var rec ActiveRefreshTokenRecord
+	if err := json.Unmarshal([]byte(raw), &rec); err != nil {
+		return nil, fmt.Errorf("unmarshal active record: %w", err)
+	}
+	state.ActiveRecord = &rec
+	state.FamilyKID = rec.SigningKID
+
+	return state, nil
 }
 
 func (s *TokenStore) StoreFamilyActiveToken(ctx context.Context, familyID string, rec ActiveRefreshTokenRecord, ttl time.Duration) error {

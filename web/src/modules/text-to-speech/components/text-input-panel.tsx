@@ -70,9 +70,7 @@ export function TextInputPanel({ generation }: { generation?: any }) {
               className="gap-1.5 border-dashed">
               <Coins className="size-3 text-chart-5" />
               <span className="text-xs">
-                <span className="tabular-nums">
-                  ${(text.length * COST_PER_UNIT).toFixed(4)}
-                </span>
+                <span className="tabular-nums">${(text.length * COST_PER_UNIT).toFixed(4)}</span>
                 &nbsp; estimated
               </span>
             </Badge>
@@ -93,9 +91,7 @@ export function TextInputPanel({ generation }: { generation?: any }) {
           </div>
         ) : (
           <div className="hidden lg:block">
-            <PromptSuggestions
-              onSelect={(prompt) => form.setFieldValue("text", prompt)}
-            />
+            <PromptSuggestions onSelect={(prompt) => form.setFieldValue("text", prompt)} />
           </div>
         )}
       </div>

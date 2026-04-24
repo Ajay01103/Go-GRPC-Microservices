@@ -73,9 +73,7 @@ export function VoicePreviewPanel({
     <div className="h-full gap-8 flex-col border-t flex-1 flex flex-col md:flex">
       {/* Header */}
       <div className="p-4 pb-0 md:p-6 md:pb-0">
-        <h3 className="text-sm font-semibold text-foreground md:text-base">
-          Voice preview
-        </h3>
+        <h3 className="text-sm font-semibold text-foreground md:text-base">Voice preview</h3>
       </div>
 
       {/* Content */}
@@ -111,9 +109,7 @@ export function VoicePreviewPanel({
         <div className="grid w-full grid-cols-3 gap-2 md:gap-4">
           {/* Metadata */}
           <div className="flex min-w-0 flex-col gap-0.5">
-            <p className="truncate text-xs md:text-sm font-medium text-foreground">
-              {text}
-            </p>
+            <p className="truncate text-xs md:text-sm font-medium text-foreground">{text}</p>
             {selectedVoiceName && (
               <div className="flex items-center gap-1 text-[10px] md:text-xs text-muted-foreground">
                 <VoiceAvatar

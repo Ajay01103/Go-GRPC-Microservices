@@ -83,9 +83,7 @@ export default function LoginForm() {
               <LogoIcon />
             </Link>
             <h1 className="mt-4 text-xl font-semibold">Sign in to Tailark</h1>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Welcome back! Sign in to continue
-            </p>
+            <p className="text-muted-foreground mt-1 text-sm">Welcome back! Sign in to continue</p>
           </div>
 
           <div className="mt-6 space-y-5">

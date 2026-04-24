@@ -11,10 +11,7 @@ function refreshDedupKey(refreshToken: string): string {
   return createHash("sha256").update(refreshToken).digest("hex")
 }
 
-function setRefreshCookie(
-  cookieStore: Awaited<ReturnType<typeof cookies>>,
-  refreshToken: string,
-) {
+function setRefreshCookie(cookieStore: Awaited<ReturnType<typeof cookies>>, refreshToken: string) {
   cookieStore.set(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

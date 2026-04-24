@@ -1,4 +1,4 @@
-package redisstore
+package redisclient
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// NewClientFromURL parses a Redis URL and returns a connected client.
 func NewClientFromURL(redisURL string) (*redis.Client, error) {
 	opts, err := redis.ParseURL(redisURL)
 	if err != nil {

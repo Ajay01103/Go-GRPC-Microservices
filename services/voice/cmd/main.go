@@ -17,11 +17,11 @@ import (
 
 	"github.com/go-grpc-sqlc/pkg/interceptor"
 	pkglogger "github.com/go-grpc-sqlc/pkg/logger"
+	"github.com/go-grpc-sqlc/pkg/redisclient"
 	"github.com/go-grpc-sqlc/pkg/token"
 	voiceconfig "github.com/go-grpc-sqlc/voice/config"
 	"github.com/go-grpc-sqlc/voice/gen/pb/pbconnect"
 	db "github.com/go-grpc-sqlc/voice/gen/sqlc"
-	"github.com/go-grpc-sqlc/voice/internal/redisstore"
 	"github.com/go-grpc-sqlc/voice/internal/repository"
 	"github.com/go-grpc-sqlc/voice/internal/s3"
 	"github.com/go-grpc-sqlc/voice/internal/server"
@@ -69,7 +69,7 @@ func main() {
 	if cfg.RedisURL == "" {
 		logger.Info("redis cache disabled", zap.String("reason", "VOICE_REDIS_URL not set"))
 	} else {
-		redisClient, redisErr := redisstore.NewClientFromURL(cfg.RedisURL)
+		redisClient, redisErr := redisclient.NewClientFromURL(cfg.RedisURL)
 		if redisErr != nil {
 			logger.Warn("redis cache disabled", zap.Error(redisErr))
 		} else {

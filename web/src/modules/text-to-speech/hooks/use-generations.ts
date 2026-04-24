@@ -30,14 +30,11 @@ export function useGenerations() {
     queryFn: async (): Promise<GenerationItemType[]> => {
       if (!accessToken) return []
 
-      const response = await generationRpcClient.listGenerations(
-        new ListGenerationsRequest(),
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+      const response = await generationRpcClient.listGenerations(new ListGenerationsRequest(), {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
         },
-      )
+      })
 
       return response.generations as GenerationItemType[]
     },
@@ -53,10 +50,7 @@ export function useGeneration(generationId: string) {
     staleTime: 30 * 1000,
     refetchInterval: (query) => {
       const status = (query.state.data as GenerationDetailType | undefined)?.status
-      if (
-        status === GenerationJobStatus.QUEUED ||
-        status === GenerationJobStatus.PROCESSING
-      ) {
+      if (status === GenerationJobStatus.QUEUED || status === GenerationJobStatus.PROCESSING) {
         return 2000
       }
 

@@ -255,3 +255,48 @@ func TestGetRotatedTokenGraceFamilyID_NotFound(t *testing.T) {
 		t.Fatalf("expected ErrGraceNotFound, got %v", err)
 	}
 }
+
+func TestLoadRefreshTokenState_ReturnsBlacklistedGraceAndActiveRecord(t *testing.T) {
+	store, cleanup := newTestStore(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	familyID := "fam-state"
+	tokenHash := "token-hash-state"
+	activeTTL := 20 * time.Minute
+
+	rec := ActiveRefreshTokenRecord{
+		UserID:     "user-state",
+		TokenHash:  "current-hash",
+		JKT:        "thumb-state",
+		ExpiresAt:  time.Now().Add(activeTTL).UTC().Format(time.RFC3339),
+		RefreshJTI: "jti-state",
+		SigningKID: "kid-state",
+	}
+	if err := store.StoreFamilyActiveToken(ctx, familyID, rec, activeTTL); err != nil {
+		t.Fatalf("store family active token: %v", err)
+	}
+	if err := store.BlacklistTokenHash(ctx, tokenHash, activeTTL); err != nil {
+		t.Fatalf("blacklist token hash: %v", err)
+	}
+	if err := store.client.Set(ctx, rotatedGraceKey(tokenHash), familyID, rotatedGraceTTL).Err(); err != nil {
+		t.Fatalf("set rotated grace key: %v", err)
+	}
+
+	state, err := store.LoadRefreshTokenState(ctx, familyID, tokenHash)
+	if err != nil {
+		t.Fatalf("load refresh token state: %v", err)
+	}
+	if !state.Blacklisted {
+		t.Fatalf("expected token hash to be blacklisted")
+	}
+	if state.GraceFamilyID != familyID {
+		t.Fatalf("expected grace family id %q, got %q", familyID, state.GraceFamilyID)
+	}
+	if state.FamilyKID != rec.SigningKID {
+		t.Fatalf("expected family kid %q, got %q", rec.SigningKID, state.FamilyKID)
+	}
+	if state.ActiveRecord == nil || state.ActiveRecord.TokenHash != rec.TokenHash {
+		t.Fatalf("expected active record token hash %q, got %#v", rec.TokenHash, state.ActiveRecord)
+	}
+}

@@ -7,8 +7,7 @@ import { VoiceService } from "../gen/pb/voice_connect"
 
 const authBaseUrl = process.env.NEXT_PUBLIC_AUTH_RPC_URL ?? "http://localhost:50051"
 const voiceBaseUrl = process.env.NEXT_PUBLIC_VOICE_RPC_URL ?? "http://localhost:50052"
-const generationBaseUrl =
-  process.env.NEXT_PUBLIC_GENERATION_RPC_URL ?? "http://localhost:50053"
+const generationBaseUrl = process.env.NEXT_PUBLIC_GENERATION_RPC_URL ?? "http://localhost:50053"
 
 const authTransport = createConnectTransport({
   baseUrl: authBaseUrl,

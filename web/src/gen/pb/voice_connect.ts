@@ -3,8 +3,19 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { CreateVoiceRequest, CreateVoiceResponse, DeleteVoiceRequest, DeleteVoiceResponse, GetAllVoicesRequest, GetAllVoicesResponse, GetVoicePlaybackUrlRequest, GetVoicePlaybackUrlResponse, UpdateVoiceRequest, UpdateVoiceResponse } from "./voice_pb";
-import { MethodKind } from "@bufbuild/protobuf";
+import {
+  CreateVoiceRequest,
+  CreateVoiceResponse,
+  DeleteVoiceRequest,
+  DeleteVoiceResponse,
+  GetAllVoicesRequest,
+  GetAllVoicesResponse,
+  GetVoicePlaybackUrlRequest,
+  GetVoicePlaybackUrlResponse,
+  UpdateVoiceRequest,
+  UpdateVoiceResponse,
+} from "./voice_pb"
+import { MethodKind } from "@bufbuild/protobuf"
 
 /**
  * @generated from service voice.VoiceService
@@ -57,6 +68,5 @@ export const VoiceService = {
       O: UpdateVoiceResponse,
       kind: MethodKind.Unary,
     },
-  }
-} as const;
-
+  },
+} as const

@@ -19,12 +19,12 @@ import (
 	generationconfig "github.com/go-grpc-sqlc/generation/config"
 	"github.com/go-grpc-sqlc/generation/gen/pb/pbconnect"
 	db "github.com/go-grpc-sqlc/generation/internal/db"
-	"github.com/go-grpc-sqlc/generation/internal/redisstore"
 	generations3 "github.com/go-grpc-sqlc/generation/internal/s3"
 	"github.com/go-grpc-sqlc/generation/internal/server"
 	"github.com/go-grpc-sqlc/generation/internal/worker"
 	"github.com/go-grpc-sqlc/pkg/interceptor"
 	pkglogger "github.com/go-grpc-sqlc/pkg/logger"
+	"github.com/go-grpc-sqlc/pkg/redisclient"
 	"github.com/go-grpc-sqlc/pkg/token"
 )
 
@@ -69,7 +69,7 @@ func main() {
 		logger.Fatal("generation redis url is required for async job queue")
 	}
 
-	redisClient, err := redisstore.NewClientFromURL(cfg.RedisURL)
+	redisClient, err := redisclient.NewClientFromURL(cfg.RedisURL)
 	if err != nil {
 		logger.Fatal("failed to initialize redis client", zap.Error(err))
 	}

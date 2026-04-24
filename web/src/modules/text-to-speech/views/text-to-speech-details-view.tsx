@@ -33,12 +33,7 @@ export function TextToSpeechDetailView({ params }: TextToSpeechDetailViewProps) 
   }, [params])
 
   const { data: generation, isLoading: isGenerationLoading } = useGeneration(generationId)
-  const {
-    allVoices,
-    customVoices,
-    systemVoices,
-    isLoading: isVoicesLoading,
-  } = useTTSVoices()
+  const { allVoices, customVoices, systemVoices, isLoading: isVoicesLoading } = useTTSVoices()
   const hasGeneratedAudio = Boolean(generation?.s3ObjectKey?.trim())
   const {
     data: generatedAudioSrc,

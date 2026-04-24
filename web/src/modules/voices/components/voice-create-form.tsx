@@ -134,11 +134,7 @@ function FileDropzone({
       {...getRootProps()}
       className={cn(
         "flex cursor-pointer flex-col items-center justify-center gap-4 overflow-hidden rounded-2xl border px-6 py-10 transition-colors",
-        isDragReject || isInvalid
-          ? "border-destructive"
-          : isDragActive
-            ? "border-primary"
-            : "",
+        isDragReject || isInvalid ? "border-destructive" : isDragActive ? "border-primary" : "",
       )}>
       <input {...getInputProps()} />
       <div className="flex size-12 items-center justify-center rounded-xl bg-muted">
@@ -193,9 +189,7 @@ function LanguageCombobox({
           )}>
           <div className="flex min-w-0 items-center gap-2">
             <Globe className="size-4 shrink-0 text-muted-foreground" />
-            <span className="truncate">
-              {value ? selectedLabel : "Select language..."}
-            </span>
+            <span className="truncate">{value ? selectedLabel : "Select language..."}</span>
           </div>
           <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
         </Button>
@@ -238,12 +232,7 @@ interface VoiceCreateFormProps {
   onError?: (message: string) => void
 }
 
-export function VoiceCreateForm({
-  scrollable,
-  className,
-  footer,
-  onError,
-}: VoiceCreateFormProps) {
+export function VoiceCreateForm({ scrollable, className, footer, onError }: VoiceCreateFormProps) {
   const createMutation = useCreateVoice()
 
   const form = useForm({
@@ -292,11 +281,7 @@ export function VoiceCreateForm({
         e.preventDefault()
         form.handleSubmit()
       }}
-      className={cn(
-        "flex flex-col gap-6",
-        scrollable && "min-h-0 flex-1 gap-0",
-        className,
-      )}>
+      className={cn("flex flex-col gap-6", scrollable && "min-h-0 flex-1 gap-0", className)}>
       <div
         className={cn(
           "flex flex-col gap-6",

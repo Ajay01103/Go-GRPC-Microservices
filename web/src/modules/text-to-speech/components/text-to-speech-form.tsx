@@ -73,10 +73,7 @@ export function TextToSpeechForm({
           throw new Error("Please select a valid voice")
         }
 
-        const { providerKey } = await getVoicePlaybackUrlAction(
-          selectedVoice.id,
-          accessToken,
-        )
+        const { providerKey } = await getVoicePlaybackUrlAction(selectedVoice.id, accessToken)
 
         const data = await generateSpeechMutation.mutateAsync({
           text: value.text.trim(),
@@ -93,8 +90,7 @@ export function TextToSpeechForm({
         await queryClient.invalidateQueries({ queryKey: ["generations"] })
         router.push(`/text-to-speech/${data.generationId}`)
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Failed to generate audio"
+        const message = error instanceof Error ? error.message : "Failed to generate audio"
 
         if (message === "SUBSCRIPTION_REQUIRED") {
           toast.error("Subscription required")

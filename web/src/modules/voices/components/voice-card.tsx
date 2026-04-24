@@ -1,12 +1,4 @@
-import {
-  BadgeInfo,
-  Library,
-  Loader2,
-  MoreVertical,
-  MoveRight,
-  Pencil,
-  Trash2,
-} from "lucide-react"
+import { BadgeInfo, Library, Loader2, MoreVertical, MoveRight, Pencil, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { toast } from "sonner"
@@ -96,9 +88,7 @@ export function VoiceCard({ voice, isCustom = false }: VoiceCardProps) {
   const [name, setName] = useState(voice.name)
   const [description, setDescription] = useState(voice.description ?? "")
   const [language, setLanguage] = useState(voice.language)
-  const [category, setCategory] = useState<"GENERAL" | "NARRATION" | "CHARACTER">(
-    "GENERAL",
-  )
+  const [category, setCategory] = useState<"GENERAL" | "NARRATION" | "CHARACTER">("GENERAL")
 
   const updateVoice = useUpdateVoice()
   const deleteVoice = useDeleteVoice()
@@ -111,9 +101,7 @@ export function VoiceCard({ voice, isCustom = false }: VoiceCardProps) {
     setName(voice.name)
     setDescription(voice.description ?? "")
     setLanguage(voice.language)
-    setCategory(
-      voice.category === 2 ? "NARRATION" : voice.category === 3 ? "CHARACTER" : "GENERAL",
-    )
+    setCategory(voice.category === 2 ? "NARRATION" : voice.category === 3 ? "CHARACTER" : "GENERAL")
     setIsEditOpen(true)
   }
 
