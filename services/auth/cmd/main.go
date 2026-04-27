@@ -23,7 +23,6 @@ import (
 	"github.com/go-grpc-sqlc/auth/internal/repository"
 	"github.com/go-grpc-sqlc/auth/internal/service"
 	"github.com/go-grpc-sqlc/auth/server"
-	"github.com/go-grpc-sqlc/pkg/dpop"
 	"github.com/go-grpc-sqlc/pkg/interceptor"
 	pkglogger "github.com/go-grpc-sqlc/pkg/logger"
 	"github.com/go-grpc-sqlc/pkg/redisclient"
@@ -36,7 +35,6 @@ func corsMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Connect-Protocol-Version, Authorization")
-		w.Header().Set("Access-Control-Expose-Headers", "Dpop-Nonce")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
 			return
@@ -97,7 +95,6 @@ func run() error {
 	querier := db.New(dbLocal)
 	userRepo := repository.NewUserRepo(querier)
 	tokenStore := redisstore.New(redisClient)
-	dpopStore := dpop.NewDPoPStore(redisClient)
 	eddsaKeyRetention := cfg.EDDSASigningKeyRetentionDuration
 	if eddsaKeyRetention < cfg.RefreshTokenDuration {
 		logger.Warn(
@@ -115,7 +112,7 @@ func run() error {
 	}
 	var tokenMaker token.TokenMaker = eddsaMaker
 
-	authService := service.New(userRepo, tokenMaker, tokenStore, dpopStore, cfg, logger)
+	authService := service.New(userRepo, tokenMaker, tokenStore, cfg, logger)
 	authServer := server.New(authService)
 
 	loggingInterceptor := interceptor.NewLoggingInterceptor(logger)

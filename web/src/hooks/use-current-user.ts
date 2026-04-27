@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { useAuth } from "@/lib/auth-context"
-import { authRpcClient } from "@/lib/rpc"
+import { authBrowserRpcClient } from "@/lib/rpc"
 
 export type CurrentUser = {
   userId: string
@@ -21,14 +21,7 @@ export function useCurrentUser() {
     queryFn: async (): Promise<CurrentUser | null> => {
       if (!accessToken) return null
 
-      const response = await authRpcClient.getCurrentUser(
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      )
+      const response = await authBrowserRpcClient.getCurrentUser({})
 
       return response as CurrentUser
     },

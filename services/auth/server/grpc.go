@@ -75,17 +75,10 @@ func (s *AuthServer) RefreshToken(ctx context.Context, req *connect.Request[pb.R
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("missing refresh token"))
 	}
 
-	res, err := s.svc.RefreshToken(ctx, req.Msg.GetRefreshToken(), req.Msg.GetDpopProof(), req.Spec().Procedure)
+	res, err := s.svc.RefreshToken(ctx, req.Msg.GetRefreshToken())
 	if err != nil {
-		var nonceErr *service.DPoPNonceRequiredError
-		if errors.As(err, &nonceErr) {
-			connErr := connect.NewError(connect.CodeUnauthenticated, err)
-			connErr.Meta().Set("Dpop-Nonce", nonceErr.Nonce)
-			return nil, connErr
-		}
-
 		switch err {
-		case service.ErrTokenExpired, service.ErrInvalidToken, service.ErrTokenRevoked, service.ErrTokenReuseDetected, service.ErrRefreshFamilyMissing, service.ErrDPoPProofReplayed, service.ErrKeyBindingMismatch:
+		case service.ErrTokenExpired, service.ErrInvalidToken, service.ErrTokenRevoked, service.ErrTokenReuseDetected, service.ErrRefreshFamilyMissing:
 			return nil, connect.NewError(connect.CodeUnauthenticated, err)
 		case service.ErrUserNotFound:
 			return nil, connect.NewError(connect.CodeNotFound, err)

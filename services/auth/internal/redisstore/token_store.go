@@ -53,7 +53,7 @@ local storedJKT = rec['jkt']
 if not storedJKT then
   storedJKT = ''
 end
-if storedJKT ~= expectedJKT then
+if expectedJKT ~= '' and storedJKT ~= expectedJKT then
   return 'JKT_MISMATCH'
 end
 

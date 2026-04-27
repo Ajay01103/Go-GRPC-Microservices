@@ -6,9 +6,8 @@ import { useRouter } from "next/navigation"
 import { formOptions } from "@tanstack/react-form"
 import { useQueryClient } from "@tanstack/react-query"
 
-import { getVoicePlaybackUrlAction } from "@/actions/voices"
-import { useAuth } from "@/lib/auth-context"
 import { useAppForm } from "@/hooks/use-app-form"
+import { voiceRpcClient } from "@/lib/rpc"
 
 import { useTTSVoices } from "../contexts/tts-voices-context"
 import { useGenerateSpeechMutation } from "../hooks/use-generations"
@@ -55,7 +54,6 @@ export function TextToSpeechForm({
 }) {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const { accessToken } = useAuth()
   const { allVoices } = useTTSVoices()
   const generateSpeechMutation = useGenerateSpeechMutation()
 
@@ -73,7 +71,14 @@ export function TextToSpeechForm({
           throw new Error("Please select a valid voice")
         }
 
-        const { providerKey } = await getVoicePlaybackUrlAction(selectedVoice.id, accessToken)
+        const playback = await voiceRpcClient.getVoicePlaybackUrl({
+          voiceId: selectedVoice.id,
+        })
+        const providerKey = playback.providerKey.trim()
+
+        if (!providerKey) {
+          throw new Error("Failed to resolve voice provider key")
+        }
 
         const data = await generateSpeechMutation.mutateAsync({
           text: value.text.trim(),
@@ -90,7 +95,8 @@ export function TextToSpeechForm({
         await queryClient.invalidateQueries({ queryKey: ["generations"] })
         router.push(`/text-to-speech/${data.generationId}`)
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to generate audio"
+        const message =
+          error instanceof Error ? error.message : "Failed to generate audio"
 
         if (message === "SUBSCRIPTION_REQUIRED") {
           toast.error("Subscription required")

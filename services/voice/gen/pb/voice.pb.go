@@ -449,6 +449,7 @@ type GetVoicePlaybackUrlResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
 	ExpiresAtUnix int64                  `protobuf:"varint,2,opt,name=expires_at_unix,json=expiresAtUnix,proto3" json:"expires_at_unix,omitempty"`
+	ProviderKey   string                 `protobuf:"bytes,3,opt,name=provider_key,json=providerKey,proto3" json:"provider_key,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -495,6 +496,13 @@ func (x *GetVoicePlaybackUrlResponse) GetExpiresAtUnix() int64 {
 		return x.ExpiresAtUnix
 	}
 	return 0
+}
+
+func (x *GetVoicePlaybackUrlResponse) GetProviderKey() string {
+	if x != nil {
+		return x.ProviderKey
+	}
+	return ""
 }
 
 type CreateVoiceRequest struct {
@@ -784,10 +792,11 @@ const file_voice_proto_rawDesc = "" +
 	"\x13DeleteVoiceResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\"7\n" +
 	"\x1aGetVoicePlaybackUrlRequest\x12\x19\n" +
-	"\bvoice_id\x18\x01 \x01(\tR\avoiceId\"W\n" +
+	"\bvoice_id\x18\x01 \x01(\tR\avoiceId\"z\n" +
 	"\x1bGetVoicePlaybackUrlResponse\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12&\n" +
-	"\x0fexpires_at_unix\x18\x02 \x01(\x03R\rexpiresAtUnix\"\x89\x02\n" +
+	"\x0fexpires_at_unix\x18\x02 \x01(\x03R\rexpiresAtUnix\x12!\n" +
+	"\fprovider_key\x18\x03 \x01(\tR\vproviderKey\"\x89\x02\n" +
 	"\x12CreateVoiceRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x120\n" +

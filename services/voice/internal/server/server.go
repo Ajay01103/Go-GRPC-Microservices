@@ -19,12 +19,22 @@ import (
 // VoiceServer implements pbconnect.VoiceServiceHandler.
 type VoiceServer struct {
 	pbconnect.UnimplementedVoiceServiceHandler
-	svc    *service.VoiceService
+	svc    voiceService
 	logger *zap.Logger
 }
 
+type voiceService interface {
+	GetAll(ctx context.Context, params service.ListVoicesParams) ([]service.VoiceItem, error)
+	Delete(ctx context.Context, id, userID string) error
+	GetPlaybackURL(ctx context.Context, voiceID, requesterUserID string) (string, int64, string, error)
+	CreateVoice(ctx context.Context, params service.CreateVoiceParams) (service.VoiceItem, error)
+	UpdateVoice(ctx context.Context, params service.UpdateVoiceParams) (service.VoiceItem, error)
+}
+
+var userPayloadFromContext = interceptor.UserPayloadFromContext
+
 // NewVoiceServer constructs a VoiceServer with the given service and logger.
-func NewVoiceServer(svc *service.VoiceService, logger *zap.Logger) *VoiceServer {
+func NewVoiceServer(svc voiceService, logger *zap.Logger) *VoiceServer {
 	return &VoiceServer{svc: svc, logger: logger}
 }
 
@@ -33,7 +43,7 @@ func (s *VoiceServer) GetAllVoices(
 	ctx context.Context,
 	req *connect.Request[pb.GetAllVoicesRequest],
 ) (*connect.Response[pb.GetAllVoicesResponse], error) {
-	payload, ok := interceptor.UserPayloadFromContext(ctx)
+	payload, ok := userPayloadFromContext(ctx)
 	if !ok {
 		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("missing auth payload"))
 	}
@@ -81,7 +91,7 @@ func (s *VoiceServer) DeleteVoice(
 	ctx context.Context,
 	req *connect.Request[pb.DeleteVoiceRequest],
 ) (*connect.Response[pb.DeleteVoiceResponse], error) {
-	payload, ok := interceptor.UserPayloadFromContext(ctx)
+	payload, ok := userPayloadFromContext(ctx)
 	if !ok {
 		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("missing auth payload"))
 	}
@@ -110,7 +120,7 @@ func (s *VoiceServer) GetVoicePlaybackUrl(
 	ctx context.Context,
 	req *connect.Request[pb.GetVoicePlaybackUrlRequest],
 ) (*connect.Response[pb.GetVoicePlaybackUrlResponse], error) {
-	payload, ok := interceptor.UserPayloadFromContext(ctx)
+	payload, ok := userPayloadFromContext(ctx)
 	if !ok {
 		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("missing auth payload"))
 	}
@@ -119,7 +129,7 @@ func (s *VoiceServer) GetVoicePlaybackUrl(
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("voice id is required"))
 	}
 
-	url, expiresAt, err := s.svc.GetPlaybackURL(ctx, req.Msg.VoiceId, payload.UserID.String())
+	url, expiresAt, providerKey, err := s.svc.GetPlaybackURL(ctx, req.Msg.VoiceId, payload.UserID.String())
 	if err != nil {
 		if errors.Is(err, repository.ErrVoiceNotFound) {
 			return nil, connect.NewError(connect.CodeNotFound, errors.New("voice not found"))
@@ -134,6 +144,7 @@ func (s *VoiceServer) GetVoicePlaybackUrl(
 	return connect.NewResponse(&pb.GetVoicePlaybackUrlResponse{
 		Url:           url,
 		ExpiresAtUnix: expiresAt,
+		ProviderKey:   providerKey,
 	}), nil
 }
 
@@ -142,7 +153,7 @@ func (s *VoiceServer) CreateVoice(
 	ctx context.Context,
 	req *connect.Request[pb.CreateVoiceRequest],
 ) (*connect.Response[pb.CreateVoiceResponse], error) {
-	payload, ok := interceptor.UserPayloadFromContext(ctx)
+	payload, ok := userPayloadFromContext(ctx)
 	if !ok {
 		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("missing auth payload"))
 	}
@@ -203,7 +214,7 @@ func (s *VoiceServer) UpdateVoice(
 	ctx context.Context,
 	req *connect.Request[pb.UpdateVoiceRequest],
 ) (*connect.Response[pb.UpdateVoiceResponse], error) {
-	payload, ok := interceptor.UserPayloadFromContext(ctx)
+	payload, ok := userPayloadFromContext(ctx)
 	if !ok {
 		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("missing auth payload"))
 	}

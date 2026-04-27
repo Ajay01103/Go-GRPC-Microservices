@@ -2,10 +2,6 @@ package service
 
 import (
 	"context"
-	"crypto/ed25519"
-	"crypto/sha256"
-	"encoding/base64"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
@@ -18,7 +14,6 @@ import (
 	db "github.com/go-grpc-sqlc/auth/gen/sqlc"
 	"github.com/go-grpc-sqlc/auth/internal/redisstore"
 	"github.com/go-grpc-sqlc/auth/internal/repository"
-	"github.com/go-grpc-sqlc/pkg/dpop"
 	"github.com/go-grpc-sqlc/pkg/token"
 )
 
@@ -27,7 +22,6 @@ type AuthService struct {
 	userRepo   *repository.UserRepo
 	tokenMaker token.TokenMaker
 	tokenStore *redisstore.TokenStore
-	dpopStore  *dpop.DPoPStore
 	cfg        config.Config
 	logger     *zap.Logger
 }
@@ -37,7 +31,6 @@ func New(
 	userRepo *repository.UserRepo,
 	tokenMaker token.TokenMaker,
 	tokenStore *redisstore.TokenStore,
-	dpopStore *dpop.DPoPStore,
 	cfg config.Config,
 	logger *zap.Logger,
 ) *AuthService {
@@ -45,7 +38,6 @@ func New(
 		userRepo:   userRepo,
 		tokenMaker: tokenMaker,
 		tokenStore: tokenStore,
-		dpopStore:  dpopStore,
 		cfg:        cfg,
 		logger:     logger,
 	}
@@ -76,7 +68,7 @@ func (s *AuthService) Register(ctx context.Context, email, name, password string
 		return nil, fmt.Errorf("create user: %w", err)
 	}
 
-	accessToken, refreshToken, err := s.mintTokenPair(ctx, user, uuid.NewString(), "")
+	accessToken, refreshToken, err := s.mintTokenPair(ctx, user, uuid.NewString())
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +97,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*Login
 		return nil, ErrInvalidCredentials
 	}
 
-	accessToken, refreshToken, err := s.mintTokenPair(ctx, user, uuid.NewString(), "")
+	accessToken, refreshToken, err := s.mintTokenPair(ctx, user, uuid.NewString())
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +112,7 @@ type RefreshResult struct {
 	RefreshToken string
 }
 
-func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr, dpopProof, expectedHTU string) (*RefreshResult, error) {
+func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr string) (*RefreshResult, error) {
 	payload, err := s.tokenMaker.VerifyRefreshToken(refreshTokenStr)
 	if err != nil {
 		if errors.Is(err, token.ErrExpiredToken) {
@@ -156,67 +148,6 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr, dpopPro
 
 	kid := state.FamilyKID
 
-	presentedJKT := payload.DPoPKeyThumbprint
-	if s.dpopStore != nil {
-		if dpopProof == "" {
-			return nil, s.challengeDPoPNonce(ctx)
-		}
-
-		verifiedProof, verifyErr := dpop.ValidateDPoPProofDetailed(
-			dpopProof,
-			"POST",
-			expectedHTU,
-			"",
-		)
-		if verifyErr != nil {
-			if errors.Is(verifyErr, dpop.ErrExpiredDPoPProof) {
-				return nil, ErrTokenExpired
-			}
-			return nil, ErrInvalidToken
-		}
-
-		if verifiedProof.Payload.Nonce == "" {
-			return nil, s.challengeDPoPNonce(ctx)
-		}
-
-		nonceValid, nonceErr := s.dpopStore.ValidateNonce(ctx, verifiedProof.Payload.Nonce)
-		if nonceErr != nil {
-			return nil, fmt.Errorf("validate dpop nonce: %w", nonceErr)
-		}
-		if !nonceValid {
-			return nil, s.challengeDPoPNonce(ctx)
-		}
-
-		proofKey := hashDPoPProof(dpopProof)
-		proofFresh, proofErr := s.dpopStore.UseProofOnce(ctx, proofKey, 60*time.Second)
-		if proofErr != nil {
-			return nil, fmt.Errorf("check dpop proof replay: %w", proofErr)
-		}
-		if !proofFresh {
-			s.logger.Warn("dpop proof replay detected",
-				zap.String("userID", payload.UserID.String()),
-				zap.String("familyID", payload.FamilyID.String()),
-			)
-			s.nukeFamily(ctx, payload.UserID.String(), payload.FamilyID.String())
-			return nil, ErrDPoPProofReplayed
-		}
-
-		jkt, thumbErr := computeThumbprintFromPublicKey(verifiedProof.PublicKey)
-		if thumbErr != nil {
-			return nil, fmt.Errorf("compute dpop thumbprint: %w", thumbErr)
-		}
-		presentedJKT = jkt
-	}
-
-	if payload.DPoPKeyThumbprint != "" && presentedJKT != payload.DPoPKeyThumbprint {
-		s.logger.Warn("refresh key substitution detected",
-			zap.String("userID", payload.UserID.String()),
-			zap.String("familyID", payload.FamilyID.String()),
-		)
-		s.nukeFamily(ctx, payload.UserID.String(), payload.FamilyID.String())
-		return nil, ErrKeyBindingMismatch
-	}
-
 	user, err := s.userRepo.GetByID(ctx, payload.UserID)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
@@ -230,7 +161,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr, dpopPro
 		user.Email,
 		user.Name,
 		payload.FamilyID.String(),
-		presentedJKT,
+		"",
 		s.cfg.RefreshTokenDuration,
 	)
 	if err != nil {
@@ -240,7 +171,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr, dpopPro
 	newRecord := redisstore.ActiveRefreshTokenRecord{
 		UserID:     user.ID,
 		TokenHash:  redisstore.HashTokenSHA256(newRefreshStr),
-		JKT:        presentedJKT,
+		JKT:        "",
 		ExpiresAt:  newRefreshPayload.ExpiredAt.UTC().Format(time.RFC3339Nano),
 		RefreshJTI: newRefreshPayload.JTI.String(),
 		SigningKID: s.tokenMaker.GetCurrentKeyID(),
@@ -252,7 +183,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr, dpopPro
 		payload.FamilyID.String(),
 		user.ID,
 		oldTokenHash,
-		payload.DPoPKeyThumbprint,
+		"",
 		kid,
 		newRecord,
 		s.cfg.RefreshTokenDuration,
@@ -271,13 +202,6 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr, dpopPro
 			zap.String("familyID", payload.FamilyID.String()),
 		)
 		return nil, ErrRefreshFamilyMissing
-	case redisstore.RotateJKTMismatch:
-		s.logger.Warn("refresh key binding mismatch during rotation",
-			zap.String("userID", user.ID),
-			zap.String("familyID", payload.FamilyID.String()),
-		)
-		s.nukeFamily(ctx, user.ID, payload.FamilyID.String())
-		return nil, ErrKeyBindingMismatch
 	case redisstore.RotateKIDMismatch:
 		s.logger.Warn("key was rotated and this token is from the old key",
 			zap.String("userID", user.ID),
@@ -300,7 +224,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr, dpopPro
 		user.Name,
 		payload.FamilyID.String(),
 		newRefreshPayload.JTI.String(),
-		presentedJKT,
+		"",
 		s.cfg.AccessTokenDuration,
 	)
 	if err != nil {
@@ -308,22 +232,6 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr, dpopPro
 	}
 
 	return &RefreshResult{AccessToken: newAccessStr, RefreshToken: newRefreshStr}, nil
-}
-
-func (s *AuthService) challengeDPoPNonce(ctx context.Context) error {
-	nonce, err := dpop.GenerateNonce()
-	if err != nil {
-		return fmt.Errorf("generate dpop nonce: %w", err)
-	}
-	if err := s.dpopStore.StoreNonce(ctx, nonce, 60*time.Second); err != nil {
-		return fmt.Errorf("store dpop nonce: %w", err)
-	}
-	return &DPoPNonceRequiredError{Nonce: nonce}
-}
-
-func computeThumbprintFromPublicKey(pubKey ed25519.PublicKey) (string, error) {
-	xBase64 := base64.RawURLEncoding.EncodeToString(pubKey)
-	return dpop.ComputeKeyThumbprint(xBase64)
 }
 
 // ─── Logout ───────────────────────────────────────────────────────────────────
@@ -379,13 +287,13 @@ func (s *AuthService) ValidateToken(ctx context.Context, accessTokenStr string) 
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
 
-func (s *AuthService) mintTokenPair(ctx context.Context, user db.User, familyID, dpopKeyThumbprint string) (accessToken, refreshToken string, err error) {
+func (s *AuthService) mintTokenPair(ctx context.Context, user db.User, familyID string) (accessToken, refreshToken string, err error) {
 	refreshStr, refreshPayload, mintErr := s.tokenMaker.CreateRefreshToken(
 		user.ID,
 		user.Email,
 		user.Name,
 		familyID,
-		dpopKeyThumbprint,
+		"",
 		s.cfg.RefreshTokenDuration,
 	)
 	if mintErr != nil {
@@ -398,7 +306,7 @@ func (s *AuthService) mintTokenPair(ctx context.Context, user db.User, familyID,
 		redisstore.ActiveRefreshTokenRecord{
 			UserID:     user.ID,
 			TokenHash:  redisstore.HashTokenSHA256(refreshStr),
-			JKT:        dpopKeyThumbprint,
+			JKT:        "",
 			ExpiresAt:  refreshPayload.ExpiredAt.UTC().Format(time.RFC3339Nano),
 			RefreshJTI: refreshPayload.JTI.String(),
 			SigningKID: s.tokenMaker.GetCurrentKeyID(),
@@ -415,7 +323,7 @@ func (s *AuthService) mintTokenPair(ctx context.Context, user db.User, familyID,
 		user.Name,
 		familyID,
 		refreshPayload.JTI.String(),
-		dpopKeyThumbprint,
+		"",
 		s.cfg.AccessTokenDuration,
 	)
 	if mintErr != nil {
@@ -434,7 +342,3 @@ func (s *AuthService) nukeFamily(ctx context.Context, userID, familyID string) {
 	}
 }
 
-func hashDPoPProof(proof string) string {
-	sum := sha256.Sum256([]byte(proof))
-	return hex.EncodeToString(sum[:])
-}

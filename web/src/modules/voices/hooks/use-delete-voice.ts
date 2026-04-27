@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 
 import { useAuth } from "@/lib/auth-context"
 import { voiceRpcClient } from "@/lib/rpc"
+import { removeVoiceProviderKey } from "@/lib/audio-cache"
 
 type DeleteVoiceInput = {
   id: string
@@ -22,16 +23,9 @@ export function useDeleteVoice() {
         throw new Error("Voice id is required")
       }
 
-      const response = await voiceRpcClient.deleteVoice(
-        {
-          id: input.id,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      )
+      const response = await voiceRpcClient.deleteVoice({
+        id: input.id,
+      })
 
       if (!response.success) {
         throw new Error("Delete failed")
@@ -41,6 +35,11 @@ export function useDeleteVoice() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["voices"] })
+    },
+    onSettled: async (_data, _error, variables) => {
+      if (variables?.id) {
+        await removeVoiceProviderKey(variables.id)
+      }
     },
   })
 }

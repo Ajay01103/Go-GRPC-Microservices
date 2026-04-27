@@ -5,12 +5,22 @@
 
 const DB_NAME = "audioCache"
 const STORE_NAME = "audioBlobs"
-const DB_VERSION = 1
+const PROVIDER_KEY_INDEX_STORE = "voiceProviderKeys"
+const DB_VERSION = 3
+const CACHE_CAP_BYTES = 200 * 1024 * 1024
 
 interface CacheEntry {
   key: string // S3 object key
   blob: Blob
-  timestamp: number // For cache invalidation
+  timestamp: number
+  lastAccessed: number
+  sizeBytes: number
+}
+
+interface VoiceProviderKeyEntry {
+  voiceId: string
+  providerKey: string
+  updatedAt: number
 }
 
 let dbInstance: IDBDatabase | null = null
@@ -29,11 +39,77 @@ async function initDB(): Promise<IDBDatabase> {
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result
+      const previousVersion = event.oldVersion
+
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         const store = db.createObjectStore(STORE_NAME, { keyPath: "key" })
         store.createIndex("timestamp", "timestamp", { unique: false })
+        store.createIndex("lastAccessed", "lastAccessed", { unique: false })
+      }
+
+      if (!db.objectStoreNames.contains(PROVIDER_KEY_INDEX_STORE)) {
+        db.createObjectStore(PROVIDER_KEY_INDEX_STORE, { keyPath: "voiceId" })
+      }
+
+      if (previousVersion < 2) {
+        const transaction = (event.target as IDBOpenDBRequest).transaction
+        if (!transaction) {
+          return
+        }
+
+        const store = transaction.objectStore(STORE_NAME)
+        if (!store.indexNames.contains("lastAccessed")) {
+          store.createIndex("lastAccessed", "lastAccessed", { unique: false })
+        }
+      }
+
+      if (previousVersion < 3) {
+        if (!db.objectStoreNames.contains(PROVIDER_KEY_INDEX_STORE)) {
+          db.createObjectStore(PROVIDER_KEY_INDEX_STORE, { keyPath: "voiceId" })
+        }
       }
     }
+  })
+}
+
+function normalizeEntrySize(entry: CacheEntry): number {
+  return entry.sizeBytes > 0 ? entry.sizeBytes : entry.blob.size
+}
+
+async function enforceCacheCap(db: IDBDatabase): Promise<void> {
+  const entries = await new Promise<CacheEntry[]>((resolve) => {
+    const transaction = db.transaction([STORE_NAME], "readonly")
+    const store = transaction.objectStore(STORE_NAME)
+    const request = store.getAll()
+
+    request.onsuccess = () => resolve((request.result as CacheEntry[]) ?? [])
+    request.onerror = () => resolve([])
+  })
+
+  let totalSize = entries.reduce((sum, entry) => sum + normalizeEntrySize(entry), 0)
+  if (totalSize <= CACHE_CAP_BYTES) {
+    return
+  }
+
+  const evictionOrder = [...entries].sort(
+    (a, b) => (a.lastAccessed || a.timestamp || 0) - (b.lastAccessed || b.timestamp || 0),
+  )
+
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], "readwrite")
+    const store = transaction.objectStore(STORE_NAME)
+
+    for (const entry of evictionOrder) {
+      if (totalSize <= CACHE_CAP_BYTES) {
+        break
+      }
+      totalSize -= normalizeEntrySize(entry)
+      store.delete(entry.key)
+    }
+
+    transaction.oncomplete = () => resolve()
+    transaction.onerror = () => reject(transaction.error)
+    transaction.onabort = () => reject(transaction.error)
   })
 }
 
@@ -48,13 +124,25 @@ export async function getCachedAudio(key: string): Promise<Blob | null> {
   try {
     const db = await initDB()
     return new Promise((resolve) => {
-      const transaction = db.transaction([STORE_NAME], "readonly")
+      const transaction = db.transaction([STORE_NAME], "readwrite")
       const store = transaction.objectStore(STORE_NAME)
       const request = store.get(key)
 
       request.onsuccess = () => {
         const entry = request.result as CacheEntry | undefined
-        resolve(entry?.blob || null)
+        if (!entry?.blob) {
+          resolve(null)
+          return
+        }
+
+        store.put({
+          ...entry,
+          timestamp: entry.timestamp || Date.now(),
+          lastAccessed: Date.now(),
+          sizeBytes: normalizeEntrySize(entry),
+        } satisfies CacheEntry)
+
+        resolve(entry.blob)
       }
       request.onerror = () => resolve(null)
     })
@@ -74,13 +162,16 @@ export async function cacheAudio(key: string, blob: Blob): Promise<void> {
 
   try {
     const db = await initDB()
+    const now = Date.now()
     const entry: CacheEntry = {
       key,
       blob,
-      timestamp: Date.now(),
+      timestamp: now,
+      lastAccessed: now,
+      sizeBytes: blob.size,
     }
 
-    return new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], "readwrite")
       const store = transaction.objectStore(STORE_NAME)
       const request = store.put(entry)
@@ -88,6 +179,8 @@ export async function cacheAudio(key: string, blob: Blob): Promise<void> {
       request.onsuccess = () => resolve()
       request.onerror = () => reject(request.error)
     })
+
+    await enforceCacheCap(db)
   } catch (error) {
     console.warn("Failed to cache audio:", error)
   }
@@ -102,15 +195,93 @@ export async function clearAudioCache(): Promise<void> {
   try {
     const db = await initDB()
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], "readwrite")
-      const store = transaction.objectStore(STORE_NAME)
-      const request = store.clear()
+      const transaction = db.transaction(
+        [STORE_NAME, PROVIDER_KEY_INDEX_STORE],
+        "readwrite",
+      )
+      const audioStore = transaction.objectStore(STORE_NAME)
+      const providerStore = transaction.objectStore(PROVIDER_KEY_INDEX_STORE)
+      const audioRequest = audioStore.clear()
+      const providerRequest = providerStore.clear()
+
+      audioRequest.onsuccess = () => undefined
+      providerRequest.onsuccess = () => resolve()
+      audioRequest.onerror = () => reject(audioRequest.error)
+      providerRequest.onerror = () => reject(providerRequest.error)
+    })
+  } catch (error) {
+    console.warn("Failed to clear audio cache:", error)
+  }
+}
+
+export async function getVoiceProviderKey(voiceId: string): Promise<string | null> {
+  if (!voiceId || typeof window === "undefined") return null
+
+  try {
+    const db = await initDB()
+    return new Promise((resolve) => {
+      const transaction = db.transaction([PROVIDER_KEY_INDEX_STORE], "readonly")
+      const store = transaction.objectStore(PROVIDER_KEY_INDEX_STORE)
+      const request = store.get(voiceId)
+
+      request.onsuccess = () => {
+        const entry = request.result as VoiceProviderKeyEntry | undefined
+        const providerKey = entry?.providerKey?.trim() || ""
+        resolve(providerKey || null)
+      }
+      request.onerror = () => resolve(null)
+    })
+  } catch (error) {
+    console.warn("Failed to read voice provider key:", error)
+    return null
+  }
+}
+
+export async function setVoiceProviderKey(
+  voiceId: string,
+  providerKey: string,
+): Promise<void> {
+  if (!voiceId || !providerKey || typeof window === "undefined") return
+
+  try {
+    const db = await initDB()
+    const entry: VoiceProviderKeyEntry = {
+      voiceId,
+      providerKey,
+      updatedAt: Date.now(),
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction([PROVIDER_KEY_INDEX_STORE], "readwrite")
+      const store = transaction.objectStore(PROVIDER_KEY_INDEX_STORE)
+      const request = store.put(entry)
 
       request.onsuccess = () => resolve()
       request.onerror = () => reject(request.error)
     })
   } catch (error) {
-    console.warn("Failed to clear audio cache:", error)
+    console.warn("Failed to persist voice provider key:", error)
+  }
+}
+
+/**
+ * Remove a persisted voiceId -> providerKey mapping.
+ */
+export async function removeVoiceProviderKey(voiceId: string): Promise<void> {
+  if (!voiceId || typeof window === "undefined") return
+
+  try {
+    const db = await initDB()
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([PROVIDER_KEY_INDEX_STORE], "readwrite")
+      const store = transaction.objectStore(PROVIDER_KEY_INDEX_STORE)
+      const request = store.delete(voiceId)
+
+      request.onsuccess = () => resolve()
+      request.onerror = () => reject(request.error)
+    })
+  } catch (error) {
+    console.warn("Failed to remove voice provider key:", error)
   }
 }
 
@@ -151,7 +322,10 @@ export async function getAudioCacheSize(): Promise<number> {
 
       request.onsuccess = () => {
         const entries = request.result as CacheEntry[]
-        const totalSize = entries.reduce((sum, entry) => sum + entry.blob.size, 0)
+        const totalSize = entries.reduce(
+          (sum, entry) => sum + normalizeEntrySize(entry),
+          0,
+        )
         resolve(totalSize)
       }
       request.onerror = () => resolve(0)

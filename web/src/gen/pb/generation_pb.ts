@@ -3,15 +3,8 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import type {
-  BinaryReadOptions,
-  FieldList,
-  JsonReadOptions,
-  JsonValue,
-  PartialMessage,
-  PlainMessage,
-} from "@bufbuild/protobuf"
-import { Message, proto3, protoInt64 } from "@bufbuild/protobuf"
+import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
+import { Message, proto3, protoInt64 } from "@bufbuild/protobuf";
 
 /**
  * @generated from enum generation.GenerationJobStatus
@@ -49,7 +42,7 @@ proto3.util.setEnumType(GenerationJobStatus, "generation.GenerationJobStatus", [
   { no: 2, name: "GENERATION_JOB_STATUS_PROCESSING" },
   { no: 3, name: "GENERATION_JOB_STATUS_COMPLETED" },
   { no: 4, name: "GENERATION_JOB_STATUS_FAILED" },
-])
+]);
 
 /**
  * @generated from message generation.GetGenerationRequest
@@ -58,39 +51,33 @@ export class GetGenerationRequest extends Message<GetGenerationRequest> {
   /**
    * @generated from field: string id = 1;
    */
-  id = ""
+  id = "";
 
   constructor(data?: PartialMessage<GetGenerationRequest>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "generation.GetGenerationRequest"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "generation.GetGenerationRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ])
+  ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetGenerationRequest {
-    return new GetGenerationRequest().fromBinary(bytes, options)
+    return new GetGenerationRequest().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetGenerationRequest {
-    return new GetGenerationRequest().fromJson(jsonValue, options)
+    return new GetGenerationRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(
-    jsonString: string,
-    options?: Partial<JsonReadOptions>,
-  ): GetGenerationRequest {
-    return new GetGenerationRequest().fromJsonString(jsonString, options)
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetGenerationRequest {
+    return new GetGenerationRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: GetGenerationRequest | PlainMessage<GetGenerationRequest> | undefined,
-    b: GetGenerationRequest | PlainMessage<GetGenerationRequest> | undefined,
-  ): boolean {
-    return proto3.util.equals(GetGenerationRequest, a, b)
+  static equals(a: GetGenerationRequest | PlainMessage<GetGenerationRequest> | undefined, b: GetGenerationRequest | PlainMessage<GetGenerationRequest> | undefined): boolean {
+    return proto3.util.equals(GetGenerationRequest, a, b);
   }
 }
 
@@ -101,80 +88,80 @@ export class GetGenerationResponse extends Message<GetGenerationResponse> {
   /**
    * @generated from field: string id = 1;
    */
-  id = ""
+  id = "";
 
   /**
    * @generated from field: string job_id = 2;
    */
-  jobId = ""
+  jobId = "";
 
   /**
    * @generated from field: string voice_id = 3;
    */
-  voiceId = ""
+  voiceId = "";
 
   /**
    * @generated from field: string voice_name = 4;
    */
-  voiceName = ""
+  voiceName = "";
 
   /**
    * @generated from field: string text = 5;
    */
-  text = ""
+  text = "";
 
   /**
    * @generated from field: double temperature = 6;
    */
-  temperature = 0
+  temperature = 0;
 
   /**
    * @generated from field: string language_id = 7;
    */
-  languageId = ""
+  languageId = "";
 
   /**
    * @generated from field: double exaggeration = 8;
    */
-  exaggeration = 0
+  exaggeration = 0;
 
   /**
    * @generated from field: double cfg_weight = 9;
    */
-  cfgWeight = 0
+  cfgWeight = 0;
 
   /**
    * @generated from field: string s3_object_key = 10;
    */
-  s3ObjectKey = ""
+  s3ObjectKey = "";
 
   /**
    * @generated from field: generation.GenerationJobStatus status = 11;
    */
-  status = GenerationJobStatus.UNSPECIFIED
+  status = GenerationJobStatus.UNSPECIFIED;
 
   /**
    * @generated from field: string error_message = 12;
    */
-  errorMessage = ""
+  errorMessage = "";
 
   /**
    * @generated from field: int64 created_at_unix = 13;
    */
-  createdAtUnix = protoInt64.zero
+  createdAtUnix = protoInt64.zero;
 
   /**
    * @generated from field: int64 updated_at_unix = 14;
    */
-  updatedAtUnix = protoInt64.zero
+  updatedAtUnix = protoInt64.zero;
 
   constructor(data?: PartialMessage<GetGenerationResponse>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "generation.GetGenerationResponse"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "generation.GetGenerationResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "job_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
@@ -190,31 +177,22 @@ export class GetGenerationResponse extends Message<GetGenerationResponse> {
     { no: 12, name: "error_message", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 13, name: "created_at_unix", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
     { no: 14, name: "updated_at_unix", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
-  ])
+  ]);
 
-  static fromBinary(
-    bytes: Uint8Array,
-    options?: Partial<BinaryReadOptions>,
-  ): GetGenerationResponse {
-    return new GetGenerationResponse().fromBinary(bytes, options)
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetGenerationResponse {
+    return new GetGenerationResponse().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetGenerationResponse {
-    return new GetGenerationResponse().fromJson(jsonValue, options)
+    return new GetGenerationResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(
-    jsonString: string,
-    options?: Partial<JsonReadOptions>,
-  ): GetGenerationResponse {
-    return new GetGenerationResponse().fromJsonString(jsonString, options)
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetGenerationResponse {
+    return new GetGenerationResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: GetGenerationResponse | PlainMessage<GetGenerationResponse> | undefined,
-    b: GetGenerationResponse | PlainMessage<GetGenerationResponse> | undefined,
-  ): boolean {
-    return proto3.util.equals(GetGenerationResponse, a, b)
+  static equals(a: GetGenerationResponse | PlainMessage<GetGenerationResponse> | undefined, b: GetGenerationResponse | PlainMessage<GetGenerationResponse> | undefined): boolean {
+    return proto3.util.equals(GetGenerationResponse, a, b);
   }
 }
 
@@ -225,75 +203,75 @@ export class GenerationItem extends Message<GenerationItem> {
   /**
    * @generated from field: string id = 1;
    */
-  id = ""
+  id = "";
 
   /**
    * @generated from field: string job_id = 2;
    */
-  jobId = ""
+  jobId = "";
 
   /**
    * @generated from field: string voice_id = 3;
    */
-  voiceId = ""
+  voiceId = "";
 
   /**
    * @generated from field: string voice_name = 4;
    */
-  voiceName = ""
+  voiceName = "";
 
   /**
    * @generated from field: string text = 5;
    */
-  text = ""
+  text = "";
 
   /**
    * @generated from field: double temperature = 6;
    */
-  temperature = 0
+  temperature = 0;
 
   /**
    * @generated from field: string language_id = 7;
    */
-  languageId = ""
+  languageId = "";
 
   /**
    * @generated from field: double exaggeration = 8;
    */
-  exaggeration = 0
+  exaggeration = 0;
 
   /**
    * @generated from field: double cfg_weight = 9;
    */
-  cfgWeight = 0
+  cfgWeight = 0;
 
   /**
    * @generated from field: string s3_object_key = 10;
    */
-  s3ObjectKey = ""
+  s3ObjectKey = "";
 
   /**
    * @generated from field: generation.GenerationJobStatus status = 11;
    */
-  status = GenerationJobStatus.UNSPECIFIED
+  status = GenerationJobStatus.UNSPECIFIED;
 
   /**
    * @generated from field: int64 created_at_unix = 12;
    */
-  createdAtUnix = protoInt64.zero
+  createdAtUnix = protoInt64.zero;
 
   /**
    * @generated from field: int64 updated_at_unix = 13;
    */
-  updatedAtUnix = protoInt64.zero
+  updatedAtUnix = protoInt64.zero;
 
   constructor(data?: PartialMessage<GenerationItem>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "generation.GenerationItem"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "generation.GenerationItem";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "job_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
@@ -308,25 +286,22 @@ export class GenerationItem extends Message<GenerationItem> {
     { no: 11, name: "status", kind: "enum", T: proto3.getEnumType(GenerationJobStatus) },
     { no: 12, name: "created_at_unix", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
     { no: 13, name: "updated_at_unix", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
-  ])
+  ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GenerationItem {
-    return new GenerationItem().fromBinary(bytes, options)
+    return new GenerationItem().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GenerationItem {
-    return new GenerationItem().fromJson(jsonValue, options)
+    return new GenerationItem().fromJson(jsonValue, options);
   }
 
   static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GenerationItem {
-    return new GenerationItem().fromJsonString(jsonString, options)
+    return new GenerationItem().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: GenerationItem | PlainMessage<GenerationItem> | undefined,
-    b: GenerationItem | PlainMessage<GenerationItem> | undefined,
-  ): boolean {
-    return proto3.util.equals(GenerationItem, a, b)
+  static equals(a: GenerationItem | PlainMessage<GenerationItem> | undefined, b: GenerationItem | PlainMessage<GenerationItem> | undefined): boolean {
+    return proto3.util.equals(GenerationItem, a, b);
   }
 }
 
@@ -335,40 +310,29 @@ export class GenerationItem extends Message<GenerationItem> {
  */
 export class ListGenerationsRequest extends Message<ListGenerationsRequest> {
   constructor(data?: PartialMessage<ListGenerationsRequest>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "generation.ListGenerationsRequest"
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [])
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "generation.ListGenerationsRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
 
-  static fromBinary(
-    bytes: Uint8Array,
-    options?: Partial<BinaryReadOptions>,
-  ): ListGenerationsRequest {
-    return new ListGenerationsRequest().fromBinary(bytes, options)
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ListGenerationsRequest {
+    return new ListGenerationsRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(
-    jsonValue: JsonValue,
-    options?: Partial<JsonReadOptions>,
-  ): ListGenerationsRequest {
-    return new ListGenerationsRequest().fromJson(jsonValue, options)
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ListGenerationsRequest {
+    return new ListGenerationsRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(
-    jsonString: string,
-    options?: Partial<JsonReadOptions>,
-  ): ListGenerationsRequest {
-    return new ListGenerationsRequest().fromJsonString(jsonString, options)
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ListGenerationsRequest {
+    return new ListGenerationsRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: ListGenerationsRequest | PlainMessage<ListGenerationsRequest> | undefined,
-    b: ListGenerationsRequest | PlainMessage<ListGenerationsRequest> | undefined,
-  ): boolean {
-    return proto3.util.equals(ListGenerationsRequest, a, b)
+  static equals(a: ListGenerationsRequest | PlainMessage<ListGenerationsRequest> | undefined, b: ListGenerationsRequest | PlainMessage<ListGenerationsRequest> | undefined): boolean {
+    return proto3.util.equals(ListGenerationsRequest, a, b);
   }
 }
 
@@ -379,45 +343,33 @@ export class ListGenerationsResponse extends Message<ListGenerationsResponse> {
   /**
    * @generated from field: repeated generation.GenerationItem generations = 1;
    */
-  generations: GenerationItem[] = []
+  generations: GenerationItem[] = [];
 
   constructor(data?: PartialMessage<ListGenerationsResponse>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "generation.ListGenerationsResponse"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "generation.ListGenerationsResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "generations", kind: "message", T: GenerationItem, repeated: true },
-  ])
+  ]);
 
-  static fromBinary(
-    bytes: Uint8Array,
-    options?: Partial<BinaryReadOptions>,
-  ): ListGenerationsResponse {
-    return new ListGenerationsResponse().fromBinary(bytes, options)
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ListGenerationsResponse {
+    return new ListGenerationsResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(
-    jsonValue: JsonValue,
-    options?: Partial<JsonReadOptions>,
-  ): ListGenerationsResponse {
-    return new ListGenerationsResponse().fromJson(jsonValue, options)
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ListGenerationsResponse {
+    return new ListGenerationsResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(
-    jsonString: string,
-    options?: Partial<JsonReadOptions>,
-  ): ListGenerationsResponse {
-    return new ListGenerationsResponse().fromJsonString(jsonString, options)
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ListGenerationsResponse {
+    return new ListGenerationsResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: ListGenerationsResponse | PlainMessage<ListGenerationsResponse> | undefined,
-    b: ListGenerationsResponse | PlainMessage<ListGenerationsResponse> | undefined,
-  ): boolean {
-    return proto3.util.equals(ListGenerationsResponse, a, b)
+  static equals(a: ListGenerationsResponse | PlainMessage<ListGenerationsResponse> | undefined, b: ListGenerationsResponse | PlainMessage<ListGenerationsResponse> | undefined): boolean {
+    return proto3.util.equals(ListGenerationsResponse, a, b);
   }
 }
 
@@ -428,50 +380,50 @@ export class GenerateSpeechRequest extends Message<GenerateSpeechRequest> {
   /**
    * @generated from field: string text = 1;
    */
-  text = ""
+  text = "";
 
   /**
    * @generated from field: string voice_id = 2;
    */
-  voiceId = ""
+  voiceId = "";
 
   /**
    * @generated from field: string voice_name = 3;
    */
-  voiceName = ""
+  voiceName = "";
 
   /**
    * @generated from field: string voice_key = 4;
    */
-  voiceKey = ""
+  voiceKey = "";
 
   /**
    * @generated from field: double temperature = 5;
    */
-  temperature = 0
+  temperature = 0;
 
   /**
    * @generated from field: string language_id = 6;
    */
-  languageId = ""
+  languageId = "";
 
   /**
    * @generated from field: double exaggeration = 7;
    */
-  exaggeration = 0
+  exaggeration = 0;
 
   /**
    * @generated from field: double cfg_weight = 8;
    */
-  cfgWeight = 0
+  cfgWeight = 0;
 
   constructor(data?: PartialMessage<GenerateSpeechRequest>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "generation.GenerateSpeechRequest"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "generation.GenerateSpeechRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "text", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "voice_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
@@ -481,31 +433,22 @@ export class GenerateSpeechRequest extends Message<GenerateSpeechRequest> {
     { no: 6, name: "language_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 7, name: "exaggeration", kind: "scalar", T: 1 /* ScalarType.DOUBLE */ },
     { no: 8, name: "cfg_weight", kind: "scalar", T: 1 /* ScalarType.DOUBLE */ },
-  ])
+  ]);
 
-  static fromBinary(
-    bytes: Uint8Array,
-    options?: Partial<BinaryReadOptions>,
-  ): GenerateSpeechRequest {
-    return new GenerateSpeechRequest().fromBinary(bytes, options)
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GenerateSpeechRequest {
+    return new GenerateSpeechRequest().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GenerateSpeechRequest {
-    return new GenerateSpeechRequest().fromJson(jsonValue, options)
+    return new GenerateSpeechRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(
-    jsonString: string,
-    options?: Partial<JsonReadOptions>,
-  ): GenerateSpeechRequest {
-    return new GenerateSpeechRequest().fromJsonString(jsonString, options)
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GenerateSpeechRequest {
+    return new GenerateSpeechRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: GenerateSpeechRequest | PlainMessage<GenerateSpeechRequest> | undefined,
-    b: GenerateSpeechRequest | PlainMessage<GenerateSpeechRequest> | undefined,
-  ): boolean {
-    return proto3.util.equals(GenerateSpeechRequest, a, b)
+  static equals(a: GenerateSpeechRequest | PlainMessage<GenerateSpeechRequest> | undefined, b: GenerateSpeechRequest | PlainMessage<GenerateSpeechRequest> | undefined): boolean {
+    return proto3.util.equals(GenerateSpeechRequest, a, b);
   }
 }
 
@@ -516,57 +459,45 @@ export class GenerateSpeechResponse extends Message<GenerateSpeechResponse> {
   /**
    * @generated from field: string generation_id = 1;
    */
-  generationId = ""
+  generationId = "";
 
   /**
    * @generated from field: string job_id = 2;
    */
-  jobId = ""
+  jobId = "";
 
   /**
    * @generated from field: generation.GenerationJobStatus status = 3;
    */
-  status = GenerationJobStatus.UNSPECIFIED
+  status = GenerationJobStatus.UNSPECIFIED;
 
   constructor(data?: PartialMessage<GenerateSpeechResponse>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "generation.GenerateSpeechResponse"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "generation.GenerateSpeechResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "generation_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "job_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "status", kind: "enum", T: proto3.getEnumType(GenerationJobStatus) },
-  ])
+  ]);
 
-  static fromBinary(
-    bytes: Uint8Array,
-    options?: Partial<BinaryReadOptions>,
-  ): GenerateSpeechResponse {
-    return new GenerateSpeechResponse().fromBinary(bytes, options)
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GenerateSpeechResponse {
+    return new GenerateSpeechResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(
-    jsonValue: JsonValue,
-    options?: Partial<JsonReadOptions>,
-  ): GenerateSpeechResponse {
-    return new GenerateSpeechResponse().fromJson(jsonValue, options)
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GenerateSpeechResponse {
+    return new GenerateSpeechResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(
-    jsonString: string,
-    options?: Partial<JsonReadOptions>,
-  ): GenerateSpeechResponse {
-    return new GenerateSpeechResponse().fromJsonString(jsonString, options)
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GenerateSpeechResponse {
+    return new GenerateSpeechResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: GenerateSpeechResponse | PlainMessage<GenerateSpeechResponse> | undefined,
-    b: GenerateSpeechResponse | PlainMessage<GenerateSpeechResponse> | undefined,
-  ): boolean {
-    return proto3.util.equals(GenerateSpeechResponse, a, b)
+  static equals(a: GenerateSpeechResponse | PlainMessage<GenerateSpeechResponse> | undefined, b: GenerateSpeechResponse | PlainMessage<GenerateSpeechResponse> | undefined): boolean {
+    return proto3.util.equals(GenerateSpeechResponse, a, b);
   }
 }
 
@@ -577,39 +508,33 @@ export class GetJobStatusRequest extends Message<GetJobStatusRequest> {
   /**
    * @generated from field: string job_id = 1;
    */
-  jobId = ""
+  jobId = "";
 
   constructor(data?: PartialMessage<GetJobStatusRequest>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "generation.GetJobStatusRequest"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "generation.GetJobStatusRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "job_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ])
+  ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetJobStatusRequest {
-    return new GetJobStatusRequest().fromBinary(bytes, options)
+    return new GetJobStatusRequest().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetJobStatusRequest {
-    return new GetJobStatusRequest().fromJson(jsonValue, options)
+    return new GetJobStatusRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(
-    jsonString: string,
-    options?: Partial<JsonReadOptions>,
-  ): GetJobStatusRequest {
-    return new GetJobStatusRequest().fromJsonString(jsonString, options)
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetJobStatusRequest {
+    return new GetJobStatusRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: GetJobStatusRequest | PlainMessage<GetJobStatusRequest> | undefined,
-    b: GetJobStatusRequest | PlainMessage<GetJobStatusRequest> | undefined,
-  ): boolean {
-    return proto3.util.equals(GetJobStatusRequest, a, b)
+  static equals(a: GetJobStatusRequest | PlainMessage<GetJobStatusRequest> | undefined, b: GetJobStatusRequest | PlainMessage<GetJobStatusRequest> | undefined): boolean {
+    return proto3.util.equals(GetJobStatusRequest, a, b);
   }
 }
 
@@ -620,40 +545,40 @@ export class GetJobStatusResponse extends Message<GetJobStatusResponse> {
   /**
    * @generated from field: string generation_id = 1;
    */
-  generationId = ""
+  generationId = "";
 
   /**
    * @generated from field: string job_id = 2;
    */
-  jobId = ""
+  jobId = "";
 
   /**
    * @generated from field: generation.GenerationJobStatus status = 3;
    */
-  status = GenerationJobStatus.UNSPECIFIED
+  status = GenerationJobStatus.UNSPECIFIED;
 
   /**
    * @generated from field: string s3_object_key = 4;
    */
-  s3ObjectKey = ""
+  s3ObjectKey = "";
 
   /**
    * @generated from field: string error_message = 5;
    */
-  errorMessage = ""
+  errorMessage = "";
 
   /**
    * @generated from field: int64 updated_at_unix = 6;
    */
-  updatedAtUnix = protoInt64.zero
+  updatedAtUnix = protoInt64.zero;
 
   constructor(data?: PartialMessage<GetJobStatusResponse>) {
-    super()
-    proto3.util.initPartial(data, this)
+    super();
+    proto3.util.initPartial(data, this);
   }
 
-  static readonly runtime: typeof proto3 = proto3
-  static readonly typeName = "generation.GetJobStatusResponse"
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "generation.GetJobStatusResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "generation_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "job_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
@@ -661,27 +586,22 @@ export class GetJobStatusResponse extends Message<GetJobStatusResponse> {
     { no: 4, name: "s3_object_key", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 5, name: "error_message", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 6, name: "updated_at_unix", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
-  ])
+  ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetJobStatusResponse {
-    return new GetJobStatusResponse().fromBinary(bytes, options)
+    return new GetJobStatusResponse().fromBinary(bytes, options);
   }
 
   static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetJobStatusResponse {
-    return new GetJobStatusResponse().fromJson(jsonValue, options)
+    return new GetJobStatusResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(
-    jsonString: string,
-    options?: Partial<JsonReadOptions>,
-  ): GetJobStatusResponse {
-    return new GetJobStatusResponse().fromJsonString(jsonString, options)
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetJobStatusResponse {
+    return new GetJobStatusResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(
-    a: GetJobStatusResponse | PlainMessage<GetJobStatusResponse> | undefined,
-    b: GetJobStatusResponse | PlainMessage<GetJobStatusResponse> | undefined,
-  ): boolean {
-    return proto3.util.equals(GetJobStatusResponse, a, b)
+  static equals(a: GetJobStatusResponse | PlainMessage<GetJobStatusResponse> | undefined, b: GetJobStatusResponse | PlainMessage<GetJobStatusResponse> | undefined): boolean {
+    return proto3.util.equals(GetJobStatusResponse, a, b);
   }
 }
+

@@ -71,11 +71,6 @@ export function useCreateVoice() {
           audioData: input.audioData,
           contentType: input.contentType ?? "audio/wav",
         },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
       )
 
       if (!response.voice) {

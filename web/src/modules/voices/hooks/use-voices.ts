@@ -25,11 +25,6 @@ export function useVoices({ userId, query }: UseVoicesParams) {
           userId,
           query,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
       )
       return response.voices as VoiceItemType[]
     },

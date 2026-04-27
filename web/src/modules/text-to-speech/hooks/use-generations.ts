@@ -30,11 +30,7 @@ export function useGenerations() {
     queryFn: async (): Promise<GenerationItemType[]> => {
       if (!accessToken) return []
 
-      const response = await generationRpcClient.listGenerations(new ListGenerationsRequest(), {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
+      const response = await generationRpcClient.listGenerations(new ListGenerationsRequest())
 
       return response.generations as GenerationItemType[]
     },
@@ -59,14 +55,7 @@ export function useGeneration(generationId: string) {
     queryFn: async (): Promise<GenerationDetailType> => {
       if (!accessToken) throw new Error("Unauthorized")
 
-      const response = await generationRpcClient.getGeneration(
-        new GetGenerationRequest({ id: generationId }),
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      )
+      const response = await generationRpcClient.getGeneration(new GetGenerationRequest({ id: generationId }))
 
       return response as GenerationDetailType
     },
@@ -83,11 +72,7 @@ export function useGenerateSpeechMutation() {
         throw new Error("Unauthorized")
       }
 
-      return generationRpcClient.generateSpeech(input, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
+      return generationRpcClient.generateSpeech(input)
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["generations"] })

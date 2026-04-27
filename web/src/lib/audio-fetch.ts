@@ -54,6 +54,24 @@ export async function fetchAudioWithCache({
 }
 
 /**
+ * Resolve an audio object URL only from IndexedDB cache.
+ * Returns null if the key has no cached blob.
+ */
+export async function getCachedAudioObjectUrl(key: string): Promise<string | null> {
+  if (!key) {
+    return null
+  }
+
+  const cachedBlob = await getCachedAudio(key)
+  if (!cachedBlob) {
+    return null
+  }
+
+  console.debug(`[AudioCache] Serving from cache without playback RPC: ${key}`)
+  return URL.createObjectURL(cachedBlob)
+}
+
+/**
  * Prefetch audio and cache it without creating a blob URL
  * Useful for preloading frequently accessed audio
  */

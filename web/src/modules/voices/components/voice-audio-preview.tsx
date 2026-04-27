@@ -1,10 +1,10 @@
 "use client"
 
 import { PauseIcon, PlayIcon } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { cn } from "@/lib/utils"
 
-import { getVoicePlaybackUrlAction } from "@/actions/voices"
 import {
   AudioPlayerDuration,
   AudioPlayerProgress,
@@ -13,7 +13,9 @@ import {
   useAudioPlayer,
 } from "@/components/ui/audio-player"
 import { Button } from "@/components/ui/button"
-import { useAuth } from "@/lib/auth-context"
+import { fetchAudioWithCache, getCachedAudioObjectUrl } from "@/lib/audio-fetch"
+import { getVoiceProviderKey, setVoiceProviderKey } from "@/lib/audio-cache"
+import { getVoicePlayback } from "@/modules/voices/hooks/use-voice-playback"
 
 type VoiceAudioPreviewProps = {
   voiceId: string
@@ -22,52 +24,28 @@ type VoiceAudioPreviewProps = {
   className?: string
 }
 
-type CachedPlayback = {
-  url: string
-  expiresAtUnix: number
-}
-
-const playbackUrlCache = new Map<string, CachedPlayback>()
-const inFlightRequests = new Map<string, Promise<CachedPlayback>>()
-
-const REFRESH_BUFFER_SECONDS = 20
-
-async function getCachedPlaybackUrl(
-  voiceId: string,
-  accessToken: string | null,
-): Promise<CachedPlayback> {
-  const nowUnix = Math.floor(Date.now() / 1000)
-  const cached = playbackUrlCache.get(voiceId)
-
-  if (cached && cached.expiresAtUnix > nowUnix + REFRESH_BUFFER_SECONDS) {
-    return cached
-  }
-
-  const existingRequest = inFlightRequests.get(voiceId)
-  if (existingRequest) {
-    return existingRequest
-  }
-
-  const request = getVoicePlaybackUrlAction(voiceId, accessToken)
-    .then((result) => {
-      playbackUrlCache.set(voiceId, result)
-      return result
-    })
-    .finally(() => {
-      inFlightRequests.delete(voiceId)
-    })
-
-  inFlightRequests.set(voiceId, request)
-  return request
-}
-
-function VoiceAudioPreviewContent({ voiceId, src, itemId, className }: VoiceAudioPreviewProps) {
-  const { accessToken } = useAuth()
+function VoiceAudioPreviewContent({
+  voiceId,
+  src,
+  itemId,
+  className,
+}: VoiceAudioPreviewProps) {
+  const queryClient = useQueryClient()
   const player = useAudioPlayer()
-  const [isLoadingUrl, setIsLoadingUrl] = useState(false)
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false)
   const playerItemID = itemId?.trim() || voiceId
+  const objectUrlRef = useRef<string | null>(null)
 
   const isActive = player.isItemActive(playerItemID)
+
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current)
+        objectUrlRef.current = null
+      }
+    }
+  }, [playerItemID])
 
   async function handlePlayPause() {
     if (isActive) {
@@ -88,17 +66,44 @@ function VoiceAudioPreviewContent({ voiceId, src, itemId, className }: VoiceAudi
         return
       }
 
-      setIsLoadingUrl(true)
-      const playback = await getCachedPlaybackUrl(voiceId, accessToken)
+      setIsLoadingAudio(true)
+      const persistedProviderKey = await getVoiceProviderKey(voiceId)
+      if (persistedProviderKey) {
+        const cachedOnlySrc = await getCachedAudioObjectUrl(persistedProviderKey)
+        if (cachedOnlySrc) {
+          if (objectUrlRef.current && objectUrlRef.current !== cachedOnlySrc) {
+            URL.revokeObjectURL(objectUrlRef.current)
+          }
+          objectUrlRef.current = cachedOnlySrc
+
+          await player.play({
+            id: playerItemID,
+            src: cachedOnlySrc,
+          })
+          return
+        }
+      }
+
+      const playback = await getVoicePlayback(queryClient, voiceId)
+      await setVoiceProviderKey(voiceId, playback.providerKey)
+      const resolvedSrc = await fetchAudioWithCache({
+        url: playback.url,
+        key: playback.providerKey,
+      })
+
+      if (objectUrlRef.current && objectUrlRef.current !== resolvedSrc) {
+        URL.revokeObjectURL(objectUrlRef.current)
+      }
+      objectUrlRef.current = resolvedSrc
 
       await player.play({
         id: playerItemID,
-        src: playback.url,
+        src: resolvedSrc,
       })
     } catch (error) {
       console.error("Failed to fetch playback url", error)
     } finally {
-      setIsLoadingUrl(false)
+      setIsLoadingAudio(false)
     }
   }
 
@@ -109,7 +114,7 @@ function VoiceAudioPreviewContent({ voiceId, src, itemId, className }: VoiceAudi
           type="button"
           size="icon"
           variant="secondary"
-          disabled={isLoadingUrl && !src}
+          disabled={isLoadingAudio && !src}
           onClick={handlePlayPause}
           aria-label={isActive && player.isPlaying ? "Pause preview" : "Play preview"}>
           {isActive && player.isPlaying ? (
@@ -131,7 +136,12 @@ function VoiceAudioPreviewContent({ voiceId, src, itemId, className }: VoiceAudi
   )
 }
 
-export function VoiceAudioPreview({ voiceId, src, itemId, className }: VoiceAudioPreviewProps) {
+export function VoiceAudioPreview({
+  voiceId,
+  src,
+  itemId,
+  className,
+}: VoiceAudioPreviewProps) {
   return (
     <AudioPlayerProvider>
       <VoiceAudioPreviewContent

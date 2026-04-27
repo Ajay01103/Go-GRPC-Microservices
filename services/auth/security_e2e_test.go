@@ -148,38 +148,6 @@ func TestMissingFamilyDoesNotNukeOnRefresh(t *testing.T) {
 	}
 }
 
-func TestDPoPProofSecondUseRejected(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-
-	client, _ := setupE2E(t)
-
-	email, name, password := uniqueIdentity("dpop")
-	regResp, err := client.Register(ctx, connect.NewRequest(&pb.RegisterRequest{
-		Email:    email,
-		Name:     name,
-		Password: password,
-	}))
-	if err != nil {
-		t.Fatalf("register failed: %v", err)
-	}
-
-	proof := "REPLAYME-" + strings.ReplaceAll(name, " ", "")
-	firstResp, err := client.RefreshToken(ctx, connect.NewRequest(&pb.RefreshTokenRequest{
-		RefreshToken: regResp.Msg.GetRefreshToken(),
-		DpopProof:    proof,
-	}))
-	if err != nil {
-		t.Fatalf("first dpop refresh failed: %v", err)
-	}
-
-	_, err = client.RefreshToken(ctx, connect.NewRequest(&pb.RefreshTokenRequest{
-		RefreshToken: firstResp.Msg.GetRefreshToken(),
-		DpopProof:    proof,
-	}))
-	requireConnectErrorContains(t, err, connect.CodeUnauthenticated, "dpop proof replay detected")
-}
-
 func setupE2E(t *testing.T) (pbconnect.AuthServiceClient, *redis.Client) {
 	t.Helper()
 

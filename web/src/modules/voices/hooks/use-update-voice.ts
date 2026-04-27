@@ -52,11 +52,6 @@ export function useUpdateVoice() {
           category: mapCategory(input.category),
           language: input.language,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
       )
 
       if (!response.voice) {

@@ -57,8 +57,14 @@ type UpdateVoiceParams struct {
 // VoiceService handles all business logic for voices.
 type VoiceService struct {
 	repo   repository.Repository
-	s3     *s3.Client
+	s3     s3Client
 	logger *zap.Logger
+}
+
+type s3Client interface {
+	Upload(ctx context.Context, opts s3.UploadOptions) error
+	Delete(ctx context.Context, key string) error
+	GetSignedURL(ctx context.Context, key string) (string, error)
 }
 
 var ErrVoiceAccessDenied = errors.New("voice access denied")
@@ -68,7 +74,7 @@ var ErrInvalidUpdateVoiceInput = errors.New("invalid update voice input")
 const maxCreateVoiceAudioBytes = 20 * 1024 * 1024
 
 // New constructs a VoiceService.
-func New(repo repository.Repository, s3Client *s3.Client, logger *zap.Logger) *VoiceService {
+func New(repo repository.Repository, s3Client s3Client, logger *zap.Logger) *VoiceService {
 	return &VoiceService{
 		repo:   repo,
 		s3:     s3Client,
@@ -77,29 +83,29 @@ func New(repo repository.Repository, s3Client *s3.Client, logger *zap.Logger) *V
 }
 
 // GetPlaybackURL returns a short-lived signed URL for a voice audio object.
-func (s *VoiceService) GetPlaybackURL(ctx context.Context, voiceID, requesterUserID string) (string, int64, error) {
+func (s *VoiceService) GetPlaybackURL(ctx context.Context, voiceID, requesterUserID string) (string, int64, string, error) {
 	voice, err := s.repo.GetVoiceByID(ctx, voiceID)
 	if err != nil {
 		if errors.Is(err, repository.ErrVoiceNotFound) {
-			return "", 0, repository.ErrVoiceNotFound
+			return "", 0, "", repository.ErrVoiceNotFound
 		}
-		return "", 0, fmt.Errorf("service: fetch voice for playback: %w", err)
+		return "", 0, "", fmt.Errorf("service: fetch voice for playback: %w", err)
 	}
 
 	if voice.UserID != requesterUserID && voice.UserID != "SYSTEM" {
-		return "", 0, ErrVoiceAccessDenied
+		return "", 0, "", ErrVoiceAccessDenied
 	}
 
 	if !voice.S3ObjectKey.Valid || voice.S3ObjectKey.String == "" {
-		return "", 0, repository.ErrVoiceNotFound
+		return "", 0, "", repository.ErrVoiceNotFound
 	}
 
 	url, err := s.s3.GetSignedURL(ctx, voice.S3ObjectKey.String)
 	if err != nil {
-		return "", 0, fmt.Errorf("service: sign playback url: %w", err)
+		return "", 0, "", fmt.Errorf("service: sign playback url: %w", err)
 	}
 
-	return url, time.Now().Add(time.Hour).Unix(), nil
+	return url, time.Now().Add(time.Hour).Unix(), voice.S3ObjectKey.String, nil
 }
 
 // GetAll returns all voices for the given user, optionally filtered by query.

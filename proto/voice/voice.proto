@@ -62,6 +62,7 @@ message GetVoicePlaybackUrlRequest {
 message GetVoicePlaybackUrlResponse {
   string url             = 1;
   int64  expires_at_unix = 2;
+  string provider_key    = 3;
 }
 
 // ─── Create ───────────────────────────────────────────────────────────────────
