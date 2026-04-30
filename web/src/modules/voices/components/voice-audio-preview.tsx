@@ -24,12 +24,7 @@ type VoiceAudioPreviewProps = {
   className?: string
 }
 
-function VoiceAudioPreviewContent({
-  voiceId,
-  src,
-  itemId,
-  className,
-}: VoiceAudioPreviewProps) {
+function VoiceAudioPreviewContent({ voiceId, src, itemId, className }: VoiceAudioPreviewProps) {
   const queryClient = useQueryClient()
   const player = useAudioPlayer()
   const [isLoadingAudio, setIsLoadingAudio] = useState(false)
@@ -136,12 +131,7 @@ function VoiceAudioPreviewContent({
   )
 }
 
-export function VoiceAudioPreview({
-  voiceId,
-  src,
-  itemId,
-  className,
-}: VoiceAudioPreviewProps) {
+export function VoiceAudioPreview({ voiceId, src, itemId, className }: VoiceAudioPreviewProps) {
   return (
     <AudioPlayerProvider>
       <VoiceAudioPreviewContent

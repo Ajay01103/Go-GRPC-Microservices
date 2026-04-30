@@ -8,8 +8,7 @@ import { VoiceService } from "../gen/pb/voice_connect"
 
 const authBaseUrl = process.env.NEXT_PUBLIC_AUTH_RPC_URL ?? "http://localhost:50051"
 const voiceBaseUrl = process.env.NEXT_PUBLIC_VOICE_RPC_URL ?? "http://localhost:50052"
-const generationBaseUrl =
-  process.env.NEXT_PUBLIC_GENERATION_RPC_URL ?? "http://localhost:50053"
+const generationBaseUrl = process.env.NEXT_PUBLIC_GENERATION_RPC_URL ?? "http://localhost:50053"
 
 const bearerAuthInterceptor: Interceptor = (next) => async (req) => {
   const token = typeof tokenStore.get === "function" ? tokenStore.get() : null
@@ -22,11 +21,13 @@ const bearerAuthInterceptor: Interceptor = (next) => async (req) => {
 
 const authTransport = createConnectTransport({
   baseUrl: authBaseUrl,
+  useBinaryFormat: true,
 })
 
 const browserAuthTransport = createConnectTransport({
   baseUrl: authBaseUrl,
   interceptors: [bearerAuthInterceptor],
+  useBinaryFormat: true,
 })
 
 const voiceTransport = createConnectTransport({

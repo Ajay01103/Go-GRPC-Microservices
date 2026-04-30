@@ -44,15 +44,13 @@ export function useUpdateVoice() {
         throw new Error("Language is required")
       }
 
-      const response = await voiceRpcClient.updateVoice(
-        {
-          id: input.id,
-          name: input.name,
-          description: input.description ?? "",
-          category: mapCategory(input.category),
-          language: input.language,
-        },
-      )
+      const response = await voiceRpcClient.updateVoice({
+        id: input.id,
+        name: input.name,
+        description: input.description ?? "",
+        category: mapCategory(input.category),
+        language: input.language,
+      })
 
       if (!response.voice) {
         throw new Error("Update failed")

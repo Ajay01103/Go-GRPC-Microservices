@@ -121,33 +121,6 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr string) 
 		return nil, ErrInvalidToken
 	}
 
-	oldTokenHash := redisstore.HashTokenSHA256(refreshTokenStr)
-	state, err := s.tokenStore.LoadRefreshTokenState(ctx, payload.FamilyID.String(), oldTokenHash)
-	if err != nil {
-		if errors.Is(err, redisstore.ErrFamilyNotFound) {
-			return nil, ErrRefreshFamilyMissing
-		}
-		return nil, fmt.Errorf("load refresh token state: %w", err)
-	}
-	if state.Blacklisted {
-		if state.GraceFamilyID == payload.FamilyID.String() {
-			s.logger.Info("concurrent refresh stale token hit grace window",
-				zap.String("userID", payload.UserID.String()),
-				zap.String("familyID", payload.FamilyID.String()),
-			)
-			return nil, ErrTokenExpired
-		}
-
-		s.logger.Warn("blacklisted refresh token reuse detected",
-			zap.String("userID", payload.UserID.String()),
-			zap.String("familyID", payload.FamilyID.String()),
-		)
-		s.nukeFamily(ctx, payload.UserID.String(), payload.FamilyID.String())
-		return nil, ErrTokenReuseDetected
-	}
-
-	kid := state.FamilyKID
-
 	user, err := s.userRepo.GetByID(ctx, payload.UserID)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
@@ -161,7 +134,6 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr string) 
 		user.Email,
 		user.Name,
 		payload.FamilyID.String(),
-		"",
 		s.cfg.RefreshTokenDuration,
 	)
 	if err != nil {
@@ -182,9 +154,9 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr string) 
 		ctx,
 		payload.FamilyID.String(),
 		user.ID,
-		oldTokenHash,
+		redisstore.HashTokenSHA256(refreshTokenStr),
 		"",
-		kid,
+		payload.KeyID,
 		newRecord,
 		s.cfg.RefreshTokenDuration,
 		s.cfg.RefreshTokenDuration,
@@ -202,6 +174,19 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr string) 
 			zap.String("familyID", payload.FamilyID.String()),
 		)
 		return nil, ErrRefreshFamilyMissing
+	case redisstore.RotateGraceHit:
+		s.logger.Info("concurrent refresh stale token hit grace window",
+			zap.String("userID", user.ID),
+			zap.String("familyID", payload.FamilyID.String()),
+		)
+		return nil, ErrTokenExpired
+	case redisstore.RotateBlacklisted:
+		s.logger.Warn("blacklisted refresh token reuse detected",
+			zap.String("userID", user.ID),
+			zap.String("familyID", payload.FamilyID.String()),
+		)
+		s.nukeFamily(ctx, user.ID, payload.FamilyID.String())
+		return nil, ErrTokenReuseDetected
 	case redisstore.RotateKIDMismatch:
 		s.logger.Warn("key was rotated and this token is from the old key",
 			zap.String("userID", user.ID),
@@ -224,7 +209,6 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenStr string) 
 		user.Name,
 		payload.FamilyID.String(),
 		newRefreshPayload.JTI.String(),
-		"",
 		s.cfg.AccessTokenDuration,
 	)
 	if err != nil {
@@ -293,7 +277,6 @@ func (s *AuthService) mintTokenPair(ctx context.Context, user db.User, familyID 
 		user.Email,
 		user.Name,
 		familyID,
-		"",
 		s.cfg.RefreshTokenDuration,
 	)
 	if mintErr != nil {
@@ -323,7 +306,6 @@ func (s *AuthService) mintTokenPair(ctx context.Context, user db.User, familyID 
 		user.Name,
 		familyID,
 		refreshPayload.JTI.String(),
-		"",
 		s.cfg.AccessTokenDuration,
 	)
 	if mintErr != nil {
@@ -334,11 +316,8 @@ func (s *AuthService) mintTokenPair(ctx context.Context, user db.User, familyID 
 }
 
 func (s *AuthService) nukeFamily(ctx context.Context, userID, familyID string) {
-	if err := s.tokenStore.RevokeFamily(ctx, familyID, s.cfg.RefreshTokenDuration); err != nil {
+	if err := s.tokenStore.RevokeFamily(ctx, userID, familyID, s.cfg.RefreshTokenDuration); err != nil {
 		s.logger.Warn("failed to revoke family", zap.String("familyID", familyID), zap.Error(err))
-	}
-	if err := s.tokenStore.RemoveFamilyFromUser(ctx, userID, familyID); err != nil {
-		s.logger.Warn("failed to remove family from user set", zap.String("familyID", familyID), zap.String("userID", userID), zap.Error(err))
 	}
 }
 

@@ -29,7 +29,7 @@ func NewJWTMaker(secretKey string) (*JWTMaker, error) {
 // CreateRefreshToken mints a new refresh token.
 // The payload's JTI must be stored in Redis by the caller before responding.
 func (m *JWTMaker) CreateRefreshToken(
-	userID, email, name, familyID, dpopKeyThumbprint string,
+	userID, email, name, familyID string,
 	duration time.Duration,
 ) (string, *RefreshPayload, error) {
 	uid, err := uuid.Parse(userID)
@@ -41,7 +41,7 @@ func (m *JWTMaker) CreateRefreshToken(
 		return "", nil, fmt.Errorf("invalid family id: %w", err)
 	}
 
-	payload, err := NewRefreshPayload(uid, email, name, fid, dpopKeyThumbprint, duration)
+	payload, err := NewRefreshPayload(uid, email, name, fid, duration)
 	if err != nil {
 		return "", nil, err
 	}
@@ -56,9 +56,7 @@ func (m *JWTMaker) CreateRefreshToken(
 		"iat":        payload.IssuedAt.Unix(),
 		"exp":        payload.ExpiredAt.Unix(),
 	}
-	if payload.DPoPKeyThumbprint != "" {
-		claims["dpop_key_thumbprint"] = payload.DPoPKeyThumbprint
-	}
+	// DPoP binding removed
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signed, err := token.SignedString([]byte(m.secretKey))
@@ -72,7 +70,7 @@ func (m *JWTMaker) CreateRefreshToken(
 
 // CreateAccessToken mints a new access token paired with the given refresh token JTI.
 func (m *JWTMaker) CreateAccessToken(
-	userID, email, name, familyID, refreshJTI, dpopKeyThumbprint string,
+	userID, email, name, familyID, refreshJTI string,
 	duration time.Duration,
 ) (string, *AccessPayload, error) {
 	uid, err := uuid.Parse(userID)
@@ -88,7 +86,7 @@ func (m *JWTMaker) CreateAccessToken(
 		return "", nil, fmt.Errorf("invalid refresh jti: %w", err)
 	}
 
-	payload, err := NewAccessPayload(uid, email, name, fid, rjti, dpopKeyThumbprint, duration)
+	payload, err := NewAccessPayload(uid, email, name, fid, rjti, duration)
 	if err != nil {
 		return "", nil, err
 	}
@@ -104,9 +102,7 @@ func (m *JWTMaker) CreateAccessToken(
 		"iat":         payload.IssuedAt.Unix(),
 		"exp":         payload.ExpiredAt.Unix(),
 	}
-	if payload.DPoPKeyThumbprint != "" {
-		claims["dpop_key_thumbprint"] = payload.DPoPKeyThumbprint
-	}
+	// DPoP binding removed
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signed, err := token.SignedString([]byte(m.secretKey))
@@ -244,7 +240,6 @@ func accessPayloadFromClaims(claims jwt.MapClaims) (*AccessPayload, error) {
 		RefreshJTI:        rjti,
 		IssuedAt:          iat,
 		ExpiredAt:         exp,
-		DPoPKeyThumbprint: optionalStringClaim(claims, "dpop_key_thumbprint"),
 	}, nil
 }
 
@@ -279,6 +274,5 @@ func refreshPayloadFromClaims(claims jwt.MapClaims) (*RefreshPayload, error) {
 		FamilyID:          familyID,
 		IssuedAt:          iat,
 		ExpiredAt:         exp,
-		DPoPKeyThumbprint: optionalStringClaim(claims, "dpop_key_thumbprint"),
 	}, nil
 }

@@ -61,17 +61,15 @@ export function useCreateVoice() {
         throw new Error("Audio data is required")
       }
 
-      const response = await voiceRpcClient.createVoice(
-        {
-          name: input.name,
-          description: input.description ?? "",
-          category: mapCategory(input.category),
-          language: input.language,
-          variant: mapVariant(input.variant),
-          audioData: input.audioData,
-          contentType: input.contentType ?? "audio/wav",
-        },
-      )
+      const response = await voiceRpcClient.createVoice({
+        name: input.name,
+        description: input.description ?? "",
+        category: mapCategory(input.category),
+        language: input.language,
+        variant: mapVariant(input.variant),
+        audioData: input.audioData,
+        contentType: input.contentType ?? "audio/wav",
+      })
 
       if (!response.voice) {
         throw new Error("Failed to create voice")

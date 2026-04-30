@@ -306,7 +306,7 @@ func (v *RemoteValidator) SetCacheTTL(ttl time.Duration) {
 // RemoteValidator is for validation only, not token creation.
 // Use the auth service token maker for token creation.
 func (v *RemoteValidator) CreateAccessToken(
-	userID, email, name, familyID, refreshJTI, dpopKeyThumbprint string,
+	userID, email, name, familyID, refreshJTI string,
 	duration time.Duration,
 ) (string, *AccessPayload, error) {
 	return "", nil, errors.New("CreateAccessToken not implemented in RemoteValidator; use auth service token maker")
@@ -316,7 +316,7 @@ func (v *RemoteValidator) CreateAccessToken(
 // RemoteValidator is for validation only, not token creation.
 // Use the auth service token maker for token creation.
 func (v *RemoteValidator) CreateRefreshToken(
-	userID, email, name, familyID, dpopKeyThumbprint string,
+	userID, email, name, familyID string,
 	duration time.Duration,
 ) (string, *RefreshPayload, error) {
 	return "", nil, errors.New("CreateRefreshToken not implemented in RemoteValidator; use auth service token maker")

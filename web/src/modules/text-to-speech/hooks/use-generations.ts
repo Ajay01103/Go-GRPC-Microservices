@@ -55,7 +55,9 @@ export function useGeneration(generationId: string) {
     queryFn: async (): Promise<GenerationDetailType> => {
       if (!accessToken) throw new Error("Unauthorized")
 
-      const response = await generationRpcClient.getGeneration(new GetGenerationRequest({ id: generationId }))
+      const response = await generationRpcClient.getGeneration(
+        new GetGenerationRequest({ id: generationId }),
+      )
 
       return response as GenerationDetailType
     },

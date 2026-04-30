@@ -62,7 +62,7 @@ func TestReplayGraceWindowThenNukeAfterGraceExpiry(t *testing.T) {
 		requireConnectErrorContains(t, err, connect.CodeUnauthenticated, "token has expired")
 	}
 
-	activeKey := "rt:active:" + familyID
+	activeKey := fmt.Sprintf("rt:{%s}:active", familyID)
 	active, err := rdb.Get(ctx, activeKey).Result()
 	if err != nil && err != redis.Nil {
 		t.Fatalf("redis get active key failed: %v", err)
@@ -121,7 +121,7 @@ func TestMissingFamilyDoesNotNukeOnRefresh(t *testing.T) {
 		t.Fatalf("family_id missing in refresh token claims")
 	}
 
-	activeKey := "rt:active:" + familyID
+	activeKey := fmt.Sprintf("rt:{%s}:active", familyID)
 	if err := rdb.Del(ctx, activeKey).Err(); err != nil {
 		t.Fatalf("delete active family key failed: %v", err)
 	}

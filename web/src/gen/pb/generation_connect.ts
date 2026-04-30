@@ -3,8 +3,17 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { GenerateSpeechRequest, GenerateSpeechResponse, GetGenerationRequest, GetGenerationResponse, GetJobStatusRequest, GetJobStatusResponse, ListGenerationsRequest, ListGenerationsResponse } from "./generation_pb";
-import { MethodKind } from "@bufbuild/protobuf";
+import {
+  GenerateSpeechRequest,
+  GenerateSpeechResponse,
+  GetGenerationRequest,
+  GetGenerationResponse,
+  GetJobStatusRequest,
+  GetJobStatusResponse,
+  ListGenerationsRequest,
+  ListGenerationsResponse,
+} from "./generation_pb"
+import { MethodKind } from "@bufbuild/protobuf"
 
 /**
  * @generated from service generation.GenerationService
@@ -48,6 +57,5 @@ export const GenerationService = {
       O: GetJobStatusResponse,
       kind: MethodKind.Unary,
     },
-  }
-} as const;
-
+  },
+} as const

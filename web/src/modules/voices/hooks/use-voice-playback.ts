@@ -54,10 +54,7 @@ export async function getVoicePlayback(
   queryClient: QueryClient,
   voiceId: string,
 ): Promise<VoicePlaybackResult> {
-  const cached = queryClient.getQueryData<VoicePlaybackResult>([
-    "voice-playback",
-    voiceId,
-  ])
+  const cached = queryClient.getQueryData<VoicePlaybackResult>(["voice-playback", voiceId])
   if (cached && isPlaybackFresh(cached)) {
     return cached
   }

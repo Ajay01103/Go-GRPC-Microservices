@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -13,65 +14,86 @@ import (
 )
 
 const (
-	refreshActivePrefix    = "rt:active:"
-	refreshBlacklistPrefix = "rt:blacklist:"
-	refreshRotatedPrefix   = "rt:rotated:"
-	refreshUserSetPrefix   = "rt:user:"
+	refreshPrefix        = "rt:"
+	refreshUserSetPrefix = "rt:user:"
 )
 
+// rotatedGraceTTL covers concurrent refresh races long enough for the
+// successor token to be minted and persisted, but stays short to limit replay
+// exposure.
 const rotatedGraceTTL = 15 * time.Second
 
-// atomicRotateFamilyScript verifies active family state and rotates it in one
-// round-trip, while blacklisting the old token hash.
+const maxRevokeTries = 5
+
+// atomicRotateFamilyScript verifies blacklist, grace, and active family state
+// and rotates the family in one Redis call.
 //
-// KEYS[1] active family key (rt:active:{familyId})
-// KEYS[2] blacklist key for old hash (rt:blacklist:{oldHash})
+// KEYS[1] active family key (rt:{familyId}:active)
+// KEYS[2] blacklist key for old hash (rt:{familyId}:blacklist:{oldHash})
+// KEYS[3] rotated grace key (rt:{familyId}:rotated:{oldHash})
 // ARGV[1] expected user id
 // ARGV[2] expected old token hash
 // ARGV[3] expected old jkt
-// ARGV[4] blacklist ttl seconds
-// ARGV[5] new active record json
-// ARGV[6] active ttl seconds
+// ARGV[4] expected signing kid from the presented refresh token
+// ARGV[5] blacklist ttl seconds
+// ARGV[6] new active record json
+// ARGV[7] active ttl seconds
+// ARGV[8] family id
+// ARGV[9] grace ttl seconds
 //
-// Returns one of: OK, FAMILY_NOT_FOUND, USER_MISMATCH, HASH_MISMATCH, JKT_MISMATCH, KID_MISMATCH
+// Returns one of: OK, FAMILY_NOT_FOUND, USER_MISMATCH, HASH_MISMATCH,
+// JKT_MISMATCH, KID_MISMATCH, BLACKLISTED, GRACE_HIT, BAD_ARGS
 var atomicRotateFamilyScript = redis.NewScript(`
+if #KEYS ~= 3 or #ARGV ~= 9 then
+	return 'BAD_ARGS'
+end
+
+local blacklisted = redis.call('EXISTS', KEYS[2])
+if blacklisted == 1 then
+	local graceFamilyID = redis.call('GET', KEYS[3])
+	if graceFamilyID and graceFamilyID == ARGV[8] then
+		return 'GRACE_HIT'
+	end
+	return 'BLACKLISTED'
+end
+
 local raw = redis.call('GET', KEYS[1])
 if not raw then
-  return 'FAMILY_NOT_FOUND'
+	return 'FAMILY_NOT_FOUND'
 end
 
 local rec = cjson.decode(raw)
 if rec['user_id'] ~= ARGV[1] then
-  return 'USER_MISMATCH'
+	return 'USER_MISMATCH'
 end
 if rec['token_hash'] ~= ARGV[2] then
-  return 'HASH_MISMATCH'
+	return 'HASH_MISMATCH'
 end
 
 local expectedJKT = ARGV[3]
 local storedJKT = rec['jkt']
 if not storedJKT then
-  storedJKT = ''
+	storedJKT = ''
 end
 if expectedJKT ~= '' and storedJKT ~= expectedJKT then
-  return 'JKT_MISMATCH'
+	return 'JKT_MISMATCH'
 end
 
 local storedKID = rec['signing_kid'] or ''
-local expectedKID = ARGV[8]
+local expectedKID = ARGV[4]
 if storedKID ~= '' and expectedKID ~= '' and storedKID ~= expectedKID then
-  return 'KID_MISMATCH'
+	return 'KID_MISMATCH'
 end
 
-redis.call('SETEX', KEYS[2], ARGV[4], 'revoked')
-redis.call('SETEX', KEYS[1], ARGV[6], ARGV[5])
-redis.call('SADD',  KEYS[3], ARGV[7])
+redis.call('SETEX', KEYS[1], ARGV[7], ARGV[6])
+redis.call('SETEX', KEYS[3], ARGV[9], ARGV[8])
+redis.call('SETEX', KEYS[2], ARGV[5], 'revoked')
 return 'OK'
 `)
 
 // TokenStore manages refresh token lifecycle in Redis using:
-// - allowlist: rt:active:{familyId}
-// - blacklist: rt:blacklist:{tokenHash}
+// - allowlist: rt:{familyId}:active
+// - blacklist: rt:{familyId}:blacklist:{tokenHash}
 // - user families: rt:user:{userId}:families
 type TokenStore struct {
 	client *redis.Client
@@ -96,6 +118,9 @@ const (
 	RotateHashMismatch   RotateOutcome = "HASH_MISMATCH"
 	RotateJKTMismatch    RotateOutcome = "JKT_MISMATCH"
 	RotateKIDMismatch    RotateOutcome = "KID_MISMATCH"
+	RotateBlacklisted    RotateOutcome = "BLACKLISTED"
+	RotateGraceHit       RotateOutcome = "GRACE_HIT"
+	RotateBadArgs        RotateOutcome = "BAD_ARGS"
 )
 
 // New creates a TokenStore from a connected Redis client.
@@ -108,20 +133,24 @@ func NewClientFromURL(redisURL string) (*redis.Client, error) {
 	return redisclient.NewClientFromURL(redisURL)
 }
 
-func activeFamilyKey(familyID string) string {
-	return refreshActivePrefix + familyID
+func familySlotTag(familyID string) string {
+	return "{" + familyID + "}"
 }
 
-func blacklistKey(tokenHash string) string {
-	return refreshBlacklistPrefix + tokenHash
+func activeFamilyKey(familyID string) string {
+	return fmt.Sprintf("%s%s:active", refreshPrefix, familySlotTag(familyID))
+}
+
+func blacklistKey(familyID, tokenHash string) string {
+	return fmt.Sprintf("%s%s:blacklist:%s", refreshPrefix, familySlotTag(familyID), tokenHash)
 }
 
 func userFamiliesKey(userID string) string {
 	return fmt.Sprintf("%s%s:families", refreshUserSetPrefix, userID)
 }
 
-func rotatedGraceKey(tokenHash string) string {
-	return refreshRotatedPrefix + tokenHash
+func rotatedGraceKey(familyID, tokenHash string) string {
+	return fmt.Sprintf("%s%s:rotated:%s", refreshPrefix, familySlotTag(familyID), tokenHash)
 }
 
 // RefreshTokenState captures the refresh-token state needed by the auth service
@@ -130,15 +159,15 @@ type RefreshTokenState struct {
 	Blacklisted   bool
 	GraceFamilyID string
 	FamilyKID     string
-	ActiveRecord   *ActiveRefreshTokenRecord
+	ActiveRecord  *ActiveRefreshTokenRecord
 }
 
 // LoadRefreshTokenState fetches blacklist, rotated-grace, and active family data
 // together so the refresh path does not pay multiple sequential Redis RTTs.
 func (s *TokenStore) LoadRefreshTokenState(ctx context.Context, familyID, tokenHash string) (*RefreshTokenState, error) {
 	pipe := s.client.Pipeline()
-	blacklistCmd := pipe.Get(ctx, blacklistKey(tokenHash))
-	graceCmd := pipe.Get(ctx, rotatedGraceKey(tokenHash))
+	blacklistCmd := pipe.Get(ctx, blacklistKey(familyID, tokenHash))
+	graceCmd := pipe.Get(ctx, rotatedGraceKey(familyID, tokenHash))
 	activeCmd := pipe.Get(ctx, activeFamilyKey(familyID))
 
 	if _, err := pipe.Exec(ctx); err != nil && err != redis.Nil {
@@ -183,11 +212,11 @@ func (s *TokenStore) StoreFamilyActiveToken(ctx context.Context, familyID string
 	if err != nil {
 		return fmt.Errorf("marshal active record: %w", err)
 	}
-	if err := s.client.Set(ctx, activeFamilyKey(familyID), raw, ttl).Err(); err != nil {
+	pipe := s.client.Pipeline()
+	pipe.Set(ctx, activeFamilyKey(familyID), raw, ttl)
+	pipe.SAdd(ctx, userFamiliesKey(rec.UserID), familyID)
+	if _, err := pipe.Exec(ctx); err != nil {
 		return fmt.Errorf("redis set active family: %w", err)
-	}
-	if err := s.upsertUserFamily(ctx, rec.UserID, familyID); err != nil {
-		return err
 	}
 	return nil
 }
@@ -207,8 +236,8 @@ func (s *TokenStore) GetFamilyActiveToken(ctx context.Context, familyID string) 
 	return &rec, nil
 }
 
-func (s *TokenStore) IsTokenHashBlacklisted(ctx context.Context, tokenHash string) (bool, error) {
-	_, err := s.client.Get(ctx, blacklistKey(tokenHash)).Result()
+func (s *TokenStore) IsTokenHashBlacklisted(ctx context.Context, familyID, tokenHash string) (bool, error) {
+	_, err := s.client.Get(ctx, blacklistKey(familyID, tokenHash)).Result()
 	if err == redis.Nil {
 		return false, nil
 	}
@@ -218,8 +247,8 @@ func (s *TokenStore) IsTokenHashBlacklisted(ctx context.Context, tokenHash strin
 	return true, nil
 }
 
-func (s *TokenStore) BlacklistTokenHash(ctx context.Context, tokenHash string, ttl time.Duration) error {
-	if err := s.client.Set(ctx, blacklistKey(tokenHash), "revoked", ttl).Err(); err != nil {
+func (s *TokenStore) BlacklistTokenHash(ctx context.Context, familyID, tokenHash string, ttl time.Duration) error {
+	if err := s.client.Set(ctx, blacklistKey(familyID, tokenHash), "revoked", ttl).Err(); err != nil {
 		return fmt.Errorf("redis set blacklist: %w", err)
 	}
 	return nil
@@ -231,21 +260,26 @@ func (s *TokenStore) RotateFamilyActiveToken(
 	newRecord ActiveRefreshTokenRecord,
 	activeTTL, blacklistTTL time.Duration,
 ) (RotateOutcome, error) {
+	if blacklistTTL < activeTTL {
+		return "", fmt.Errorf("blacklist ttl must be >= active ttl")
+	}
+
 	raw, err := json.Marshal(newRecord)
 	if err != nil {
 		return "", fmt.Errorf("marshal new active record: %w", err)
 	}
 
 	result, err := atomicRotateFamilyScript.Run(ctx, s.client,
-		[]string{activeFamilyKey(familyID), blacklistKey(oldTokenHash), userFamiliesKey(userID)},
+		[]string{activeFamilyKey(familyID), blacklistKey(familyID, oldTokenHash), rotatedGraceKey(familyID, oldTokenHash)},
 		userID,
 		oldTokenHash,
 		oldJKT,
+		signingKID,
 		int64(blacklistTTL.Seconds()),
 		string(raw),
 		int64(activeTTL.Seconds()),
 		familyID,
-		signingKID,
+		int64(rotatedGraceTTL.Seconds()),
 	).Result()
 	if err != nil {
 		return "", fmt.Errorf("redis rotate family: %w", err)
@@ -255,69 +289,120 @@ func (s *TokenStore) RotateFamilyActiveToken(
 	if !ok {
 		return "", fmt.Errorf("unexpected redis rotate response type: %T", result)
 	}
-
+	if RotateOutcome(outcome) == RotateBadArgs {
+		return "", fmt.Errorf("redis rotate family script bad args")
+	}
 	if RotateOutcome(outcome) == RotateSuccess {
-		if err := s.client.Set(ctx, rotatedGraceKey(oldTokenHash), familyID, rotatedGraceTTL).Err(); err != nil {
-			// Best effort marker: missing grace should degrade to strict anti-replay behavior.
+		if err := s.client.SAdd(ctx, userFamiliesKey(userID), familyID).Err(); err != nil {
+			return "", fmt.Errorf("redis upsert user family: %w", err)
 		}
 	}
 
 	return RotateOutcome(outcome), nil
 }
 
-func (s *TokenStore) RevokeFamily(ctx context.Context, familyID string, blacklistTTL time.Duration) error {
-	rec, err := s.GetFamilyActiveToken(ctx, familyID)
-	if err != nil && err != ErrFamilyNotFound {
-		return err
-	}
-	if rec != nil && rec.TokenHash != "" {
-		if blErr := s.BlacklistTokenHash(ctx, rec.TokenHash, blacklistTTL); blErr != nil {
-			return blErr
+func (s *TokenStore) RevokeFamily(ctx context.Context, userID, familyID string, blacklistTTL time.Duration) error {
+	activeKey := activeFamilyKey(familyID)
+	userKey := userFamiliesKey(userID)
+
+	for attempt := 0; attempt < maxRevokeTries; attempt++ {
+		err := s.client.Watch(ctx, func(tx *redis.Tx) error {
+			raw, err := tx.Get(ctx, activeKey).Result()
+			if err == redis.Nil {
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+
+			var rec ActiveRefreshTokenRecord
+			if err := json.Unmarshal([]byte(raw), &rec); err != nil {
+				return err
+			}
+
+			_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+				if rec.TokenHash != "" {
+					pipe.Set(ctx, blacklistKey(familyID, rec.TokenHash), "revoked", blacklistTTL)
+				}
+				pipe.Del(ctx, activeKey)
+				return nil
+			})
+			return err
+		}, activeKey)
+		if err == nil {
+			_ = s.client.SRem(ctx, userKey, familyID)
+			return nil
 		}
+		if errors.Is(err, redis.TxFailedErr) {
+			continue
+		}
+		return fmt.Errorf("redis revoke family: %w", err)
 	}
-	if err := s.client.Del(ctx, activeFamilyKey(familyID)).Err(); err != nil {
-		return fmt.Errorf("redis del active family: %w", err)
-	}
-	return nil
+
+	return fmt.Errorf("redis revoke family: too many retries")
 }
 
 func (s *TokenStore) LogoutFamily(ctx context.Context, userID, familyID, tokenHash string, blacklistTTL time.Duration) error {
 	pipe := s.client.TxPipeline()
 	pipe.Del(ctx, activeFamilyKey(familyID))
-	pipe.SRem(ctx, userFamiliesKey(userID), familyID)
 	if tokenHash != "" {
-		pipe.Set(ctx, blacklistKey(tokenHash), "revoked", blacklistTTL)
+		pipe.Set(ctx, blacklistKey(familyID, tokenHash), "revoked", blacklistTTL)
 	}
 	if _, err := pipe.Exec(ctx); err != nil {
 		return fmt.Errorf("redis logout family: %w", err)
 	}
+	_ = s.client.SRem(ctx, userFamiliesKey(userID), familyID)
 	return nil
 }
 
 func (s *TokenStore) RevokeAllUserFamilies(ctx context.Context, userID string, blacklistTTL time.Duration) error {
-	families, err := s.listUserFamiliesPruned(ctx, userID)
+	families, err := s.client.SMembers(ctx, userFamiliesKey(userID)).Result()
+	if err == redis.Nil {
+		return nil
+	}
 	if err != nil {
-		return err
+		return fmt.Errorf("redis smembers families: %w", err)
 	}
 	if len(families) == 0 {
 		return nil
 	}
 
-	pipe := s.client.TxPipeline()
-	for _, familyID := range families {
-		rec, recErr := s.GetFamilyActiveToken(ctx, familyID)
-		if recErr != nil && recErr != ErrFamilyNotFound {
-			return recErr
+	// Note: there is a narrow window between the SMembers call and the family
+	// revocation pipeline where a concurrent rotate could change the active hash.
+	// The active key is still deleted, so the rotated token becomes unusable
+	// regardless. A missed blacklist entry here is acceptable for bulk revoke.
+
+	pipe := s.client.Pipeline()
+	getCmds := make([]*redis.StringCmd, len(families))
+	for idx, familyID := range families {
+		getCmds[idx] = pipe.Get(ctx, activeFamilyKey(familyID))
+	}
+	if _, err := pipe.Exec(ctx); err != nil && err != redis.Nil {
+		return fmt.Errorf("redis load revoke-all families: %w", err)
+	}
+
+	pipe = s.client.Pipeline()
+	for idx, familyID := range families {
+		recRaw, recErr := getCmds[idx].Result()
+		if recErr != nil && recErr != redis.Nil {
+			return fmt.Errorf("redis get active family: %w", recErr)
 		}
-		if rec != nil && rec.TokenHash != "" {
-			pipe.Set(ctx, blacklistKey(rec.TokenHash), "revoked", blacklistTTL)
+		if recErr == nil {
+			var rec ActiveRefreshTokenRecord
+			if err := json.Unmarshal([]byte(recRaw), &rec); err != nil {
+				return fmt.Errorf("unmarshal active record: %w", err)
+			}
+			if rec.TokenHash != "" {
+				pipe.Set(ctx, blacklistKey(familyID, rec.TokenHash), "revoked", blacklistTTL)
+			}
 		}
 		pipe.Del(ctx, activeFamilyKey(familyID))
 	}
-	pipe.Del(ctx, userFamiliesKey(userID))
 	if _, err := pipe.Exec(ctx); err != nil {
 		return fmt.Errorf("redis revoke all families: %w", err)
 	}
+
+	_ = s.client.Del(ctx, userFamiliesKey(userID))
 
 	return nil
 }
@@ -418,8 +503,8 @@ func (s *TokenStore) GetFamilyKID(ctx context.Context, familyID string) (string,
 	return partial.SigningKID, nil
 }
 
-func (s *TokenStore) GetRotatedTokenGraceFamilyID(ctx context.Context, oldTokenHash string) (string, error) {
-	value, err := s.client.Get(ctx, rotatedGraceKey(oldTokenHash)).Result()
+func (s *TokenStore) GetRotatedTokenGraceFamilyID(ctx context.Context, familyID, oldTokenHash string) (string, error) {
+	value, err := s.client.Get(ctx, rotatedGraceKey(familyID, oldTokenHash)).Result()
 	if err == redis.Nil {
 		return "", ErrGraceNotFound
 	}

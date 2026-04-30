@@ -128,7 +128,7 @@ func NewEDDSAMakerFromPrivateKey(privateKey ed25519.PrivateKey) (*EDDSAMaker, er
 	return m, nil
 }
 
-func (m *EDDSAMaker) CreateRefreshToken(userID, email, name, familyID, dpopKeyThumbprint string, duration time.Duration) (string, *RefreshPayload, error) {
+func (m *EDDSAMaker) CreateRefreshToken(userID, email, name, familyID string, duration time.Duration) (string, *RefreshPayload, error) {
 	if err := m.ensureCurrentSigningKey(); err != nil {
 		return "", nil, err
 	}
@@ -143,7 +143,7 @@ func (m *EDDSAMaker) CreateRefreshToken(userID, email, name, familyID, dpopKeyTh
 	}
 
 	now := time.Now().UTC()
-	payload, err := NewRefreshPayloadAt(uid, email, name, fid, dpopKeyThumbprint, now, duration)
+	payload, err := NewRefreshPayloadAt(uid, email, name, fid, now, duration)
 	if err != nil {
 		return "", nil, err
 	}
@@ -172,7 +172,7 @@ func (m *EDDSAMaker) CreateRefreshToken(userID, email, name, familyID, dpopKeyTh
 	return signed, payload, nil
 }
 
-func (m *EDDSAMaker) CreateAccessToken(userID, email, name, familyID, refreshJTI, dpopKeyThumbprint string, duration time.Duration) (string, *AccessPayload, error) {
+func (m *EDDSAMaker) CreateAccessToken(userID, email, name, familyID, refreshJTI string, duration time.Duration) (string, *AccessPayload, error) {
 	if err := m.ensureCurrentSigningKey(); err != nil {
 		return "", nil, err
 	}
@@ -191,7 +191,7 @@ func (m *EDDSAMaker) CreateAccessToken(userID, email, name, familyID, refreshJTI
 	}
 
 	now := time.Now().UTC()
-	payload, err := NewAccessPayloadAt(uid, email, name, fid, rjti, dpopKeyThumbprint, now, duration)
+	payload, err := NewAccessPayloadAt(uid, email, name, fid, rjti, now, duration)
 	if err != nil {
 		return "", nil, err
 	}

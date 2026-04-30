@@ -195,10 +195,7 @@ export async function clearAudioCache(): Promise<void> {
   try {
     const db = await initDB()
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(
-        [STORE_NAME, PROVIDER_KEY_INDEX_STORE],
-        "readwrite",
-      )
+      const transaction = db.transaction([STORE_NAME, PROVIDER_KEY_INDEX_STORE], "readwrite")
       const audioStore = transaction.objectStore(STORE_NAME)
       const providerStore = transaction.objectStore(PROVIDER_KEY_INDEX_STORE)
       const audioRequest = audioStore.clear()
@@ -237,10 +234,7 @@ export async function getVoiceProviderKey(voiceId: string): Promise<string | nul
   }
 }
 
-export async function setVoiceProviderKey(
-  voiceId: string,
-  providerKey: string,
-): Promise<void> {
+export async function setVoiceProviderKey(voiceId: string, providerKey: string): Promise<void> {
   if (!voiceId || !providerKey || typeof window === "undefined") return
 
   try {
@@ -322,10 +316,7 @@ export async function getAudioCacheSize(): Promise<number> {
 
       request.onsuccess = () => {
         const entries = request.result as CacheEntry[]
-        const totalSize = entries.reduce(
-          (sum, entry) => sum + normalizeEntrySize(entry),
-          0,
-        )
+        const totalSize = entries.reduce((sum, entry) => sum + normalizeEntrySize(entry), 0)
         resolve(totalSize)
       }
       request.onerror = () => resolve(0)

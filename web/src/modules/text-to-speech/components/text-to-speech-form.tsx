@@ -95,8 +95,7 @@ export function TextToSpeechForm({
         await queryClient.invalidateQueries({ queryKey: ["generations"] })
         router.push(`/text-to-speech/${data.generationId}`)
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Failed to generate audio"
+        const message = error instanceof Error ? error.message : "Failed to generate audio"
 
         if (message === "SUBSCRIPTION_REQUIRED") {
           toast.error("Subscription required")

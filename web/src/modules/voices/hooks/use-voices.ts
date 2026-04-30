@@ -20,12 +20,10 @@ export function useVoices({ userId, query }: UseVoicesParams) {
     staleTime: 60 * 1000,
     queryFn: async (): Promise<VoiceItemType[]> => {
       if (!userId || !accessToken) return []
-      const response = await voiceRpcClient.getAllVoices(
-        {
-          userId,
-          query,
-        },
-      )
+      const response = await voiceRpcClient.getAllVoices({
+        userId,
+        query,
+      })
       return response.voices as VoiceItemType[]
     },
   })
