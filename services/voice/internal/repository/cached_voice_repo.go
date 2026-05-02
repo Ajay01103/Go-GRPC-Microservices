@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	db "github.com/go-grpc-sqlc/voice/gen/sqlc"
+	db "github.com/Ajay01103/go-grpc-sqlc/voice/gen/sqlc"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"

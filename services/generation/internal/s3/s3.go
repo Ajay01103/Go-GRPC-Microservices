@@ -9,7 +9,7 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	generationconfig "github.com/go-grpc-sqlc/generation/config"
+	generationconfig "github.com/Ajay01103/go-grpc-sqlc/generation/config"
 )
 
 // Client wraps an S3 client configured for Backblaze B2-compatible storage.

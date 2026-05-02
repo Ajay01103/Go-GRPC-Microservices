@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	"github.com/go-grpc-sqlc/auth/gen/pb"
-	"github.com/go-grpc-sqlc/auth/gen/pb/pbconnect"
+	"github.com/Ajay01103/go-grpc-sqlc/auth/gen/pb"
+	"github.com/Ajay01103/go-grpc-sqlc/auth/gen/pb/pbconnect"
 	"github.com/redis/go-redis/v9"
 )
 

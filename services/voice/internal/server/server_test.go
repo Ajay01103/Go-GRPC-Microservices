@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
-	"github.com/go-grpc-sqlc/pkg/token"
-	"github.com/go-grpc-sqlc/voice/gen/pb"
-	"github.com/go-grpc-sqlc/voice/internal/repository"
-	"github.com/go-grpc-sqlc/voice/internal/service"
+	"github.com/Ajay01103/go-grpc-sqlc/pkg/token"
+	"github.com/Ajay01103/go-grpc-sqlc/voice/gen/pb"
+	"github.com/Ajay01103/go-grpc-sqlc/voice/internal/repository"
+	"github.com/Ajay01103/go-grpc-sqlc/voice/internal/service"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )

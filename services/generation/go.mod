@@ -1,4 +1,4 @@
-module github.com/go-grpc-sqlc/generation
+module github.com/Ajay01103/go-grpc-sqlc/generation
 
 go 1.25.0
 

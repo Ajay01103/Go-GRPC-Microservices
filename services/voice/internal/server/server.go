@@ -6,14 +6,14 @@ import (
 	"strings"
 
 	"connectrpc.com/connect"
-	"github.com/go-grpc-sqlc/pkg/interceptor"
+	"github.com/Ajay01103/go-grpc-sqlc/pkg/interceptor"
 	"go.uber.org/zap"
 
-	"github.com/go-grpc-sqlc/voice/gen/pb"
-	"github.com/go-grpc-sqlc/voice/gen/pb/pbconnect"
-	db "github.com/go-grpc-sqlc/voice/gen/sqlc"
-	"github.com/go-grpc-sqlc/voice/internal/repository"
-	"github.com/go-grpc-sqlc/voice/internal/service"
+	"github.com/Ajay01103/go-grpc-sqlc/voice/gen/pb"
+	"github.com/Ajay01103/go-grpc-sqlc/voice/gen/pb/pbconnect"
+	db "github.com/Ajay01103/go-grpc-sqlc/voice/gen/sqlc"
+	"github.com/Ajay01103/go-grpc-sqlc/voice/internal/repository"
+	"github.com/Ajay01103/go-grpc-sqlc/voice/internal/service"
 )
 
 // VoiceServer implements pbconnect.VoiceServiceHandler.

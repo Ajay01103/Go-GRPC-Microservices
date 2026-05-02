@@ -20,8 +20,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 
-	voiceconfig "github.com/go-grpc-sqlc/voice/config"
-	db "github.com/go-grpc-sqlc/voice/gen/sqlc"
+	voiceconfig "github.com/Ajay01103/go-grpc-sqlc/voice/config"
+	db "github.com/Ajay01103/go-grpc-sqlc/voice/gen/sqlc"
 )
 
 const systemUserID = "SYSTEM"

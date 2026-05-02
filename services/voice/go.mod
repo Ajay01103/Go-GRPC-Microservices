@@ -1,4 +1,4 @@
-module github.com/go-grpc-sqlc/voice
+module github.com/Ajay01103/go-grpc-sqlc/voice
 
 go 1.25.0
 
@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.29.14
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.67
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.78.2
-	github.com/go-grpc-sqlc/pkg v0.0.0-00010101000000-000000000000
+	github.com/Ajay01103/go-grpc-sqlc/pkg v0.0.0-00010101000000-000000000000
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.8.0
 	github.com/redis/go-redis/v9 v9.18.0
@@ -56,4 +56,4 @@ require (
 	golang.org/x/text v0.35.0 // indirect
 )
 
-replace github.com/go-grpc-sqlc/pkg => ../../pkg
+replace github.com/Ajay01103/go-grpc-sqlc/pkg => ../../pkg

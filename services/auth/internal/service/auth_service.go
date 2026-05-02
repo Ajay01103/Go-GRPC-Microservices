@@ -10,11 +10,11 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/go-grpc-sqlc/auth/config"
-	db "github.com/go-grpc-sqlc/auth/gen/sqlc"
-	"github.com/go-grpc-sqlc/auth/internal/redisstore"
-	"github.com/go-grpc-sqlc/auth/internal/repository"
-	"github.com/go-grpc-sqlc/pkg/token"
+	"github.com/Ajay01103/go-grpc-sqlc/auth/config"
+	db "github.com/Ajay01103/go-grpc-sqlc/auth/gen/sqlc"
+	"github.com/Ajay01103/go-grpc-sqlc/auth/internal/redisstore"
+	"github.com/Ajay01103/go-grpc-sqlc/auth/internal/repository"
+	"github.com/Ajay01103/go-grpc-sqlc/pkg/token"
 )
 
 // AuthService holds all dependencies needed by the auth business logic.
@@ -320,4 +320,3 @@ func (s *AuthService) nukeFamily(ctx context.Context, userID, familyID string) {
 		s.logger.Warn("failed to revoke family", zap.String("familyID", familyID), zap.Error(err))
 	}
 }
-

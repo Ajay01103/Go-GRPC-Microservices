@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package generation;
 
-option go_package = "github.com/go-grpc-sqlc/generation/gen/pb;pb";
+option go_package = "github.com/Ajay01103/go-grpc-sqlc/generation/gen/pb;pb";
 
 enum GenerationJobStatus {
   GENERATION_JOB_STATUS_UNSPECIFIED = 0;

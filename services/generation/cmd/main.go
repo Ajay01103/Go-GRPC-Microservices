@@ -16,16 +16,16 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
-	generationconfig "github.com/go-grpc-sqlc/generation/config"
-	"github.com/go-grpc-sqlc/generation/gen/pb/pbconnect"
-	db "github.com/go-grpc-sqlc/generation/internal/db"
-	generations3 "github.com/go-grpc-sqlc/generation/internal/s3"
-	"github.com/go-grpc-sqlc/generation/internal/server"
-	"github.com/go-grpc-sqlc/generation/internal/worker"
-	"github.com/go-grpc-sqlc/pkg/interceptor"
-	pkglogger "github.com/go-grpc-sqlc/pkg/logger"
-	"github.com/go-grpc-sqlc/pkg/redisclient"
-	"github.com/go-grpc-sqlc/pkg/token"
+	generationconfig "github.com/Ajay01103/go-grpc-sqlc/generation/config"
+	"github.com/Ajay01103/go-grpc-sqlc/generation/gen/pb/pbconnect"
+	db "github.com/Ajay01103/go-grpc-sqlc/generation/internal/db"
+	generations3 "github.com/Ajay01103/go-grpc-sqlc/generation/internal/s3"
+	"github.com/Ajay01103/go-grpc-sqlc/generation/internal/server"
+	"github.com/Ajay01103/go-grpc-sqlc/generation/internal/worker"
+	"github.com/Ajay01103/go-grpc-sqlc/pkg/interceptor"
+	pkglogger "github.com/Ajay01103/go-grpc-sqlc/pkg/logger"
+	"github.com/Ajay01103/go-grpc-sqlc/pkg/redisclient"
+	"github.com/Ajay01103/go-grpc-sqlc/pkg/token"
 )
 
 func main() {

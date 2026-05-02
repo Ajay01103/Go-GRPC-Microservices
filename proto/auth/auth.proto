@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package auth;
 
-option go_package = "github.com/go-grpc-sqlc/auth/gen/pb;pb";
+option go_package = "github.com/Ajay01103/go-grpc-sqlc/auth/gen/pb;pb";
 
 // ─── Request / Response Messages ─────────────────────────────────────────────
 

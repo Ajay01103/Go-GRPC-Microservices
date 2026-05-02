@@ -110,7 +110,7 @@ func (q *Queries) DeleteVoice(ctx context.Context, arg DeleteVoiceParams) error 
 }
 
 const getSystemVoiceByName = `-- name: GetSystemVoiceByName :one
-SELECT id, user_id, name, description, category, language, variant, s3_object_key, created_at, updated_at, owner_type, owner_id FROM voices
+SELECT id, user_id, owner_type, owner_id, name, description, category, language, variant, s3_object_key, created_at, updated_at FROM voices
 WHERE name = $1 AND owner_type = 'SYSTEM'
 LIMIT 1
 `
@@ -121,6 +121,8 @@ func (q *Queries) GetSystemVoiceByName(ctx context.Context, name string) (Voice,
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
+		&i.OwnerType,
+		&i.OwnerID,
 		&i.Name,
 		&i.Description,
 		&i.Category,
@@ -129,8 +131,6 @@ func (q *Queries) GetSystemVoiceByName(ctx context.Context, name string) (Voice,
 		&i.S3ObjectKey,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.OwnerType,
-		&i.OwnerID,
 	)
 	return i, err
 }

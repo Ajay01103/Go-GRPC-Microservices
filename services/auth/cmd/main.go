@@ -16,17 +16,17 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
-	"github.com/go-grpc-sqlc/auth/config"
-	"github.com/go-grpc-sqlc/auth/gen/pb/pbconnect"
-	db "github.com/go-grpc-sqlc/auth/gen/sqlc"
-	"github.com/go-grpc-sqlc/auth/internal/redisstore"
-	"github.com/go-grpc-sqlc/auth/internal/repository"
-	"github.com/go-grpc-sqlc/auth/internal/service"
-	"github.com/go-grpc-sqlc/auth/server"
-	"github.com/go-grpc-sqlc/pkg/interceptor"
-	pkglogger "github.com/go-grpc-sqlc/pkg/logger"
-	"github.com/go-grpc-sqlc/pkg/redisclient"
-	"github.com/go-grpc-sqlc/pkg/token"
+	"github.com/Ajay01103/go-grpc-sqlc/auth/config"
+	"github.com/Ajay01103/go-grpc-sqlc/auth/gen/pb/pbconnect"
+	db "github.com/Ajay01103/go-grpc-sqlc/auth/gen/sqlc"
+	"github.com/Ajay01103/go-grpc-sqlc/auth/internal/redisstore"
+	"github.com/Ajay01103/go-grpc-sqlc/auth/internal/repository"
+	"github.com/Ajay01103/go-grpc-sqlc/auth/internal/service"
+	"github.com/Ajay01103/go-grpc-sqlc/auth/server"
+	"github.com/Ajay01103/go-grpc-sqlc/pkg/interceptor"
+	pkglogger "github.com/Ajay01103/go-grpc-sqlc/pkg/logger"
+	"github.com/Ajay01103/go-grpc-sqlc/pkg/redisclient"
+	"github.com/Ajay01103/go-grpc-sqlc/pkg/token"
 )
 
 // corsMiddleware allows Next.js or any other frontend to access Connect endpoints.

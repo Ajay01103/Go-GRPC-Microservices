@@ -3,7 +3,7 @@ package redisstore
 import (
 	"github.com/redis/go-redis/v9"
 
-	"github.com/go-grpc-sqlc/pkg/redisclient"
+	"github.com/Ajay01103/go-grpc-sqlc/pkg/redisclient"
 )
 
 // NewClientFromURL parses the Redis URL and returns a configured client.

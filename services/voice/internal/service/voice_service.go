@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	db "github.com/go-grpc-sqlc/voice/gen/sqlc"
-	"github.com/go-grpc-sqlc/voice/internal/repository"
-	"github.com/go-grpc-sqlc/voice/internal/s3"
+	db "github.com/Ajay01103/go-grpc-sqlc/voice/gen/sqlc"
+	"github.com/Ajay01103/go-grpc-sqlc/voice/internal/repository"
+	"github.com/Ajay01103/go-grpc-sqlc/voice/internal/s3"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"go.uber.org/zap"
@@ -288,23 +288,6 @@ func buildS3ObjectKey(userID, voiceID, _ string) string {
 		return fmt.Sprintf("system/%s.wav", voiceID)
 	}
 	return fmt.Sprintf("custom/%s/%s.wav", trimmedUserID, voiceID)
-}
-
-func extensionFromContentType(contentType string) string {
-	switch strings.ToLower(strings.TrimSpace(contentType)) {
-	case "audio/mpeg", "audio/mp3":
-		return ".mp3"
-	case "audio/ogg":
-		return ".ogg"
-	case "audio/webm":
-		return ".webm"
-	case "audio/x-wav", "audio/wav":
-		return ".wav"
-	case "audio/mp4", "audio/aac":
-		return ".m4a"
-	default:
-		return ".wav"
-	}
 }
 
 func normalizeContentType(contentType string) string {

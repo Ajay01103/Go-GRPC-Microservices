@@ -122,7 +122,6 @@ func TestRotateFamilyActiveToken_UserFamiliesSetDoesNotExpire(t *testing.T) {
 		t.Fatalf("expected user family set ttl -1 (no expiry), got %v", userSetTTL)
 	}
 
-
 	blacklisted, err := store.IsTokenHashBlacklisted(ctx, familyID, oldHash)
 	if err != nil {
 		t.Fatalf("check old token hash blacklist: %v", err)

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
+	db "github.com/Ajay01103/go-grpc-sqlc/auth/gen/sqlc"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	db "github.com/go-grpc-sqlc/auth/gen/sqlc"
 )
 
 // ErrUserNotFound is returned when a user lookup yields no result.

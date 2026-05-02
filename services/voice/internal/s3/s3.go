@@ -11,7 +11,7 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	voiceconfig "github.com/go-grpc-sqlc/voice/config"
+	voiceconfig "github.com/Ajay01103/go-grpc-sqlc/voice/config"
 )
 
 // Client wraps the AWS S3 client configured for Backblaze B2.

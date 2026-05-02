@@ -15,17 +15,17 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
-	"github.com/go-grpc-sqlc/pkg/interceptor"
-	pkglogger "github.com/go-grpc-sqlc/pkg/logger"
-	"github.com/go-grpc-sqlc/pkg/redisclient"
-	"github.com/go-grpc-sqlc/pkg/token"
-	voiceconfig "github.com/go-grpc-sqlc/voice/config"
-	"github.com/go-grpc-sqlc/voice/gen/pb/pbconnect"
-	db "github.com/go-grpc-sqlc/voice/gen/sqlc"
-	"github.com/go-grpc-sqlc/voice/internal/repository"
-	"github.com/go-grpc-sqlc/voice/internal/s3"
-	"github.com/go-grpc-sqlc/voice/internal/server"
-	"github.com/go-grpc-sqlc/voice/internal/service"
+	"github.com/Ajay01103/go-grpc-sqlc/pkg/interceptor"
+	pkglogger "github.com/Ajay01103/go-grpc-sqlc/pkg/logger"
+	"github.com/Ajay01103/go-grpc-sqlc/pkg/redisclient"
+	"github.com/Ajay01103/go-grpc-sqlc/pkg/token"
+	voiceconfig "github.com/Ajay01103/go-grpc-sqlc/voice/config"
+	"github.com/Ajay01103/go-grpc-sqlc/voice/gen/pb/pbconnect"
+	db "github.com/Ajay01103/go-grpc-sqlc/voice/gen/sqlc"
+	"github.com/Ajay01103/go-grpc-sqlc/voice/internal/repository"
+	"github.com/Ajay01103/go-grpc-sqlc/voice/internal/s3"
+	"github.com/Ajay01103/go-grpc-sqlc/voice/internal/server"
+	"github.com/Ajay01103/go-grpc-sqlc/voice/internal/service"
 )
 
 func main() {

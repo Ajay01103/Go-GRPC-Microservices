@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	db "github.com/go-grpc-sqlc/generation/internal/db"
-	generations3 "github.com/go-grpc-sqlc/generation/internal/s3"
+	db "github.com/Ajay01103/go-grpc-sqlc/generation/internal/db"
+	generations3 "github.com/Ajay01103/go-grpc-sqlc/generation/internal/s3"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"

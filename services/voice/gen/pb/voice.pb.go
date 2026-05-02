@@ -832,7 +832,7 @@ const file_voice_proto_rawDesc = "" +
 	"\vDeleteVoice\x12\x19.voice.DeleteVoiceRequest\x1a\x1a.voice.DeleteVoiceResponse\x12\\\n" +
 	"\x13GetVoicePlaybackUrl\x12!.voice.GetVoicePlaybackUrlRequest\x1a\".voice.GetVoicePlaybackUrlResponse\x12D\n" +
 	"\vCreateVoice\x12\x19.voice.CreateVoiceRequest\x1a\x1a.voice.CreateVoiceResponse\x12D\n" +
-	"\vUpdateVoice\x12\x19.voice.UpdateVoiceRequest\x1a\x1a.voice.UpdateVoiceResponseB)Z'github.com/go-grpc-sqlc/voice/gen/pb;pbb\x06proto3"
+	"\vUpdateVoice\x12\x19.voice.UpdateVoiceRequest\x1a\x1a.voice.UpdateVoiceResponseB3Z1github.com/Ajay01103/go-grpc-sqlc/voice/gen/pb;pbb\x06proto3"
 
 var (
 	file_voice_proto_rawDescOnce sync.Once

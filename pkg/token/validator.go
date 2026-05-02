@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -22,12 +23,12 @@ const jwksRefreshSingleflightKey = "jwks_refresh"
 // This allows other microservices to validate tokens independently.
 type RemoteValidator struct {
 	jwksUrl    string
-	publicKeys map[string]cachedJWK
-	mu         sync.RWMutex
-	lastFetch  time.Time
-	cacheTTL   time.Duration
+	keys       atomic.Value // stores map[string]cachedJWK
+	lastFetch  atomic.Int64 // unix nano
+	cacheTTL   atomic.Int64 // nanoseconds
 	httpClient *http.Client
 	refreshGrp singleflight.Group
+	mu         sync.Mutex // only used during refresh write
 }
 
 type cachedJWK struct {
@@ -37,12 +38,13 @@ type cachedJWK struct {
 
 // NewRemoteValidator creates a new RemoteValidator that fetches keys from the given JWKS URL.
 func NewRemoteValidator(jwksUrl string) *RemoteValidator {
-	return &RemoteValidator{
+	v := &RemoteValidator{
 		jwksUrl:    jwksUrl,
-		publicKeys: make(map[string]cachedJWK),
-		cacheTTL:   1 * time.Hour,
 		httpClient: &http.Client{Timeout: 5 * time.Second},
 	}
+	v.keys.Store(make(map[string]cachedJWK))
+	v.cacheTTL.Store(int64(1 * time.Hour))
+	return v
 }
 
 // VerifyAccessToken validates an access token using cached public keys.
@@ -67,31 +69,36 @@ func (v *RemoteValidator) VerifyRefreshToken(tokenStr string) (*RefreshPayload, 
 	return v.validateRefreshTokenWithCache(tokenStr)
 }
 
-// ensureKeysCached fetches keys from JWKS endpoint if cache is stale.
-func (v *RemoteValidator) ensureKeysCached() error {
-	v.mu.RLock()
-	hasCachedKeys := len(v.publicKeys) > 0
-	isCached := hasCachedKeys && time.Since(v.lastFetch) < v.cacheTTL
-	v.mu.RUnlock()
+// loadKeys returns the cached keys map (zero-lock hot path).
+func (v *RemoteValidator) loadKeys() map[string]cachedJWK {
+	if m, ok := v.keys.Load().(map[string]cachedJWK); ok {
+		return m
+	}
+	return nil
+}
 
-	if isCached {
-		return nil
+// storeKeys caches the keys map and updates lastFetch.
+func (v *RemoteValidator) storeKeys(keys map[string]cachedJWK) {
+	v.keys.Store(keys)
+	v.lastFetch.Store(time.Now().UnixNano())
+}
+
+// ensureKeysCached fetches keys from JWKS endpoint if cache is stale.
+// Hot path (99.9%): zero locks.
+func (v *RemoteValidator) ensureKeysCached() error {
+	lastFetch := time.Unix(0, v.lastFetch.Load())
+	keys := v.loadKeys()
+	cacheTTL := time.Duration(v.cacheTTL.Load())
+
+	if keys != nil && time.Since(lastFetch) < cacheTTL {
+		return nil // hot path: zero locks
 	}
 
 	refreshErr := v.refreshKeysSingleflight()
-	if refreshErr == nil {
-		return nil
+	if refreshErr != nil && v.loadKeys() == nil {
+		return refreshErr // no stale fallback either
 	}
-
-	// If refresh fails but there are stale keys, continue to use them.
-	v.mu.RLock()
-	hasStaleFallback := len(v.publicKeys) > 0
-	v.mu.RUnlock()
-	if hasStaleFallback {
-		return nil
-	}
-
-	return refreshErr
+	return nil
 }
 
 func (v *RemoteValidator) refreshKeysSingleflight() error {
@@ -114,14 +121,11 @@ func (v *RemoteValidator) refreshKeys() error {
 		return fmt.Errorf("jwks endpoint returned %d: %s", resp.StatusCode, string(body))
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("read response: %w", err)
-	}
-
+	// Limit response to 64KB to prevent OOM from malicious endpoints
+	limited := io.LimitReader(resp.Body, 64*1024)
 	var jwksResp JWKSResponse
-	if err := json.Unmarshal(body, &jwksResp); err != nil {
-		return fmt.Errorf("unmarshal jwks: %w", err)
+	if err := json.NewDecoder(limited).Decode(&jwksResp); err != nil {
+		return fmt.Errorf("decode jwks: %w", err)
 	}
 
 	// Parse keys and cache them
@@ -148,25 +152,18 @@ func (v *RemoteValidator) refreshKeys() error {
 		return errors.New("jwks contains no valid signing keys")
 	}
 
-	v.mu.Lock()
-	v.publicKeys = keys
-	v.lastFetch = time.Now()
-	v.mu.Unlock()
-
+	v.storeKeys(keys)
 	return nil
 }
 
-// validateAccessTokenWithCache validates an access token using cached keys.
-func (v *RemoteValidator) validateAccessTokenWithCache(tokenStr string) (*AccessPayload, error) {
-	v.mu.RLock()
-	publicKeys := v.publicKeys
-	v.mu.RUnlock()
-
+// parseTokenWithClaims is a generic parser for both access and refresh tokens.
+// It eliminates ~95% duplicate code between validateAccessTokenWithCache and validateRefreshTokenWithCache.
+func (v *RemoteValidator) parseTokenWithClaims(tokenStr string, claims jwt.Claims) (*jwt.Token, error) {
+	publicKeys := v.loadKeys()
 	if len(publicKeys) == 0 {
 		return nil, errors.New("no public keys cached")
 	}
 
-	claims := &AccessTokenClaims{}
 	token, err := jwt.ParseWithClaims(tokenStr, claims,
 		func(token *jwt.Token) (interface{}, error) {
 			return keyForTokenHeader(publicKeys, token)
@@ -178,9 +175,18 @@ func (v *RemoteValidator) validateAccessTokenWithCache(tokenStr string) (*Access
 		}
 		return nil, ErrInvalidToken
 	}
-
 	if !token.Valid {
 		return nil, ErrInvalidToken
+	}
+	return token, nil
+}
+
+// validateAccessTokenWithCache validates an access token using cached keys.
+func (v *RemoteValidator) validateAccessTokenWithCache(tokenStr string) (*AccessPayload, error) {
+	claims := &AccessTokenClaims{}
+	token, err := v.parseTokenWithClaims(tokenStr, claims)
+	if err != nil {
+		return nil, err
 	}
 
 	payload, err := accessPayloadFromTokenClaims(claims)
@@ -189,35 +195,15 @@ func (v *RemoteValidator) validateAccessTokenWithCache(tokenStr string) (*Access
 	}
 
 	payload.KeyID, _ = token.Header["kid"].(string)
-
 	return payload, nil
 }
 
 // validateRefreshTokenWithCache validates a refresh token using cached keys.
 func (v *RemoteValidator) validateRefreshTokenWithCache(tokenStr string) (*RefreshPayload, error) {
-	v.mu.RLock()
-	publicKeys := v.publicKeys
-	v.mu.RUnlock()
-
-	if len(publicKeys) == 0 {
-		return nil, errors.New("no public keys cached")
-	}
-
 	claims := &RefreshTokenClaims{}
-	token, err := jwt.ParseWithClaims(tokenStr, claims,
-		func(token *jwt.Token) (interface{}, error) {
-			return keyForTokenHeader(publicKeys, token)
-		},
-	)
+	token, err := v.parseTokenWithClaims(tokenStr, claims)
 	if err != nil {
-		if errors.Is(err, jwt.ErrTokenExpired) {
-			return nil, ErrExpiredToken
-		}
-		return nil, ErrInvalidToken
-	}
-
-	if !token.Valid {
-		return nil, ErrInvalidToken
+		return nil, err
 	}
 
 	payload, err := refreshPayloadFromTokenClaims(claims)
@@ -226,7 +212,6 @@ func (v *RemoteValidator) validateRefreshTokenWithCache(tokenStr string) (*Refre
 	}
 
 	payload.KeyID, _ = token.Header["kid"].(string)
-
 	return payload, nil
 }
 
@@ -295,11 +280,9 @@ func parseEd25519PublicKey(key JWKSKey) (ed25519.PublicKey, error) {
 	return pub, nil
 }
 
-// SetCacheTTL sets how long keys should be cached locally.
+// SetCacheTTL sets how long keys should be cached locally (thread-safe via atomic).
 func (v *RemoteValidator) SetCacheTTL(ttl time.Duration) {
-	v.mu.Lock()
-	defer v.mu.Unlock()
-	v.cacheTTL = ttl
+	v.cacheTTL.Store(int64(ttl))
 }
 
 // CreateAccessToken is not implemented for RemoteValidator.

@@ -13,7 +13,9 @@ const minSecretKeySize = 32
 
 // JWTMaker implements TokenMaker using HS256 JWT tokens.
 type JWTMaker struct {
-	secretKey string
+	secretKey      string
+	secretKeyBytes []byte
+	keyFunc        jwt.Keyfunc
 }
 
 // NewJWTMaker creates a JWTMaker. secretKey must be at least 32 characters.
@@ -21,7 +23,17 @@ func NewJWTMaker(secretKey string) (*JWTMaker, error) {
 	if len(secretKey) < minSecretKeySize {
 		return nil, fmt.Errorf("invalid key size: must be at least %d characters", minSecretKeySize)
 	}
-	return &JWTMaker{secretKey}, nil
+	m := &JWTMaker{
+		secretKey:      secretKey,
+		secretKeyBytes: []byte(secretKey),
+	}
+	m.keyFunc = func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, ErrInvalidToken
+		}
+		return m.secretKeyBytes, nil
+	}
+	return m, nil
 }
 
 // ─── Refresh Token ────────────────────────────────────────────────────────────
@@ -56,10 +68,8 @@ func (m *JWTMaker) CreateRefreshToken(
 		"iat":        payload.IssuedAt.Unix(),
 		"exp":        payload.ExpiredAt.Unix(),
 	}
-	// DPoP binding removed
-
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signed, err := token.SignedString([]byte(m.secretKey))
+	signed, err := token.SignedString(m.secretKeyBytes)
 	if err != nil {
 		return "", nil, err
 	}
@@ -102,10 +112,8 @@ func (m *JWTMaker) CreateAccessToken(
 		"iat":         payload.IssuedAt.Unix(),
 		"exp":         payload.ExpiredAt.Unix(),
 	}
-	// DPoP binding removed
-
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signed, err := token.SignedString([]byte(m.secretKey))
+	signed, err := token.SignedString(m.secretKeyBytes)
 	if err != nil {
 		return "", nil, err
 	}
@@ -155,14 +163,7 @@ func (m *JWTMaker) VerifyRefreshToken(tokenStr string) (*RefreshPayload, error) 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 func (m *JWTMaker) parseClaims(tokenStr string) (jwt.MapClaims, error) {
-	keyFunc := func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, ErrInvalidToken
-		}
-		return []byte(m.secretKey), nil
-	}
-
-	jwtToken, err := jwt.ParseWithClaims(tokenStr, jwt.MapClaims{}, keyFunc)
+	jwtToken, err := jwt.ParseWithClaims(tokenStr, make(jwt.MapClaims, 10), m.keyFunc)
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
 			return nil, ErrExpiredToken
@@ -231,15 +232,15 @@ func accessPayloadFromClaims(claims jwt.MapClaims) (*AccessPayload, error) {
 	}
 
 	return &AccessPayload{
-		JTI:               jti,
-		UserID:            sub,
-		Email:             fmt.Sprintf("%v", claims["email"]),
-		Name:              fmt.Sprintf("%v", claims["name"]),
-		TokenType:         TokenTypeAccess,
-		FamilyID:          familyID,
-		RefreshJTI:        rjti,
-		IssuedAt:          iat,
-		ExpiredAt:         exp,
+		JTI:        jti,
+		UserID:     sub,
+		Email:      optionalStringClaim(claims, "email"),
+		Name:       optionalStringClaim(claims, "name"),
+		TokenType:  TokenTypeAccess,
+		FamilyID:   familyID,
+		RefreshJTI: rjti,
+		IssuedAt:   iat,
+		ExpiredAt:  exp,
 	}, nil
 }
 
@@ -266,13 +267,13 @@ func refreshPayloadFromClaims(claims jwt.MapClaims) (*RefreshPayload, error) {
 	}
 
 	return &RefreshPayload{
-		JTI:               jti,
-		UserID:            sub,
-		Email:             fmt.Sprintf("%v", claims["email"]),
-		Name:              fmt.Sprintf("%v", claims["name"]),
-		TokenType:         TokenTypeRefresh,
-		FamilyID:          familyID,
-		IssuedAt:          iat,
-		ExpiredAt:         exp,
+		JTI:       jti,
+		UserID:    sub,
+		Email:     optionalStringClaim(claims, "email"),
+		Name:      optionalStringClaim(claims, "name"),
+		TokenType: TokenTypeRefresh,
+		FamilyID:  familyID,
+		IssuedAt:  iat,
+		ExpiredAt: exp,
 	}, nil
 }

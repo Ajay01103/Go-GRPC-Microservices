@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	db "github.com/go-grpc-sqlc/voice/gen/sqlc"
-	"github.com/go-grpc-sqlc/voice/internal/repository"
-	"github.com/go-grpc-sqlc/voice/internal/s3"
+	db "github.com/Ajay01103/go-grpc-sqlc/voice/gen/sqlc"
+	"github.com/Ajay01103/go-grpc-sqlc/voice/internal/repository"
+	"github.com/Ajay01103/go-grpc-sqlc/voice/internal/s3"
 	"github.com/jackc/pgx/v5/pgtype"
 	"go.uber.org/zap"
 )

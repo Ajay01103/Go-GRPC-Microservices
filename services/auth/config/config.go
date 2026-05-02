@@ -8,12 +8,12 @@ import (
 
 // Config holds all configuration values loaded from environment variables.
 type Config struct {
-	DBUrl                          string        `mapstructure:"AUTH_DB_URL"`
-	RedisUrl                       string        `mapstructure:"REDIS_URL"`
-	JWTSecret                      string        `mapstructure:"JWT_SECRET"`
-	GRPCPort                       string        `mapstructure:"AUTH_GRPC_PORT"`
-	AccessTokenDuration            time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
-	RefreshTokenDuration           time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
+	DBUrl                            string        `mapstructure:"AUTH_DB_URL"`
+	RedisUrl                         string        `mapstructure:"REDIS_URL"`
+	JWTSecret                        string        `mapstructure:"JWT_SECRET"`
+	GRPCPort                         string        `mapstructure:"AUTH_GRPC_PORT"`
+	AccessTokenDuration              time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
+	RefreshTokenDuration             time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
 	EDDSASigningKeyRetentionDuration time.Duration `mapstructure:"EDDSA_SIGNING_KEY_RETENTION_DURATION"`
 }
 

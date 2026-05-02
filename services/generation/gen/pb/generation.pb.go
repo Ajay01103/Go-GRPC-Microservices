@@ -859,7 +859,7 @@ const file_generation_proto_rawDesc = "" +
 	"\rGetGeneration\x12 .generation.GetGenerationRequest\x1a!.generation.GetGenerationResponse\x12Z\n" +
 	"\x0fListGenerations\x12\".generation.ListGenerationsRequest\x1a#.generation.ListGenerationsResponse\x12W\n" +
 	"\x0eGenerateSpeech\x12!.generation.GenerateSpeechRequest\x1a\".generation.GenerateSpeechResponse\x12Q\n" +
-	"\fGetJobStatus\x12\x1f.generation.GetJobStatusRequest\x1a .generation.GetJobStatusResponseB.Z,github.com/go-grpc-sqlc/generation/gen/pb;pbb\x06proto3"
+	"\fGetJobStatus\x12\x1f.generation.GetJobStatusRequest\x1a .generation.GetJobStatusResponseB8Z6github.com/Ajay01103/go-grpc-sqlc/generation/gen/pb;pbb\x06proto3"
 
 var (
 	file_generation_proto_rawDescOnce sync.Once

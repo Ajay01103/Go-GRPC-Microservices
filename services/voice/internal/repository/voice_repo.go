@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	db "github.com/go-grpc-sqlc/voice/gen/sqlc"
+	db "github.com/Ajay01103/go-grpc-sqlc/voice/gen/sqlc"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )

@@ -23,28 +23,26 @@ const (
 //     When the client calls RefreshToken, the server looks up
 //     Redis key "refresh_token:{RefreshJTI}" to check revocation.
 //   - KeyID:      the kid of the RSA key used to sign this token
-//   - DPoPKeyThumbprint: S256 thumbprint of client's DPoP public key (if DPoP-bound)
 type AccessPayload struct {
-	JTI               uuid.UUID `json:"jti"`
-	UserID            uuid.UUID `json:"sub"`
-	Email             string    `json:"email"`
-	Name              string    `json:"name"`
-	TokenType         TokenType `json:"token_type"`
-	FamilyID          uuid.UUID `json:"family_id"`
-	RefreshJTI        uuid.UUID `json:"refresh_jti"`
-	IssuedAt          time.Time `json:"iat"`
-	ExpiredAt         time.Time `json:"exp"`
-	KeyID             string    `json:"kid,omitempty"`
-
+	JTI        uuid.UUID `json:"jti"`
+	UserID     uuid.UUID `json:"sub"`
+	Email      string    `json:"email"`
+	Name       string    `json:"name"`
+	TokenType  TokenType `json:"token_type"`
+	FamilyID   uuid.UUID `json:"family_id"`
+	RefreshJTI uuid.UUID `json:"refresh_jti"`
+	IssuedAt   time.Time `json:"iat"`
+	ExpiredAt  time.Time `json:"exp"`
+	KeyID      string    `json:"kid,omitempty"`
 }
 
 // AccessTokenClaims is a typed JWT claim set for access tokens.
 type AccessTokenClaims struct {
-	Email             string    `json:"email"`
-	Name              string    `json:"name"`
-	TokenType         TokenType `json:"token_type"`
-	FamilyID          string    `json:"family_id"`
-	RefreshJTI        string    `json:"refresh_jti"`
+	Email      string    `json:"email"`
+	Name       string    `json:"name"`
+	TokenType  TokenType `json:"token_type"`
+	FamilyID   string    `json:"family_id"`
+	RefreshJTI string    `json:"refresh_jti"`
 
 	jwt.RegisteredClaims
 }
@@ -64,16 +62,15 @@ func NewAccessPayload(userID uuid.UUID, email, name string, familyID, refreshJTI
 func NewAccessPayloadAt(userID uuid.UUID, email, name string, familyID, refreshJTI uuid.UUID, now time.Time, duration time.Duration) (*AccessPayload, error) {
 	now = now.UTC()
 	return &AccessPayload{
-		JTI:               uuid.New(),
-		UserID:            userID,
-		Email:             email,
-		Name:              name,
-		TokenType:         TokenTypeAccess,
-		FamilyID:          familyID,
-		RefreshJTI:        refreshJTI,
-		IssuedAt:          now,
-		ExpiredAt:         now.Add(duration),
-        
+		JTI:        uuid.New(),
+		UserID:     userID,
+		Email:      email,
+		Name:       name,
+		TokenType:  TokenTypeAccess,
+		FamilyID:   familyID,
+		RefreshJTI: refreshJTI,
+		IssuedAt:   now,
+		ExpiredAt:  now.Add(duration),
 	}, nil
 }
 
@@ -117,16 +114,15 @@ func accessPayloadFromTokenClaims(claims *AccessTokenClaims) (*AccessPayload, er
 	}
 
 	payload := &AccessPayload{
-		JTI:               jti,
-		UserID:            uid,
-		Email:             claims.Email,
-		Name:              claims.Name,
-		TokenType:         claims.TokenType,
-		FamilyID:          familyID,
-		RefreshJTI:        refreshJTI,
-		IssuedAt:          claims.IssuedAt.Time,
-		ExpiredAt:         claims.ExpiresAt.Time,
-        
+		JTI:        jti,
+		UserID:     uid,
+		Email:      claims.Email,
+		Name:       claims.Name,
+		TokenType:  claims.TokenType,
+		FamilyID:   familyID,
+		RefreshJTI: refreshJTI,
+		IssuedAt:   claims.IssuedAt.Time,
+		ExpiredAt:  claims.ExpiresAt.Time,
 	}
 
 	if time.Now().After(payload.ExpiredAt) {
@@ -150,27 +146,25 @@ func (p *AccessPayload) Valid() error {
 //   - JTI: unique ID stored as the Redis key "refresh_token:{JTI}".
 //     Revoking a refresh token means deleting this key from Redis.
 //   - KeyID: the kid of the RSA key used to sign this token
-//   - DPoPKeyThumbprint: S256 thumbprint of client's DPoP public key (if DPoP-bound)
 type RefreshPayload struct {
-	JTI               uuid.UUID `json:"jti"`
-	UserID            uuid.UUID `json:"sub"`
-	Email             string    `json:"email"`
-	Name              string    `json:"name"`
-	TokenType         TokenType `json:"token_type"`
-	FamilyID          uuid.UUID `json:"family_id"`
-	IssuedAt          time.Time `json:"iat"`
-	ExpiredAt         time.Time `json:"exp"`
-	KeyID             string    `json:"kid,omitempty"`
-    
+	JTI       uuid.UUID `json:"jti"`
+	UserID    uuid.UUID `json:"sub"`
+	Email     string    `json:"email"`
+	Name      string    `json:"name"`
+	TokenType TokenType `json:"token_type"`
+	FamilyID  uuid.UUID `json:"family_id"`
+	IssuedAt  time.Time `json:"iat"`
+	ExpiredAt time.Time `json:"exp"`
+	KeyID     string    `json:"kid,omitempty"`
 }
 
 // RefreshTokenClaims is a typed JWT claim set for refresh tokens.
 type RefreshTokenClaims struct {
-	Email             string    `json:"email"`
-	Name              string    `json:"name"`
-	TokenType         TokenType `json:"token_type"`
-	FamilyID          string    `json:"family_id"`
-    
+	Email     string    `json:"email"`
+	Name      string    `json:"name"`
+	TokenType TokenType `json:"token_type"`
+	FamilyID  string    `json:"family_id"`
+
 	jwt.RegisteredClaims
 }
 
@@ -188,15 +182,14 @@ func NewRefreshPayload(userID uuid.UUID, email, name string, familyID uuid.UUID,
 func NewRefreshPayloadAt(userID uuid.UUID, email, name string, familyID uuid.UUID, now time.Time, duration time.Duration) (*RefreshPayload, error) {
 	now = now.UTC()
 	return &RefreshPayload{
-		JTI:               uuid.New(),
-		UserID:            userID,
-		Email:             email,
-		Name:              name,
-		TokenType:         TokenTypeRefresh,
-		FamilyID:          familyID,
-		IssuedAt:          now,
-		ExpiredAt:         now.Add(duration),
-        
+		JTI:       uuid.New(),
+		UserID:    userID,
+		Email:     email,
+		Name:      name,
+		TokenType: TokenTypeRefresh,
+		FamilyID:  familyID,
+		IssuedAt:  now,
+		ExpiredAt: now.Add(duration),
 	}, nil
 }
 
@@ -235,15 +228,14 @@ func refreshPayloadFromTokenClaims(claims *RefreshTokenClaims) (*RefreshPayload,
 	}
 
 	payload := &RefreshPayload{
-		JTI:               jti,
-		UserID:            uid,
-		Email:             claims.Email,
-		Name:              claims.Name,
-		TokenType:         claims.TokenType,
-		FamilyID:          familyID,
-		IssuedAt:          claims.IssuedAt.Time,
-		ExpiredAt:         claims.ExpiresAt.Time,
-        
+		JTI:       jti,
+		UserID:    uid,
+		Email:     claims.Email,
+		Name:      claims.Name,
+		TokenType: claims.TokenType,
+		FamilyID:  familyID,
+		IssuedAt:  claims.IssuedAt.Time,
+		ExpiredAt: claims.ExpiresAt.Time,
 	}
 
 	if time.Now().After(payload.ExpiredAt) {

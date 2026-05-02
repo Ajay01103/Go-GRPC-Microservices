@@ -1,4 +1,4 @@
-module github.com/go-grpc-sqlc/pkg
+module github.com/Ajay01103/go-grpc-sqlc/pkg
 
 go 1.25.0
 

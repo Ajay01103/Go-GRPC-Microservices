@@ -119,7 +119,6 @@ func mustSignedAccessToken(t *testing.T, method jwt.SigningMethod, signer interf
 		"Test User",
 		uuid.New(),
 		uuid.New(),
-		"",
 		now,
 		15*time.Minute,
 	)
@@ -149,7 +148,6 @@ func mustSignedRefreshToken(t *testing.T, method jwt.SigningMethod, signer inter
 		"test@example.com",
 		"Test User",
 		uuid.New(),
-		"",
 		now,
 		24*time.Hour,
 	)

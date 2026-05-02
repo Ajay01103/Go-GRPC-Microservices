@@ -39,6 +39,7 @@ func (s *DPoPStore) UseProofOnce(ctx context.Context, proofJTI string, ttl time.
 	}
 	return result == "OK", nil
 }
+
 // StoreNonce stores a server-issued nonce for DPoP challenges.
 // This is used to prevent DPoP replay across different endpoints.
 func (s *DPoPStore) StoreNonce(ctx context.Context, nonce string, ttl time.Duration) error {

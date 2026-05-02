@@ -5,9 +5,9 @@ import (
 	"errors"
 
 	"connectrpc.com/connect"
-	"github.com/go-grpc-sqlc/auth/gen/pb"
-	"github.com/go-grpc-sqlc/auth/gen/pb/pbconnect"
-	"github.com/go-grpc-sqlc/auth/internal/service"
+	"github.com/Ajay01103/go-grpc-sqlc/auth/gen/pb"
+	"github.com/Ajay01103/go-grpc-sqlc/auth/gen/pb/pbconnect"
+	"github.com/Ajay01103/go-grpc-sqlc/auth/internal/service"
 )
 
 // AuthServer implements the pbconnect.AuthServiceHandler interface

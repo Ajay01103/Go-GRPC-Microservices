@@ -100,6 +100,8 @@ func (ns NullVoiceVariant) Value() (driver.Value, error) {
 type Voice struct {
 	ID          string             `json:"id"`
 	UserID      string             `json:"user_id"`
+	OwnerType   string             `json:"owner_type"`
+	OwnerID     pgtype.Text        `json:"owner_id"`
 	Name        string             `json:"name"`
 	Description pgtype.Text        `json:"description"`
 	Category    VoiceCategory      `json:"category"`
@@ -108,6 +110,4 @@ type Voice struct {
 	S3ObjectKey pgtype.Text        `json:"s3_object_key"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
-	OwnerType   string             `json:"owner_type"`
-	OwnerID     pgtype.Text        `json:"owner_id"`
 }

@@ -1,10 +1,11 @@
-module github.com/go-grpc-sqlc/auth
+module github.com/Ajay01103/go-grpc-sqlc/auth
 
 go 1.25.0
 
 require (
 	connectrpc.com/connect v1.19.1
-	github.com/go-grpc-sqlc/pkg v0.0.0-00010101000000-000000000000
+	github.com/Ajay01103/go-grpc-sqlc/pkg v0.0.0-00010101000000-000000000000
+	github.com/alicebob/miniredis/v2 v2.37.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.8.0
 	github.com/redis/go-redis/v9 v9.18.0
@@ -17,7 +18,6 @@ require (
 )
 
 require (
-	github.com/alicebob/miniredis/v2 v2.37.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
@@ -43,4 +43,4 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
 )
 
-replace github.com/go-grpc-sqlc/pkg => ../../pkg
+replace github.com/Ajay01103/go-grpc-sqlc/pkg => ../../pkg
