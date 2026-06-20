@@ -1,6 +1,7 @@
 # Elevenlabs-Go-Grpc-Sqlc Monorepo Setup Guide
 
 ![alt text](dashboard.png)
+<video controls src="demo.mov" title="Title"></video>
 This repository contains four runtime services:
 
 - Auth service (ConnectRPC + PostgreSQL + Redis)
